@@ -3398,3 +3398,169 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 **改它是内容判断，归用户**——PM 报，不自己写。
 
 ---
+
+---
+## T-100 — 给 `verify-mount.mjs` 加 pin：盯住 `publish.yml` 里那两个新步骤
+
+- **Verdicts**：code: not run — 本仓库 0.9.0 起三轮评审在里程碑结尾并行跑一轮，M1 还没到那一步 ｜ security: not run — 同上 ｜ qa: not run — 同上（QA 也是里程碑一轮） ｜ doc: not run — 同上
+
+- **里程碑**：M1 ｜ **形状**：单人（solo）
+- **拥有的文件**：`tools/verify-mount.mjs`
+- **依赖**：**没有。这是 M1 的第一个任务，必须在 T-101 之前落地。**
+- **要求来源**：用户，2026-08-22，面谈第 4 条（`docs/design/prd-2026-08-22-gh-release.md` 第三节）
+- **契约在哪**：`docs/design/prd-2026-08-22-gh-release.md` **第七节**。那一节把两个新步骤的
+  `name`、`id`、位置和 `if` 条件写死了。T-101 还没写，所以这个任务**只能照那一节写**，
+  不许自己发明名字。
+
+## 这个任务为什么排第一（这是本作业的「先写失败的测试」）
+
+面谈第 5、6 条之后，改 `publish.yml` 的 T-101 **没有单元测试可写** —— 它改的是一份 YAML，
+里面那段 shell 按第 6 条不测。所以它唯一的自动检查就是这个 pin。
+
+把顺序倒过来，测试先行就成立了：**这个任务写完，`npm test` 是红的** —— pin 找不到那两个
+步骤，这就是「先失败」那一半的证据。T-101 落地之后它变绿，那是「后通过」。
+
+**所以本任务交付的时候 `npm test` 是红的，而且必须是红的。** 报告里要贴那段红色输出，
+并且证明红的**只有**这几条新 pin，别的一条都没坏。
+
+## DoD（PM 写）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | pin 认出 `Read the release notes from CHANGELOG.md` 这一步：`name` 一字不差，`id` 是 `notes`。找不到 → 红 | 变异证明 ① |
+| 2 | pin 判它排在发布那一步**前面**。用文件里已有的 `publishCommand` 定位发布步，**不许另写一套「什么算发布」** | 变异证明 ② |
+| 3 | pin 判它**自己没有 `if:`**（每次都要跑，不能被跳过）。给它加个 `if:` → 红 | 变异证明 ③ |
+| 4 | pin 认出 `Create the GitHub release` 这一步，并判它排在发布那一步**后面** | 变异证明 ④ |
+| 5 | pin 判第 4 步那一步带 `if:`，且条件里含 `steps.guard.outputs.publish` 和 `'true'`。把 `if:` 删掉 → 红 | 变异证明 ⑤ |
+| 6 | 断步骤边界**复用文件里已有的 `stepOpeners` 那套**（`release.matchAll(/^[ \t]*-[ \t]+(?:name\|uses\|run\|id\|if\|shell\|env\|with):/gm)`），不新造第二套切法。两套切法会各说各话 | 人读 diff ＋ code review |
+| 7 | 每条 `fail()` / `ok()` 的话里都**点名读的是哪个文件**（本文件房规：「a workflow is wrong」在一堆 workflow 里没法照着做） | 人读 diff |
+| 8 | pin 只作用在**发布用的 workflow**（`publishers` 那份名单），不作用在 `test.yml` | 把 pin 的条件改成对所有 workflow 生效 → `test.yml` 会红，说明作用域写错了 |
+| 9 | **变异证明至少 5 次**（第 1–5 条各一次，都在 `.github/workflows/publish.yml` 的**抛弃副本**上做，或者改完就还原）。**外加一次假红测试**：把 `publish.yml` 正当地改一下（比如给某一步加一句注释）→ pin 必须仍然只报「缺那两步」，不许多报 | 报告里 6 段真实输出 ＋ `git status --porcelain` 只剩 `tools/verify-mount.mjs` |
+| 10 | 现有的 pin 一条都没弱：改动前后 `node tools/verify-mount.mjs` 打出的 `ok(...)` 行数**只增不减**，且原有每一行文字不变 | 报告里贴改动前后两次输出的 diff |
+| 11 | **交付时 `npm test` 是红的，且只红在这几条新 pin 上。** 报告要贴红色输出，并说明红的是哪几条、为什么这是对的 | 报告 ＋ PM 复跑 |
+| 12 | 不改 `tools/verify-mount.mjs` 以外的任何文件 | `git status --porcelain` |
+
+## 不许做的事
+
+- **不许碰 `.github/workflows/publish.yml`。** 那是 T-101 的文件。这个任务只写 pin。
+- **不许为了让 `npm test` 变绿而放宽 pin。** 红是这个任务的产出。
+
+---
+## T-101 — 给 `publish.yml` 加两个步骤：取 CHANGELOG 文字、建 GitHub release
+
+- **Verdicts**：code: not run — 任务还没开始，评审在 M1 结尾那一轮 ｜ security: not run — 同上 ｜ qa: not run — 同上 ｜ doc: not run — 同上
+
+- **里程碑**：M1 ｜ **形状**：单人（solo）
+- **拥有的文件**：`.github/workflows/publish.yml`
+- **依赖**：**T-100 必须先落地**（串行）。落地之后 `npm test` 是红的，本任务要把它变绿。
+- **要求来源**：用户，2026-08-22，面谈六条（`docs/design/prd-2026-08-22-gh-release.md` 第三节）
+- **契约在哪**：`docs/design/prd-2026-08-22-gh-release.md` **第七节**，包含 8 个步骤的顺序表、
+  两个新步骤的 `name` 和 `id`、`permissions` 怎么改、第 4 步和第 8 步各要做什么。
+
+## 这个任务没有单元测试，这是写下来批准的
+
+本仓库的规矩是工程师先写失败的单元测试再写代码。**这个任务例外，理由写在这里：**
+
+它改的是一份 YAML。里面那段取 CHANGELOG 文字的 shell，用户在 2026-08-22 的面谈里
+**听过代价之后明确选了不测**（第 6 条）—— PM 建议过写成 `tools/changelog-notes.mjs`，
+也建议过写 harness 把 `run:` 抠出来用 bash 真跑，两条都被否掉了，理由是简单。
+
+所以：
+
+- **本任务的自动检查就是 T-100 那个 pin**，它判的是步骤的位置和 `if` 条件，
+  **判不了那段 shell 的逻辑对不对**；
+- 那段 shell **没有任何测试执行过它**，这条进 `docs/qa/gaps.md`（PM 写）；
+- 下面第 6–9 条要求工程师**用手把那段 shell 在本机跑一遍**并贴输出。
+  **那是证据，不是测试** —— 它不进任何测试套件，下次没人会再跑它。报告里必须这么说。
+
+## DoD（PM 写）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `publish` job 的 8 个步骤，顺序和 `if` 条件跟 PRD 第七节那张表**一模一样** | `node tools/verify-mount.mjs`（T-100 的 pin） |
+| 2 | `permissions` 是 `contents: write` ＋ `id-token: write`。**`contents: read` 不够** —— `gh release create` 要写 | 人读 diff ＋ code review |
+| 3 | 仍然**只有一个 job**；仍然 `on: push: tags: ["v*"]`，**没有 `branches:`**；`npm test` 仍然在发布前无条件跑 | `node tools/verify-mount.mjs`（设计规矩第 7 条那几条老 pin，一条都不许红） |
+| 4 | 第 4 步从 `package.json` 读版本号（**不从 tag 读**），在 `CHANGELOG.md` 里找开头正好是 `## <版本号><空格>` 的行，取到下一个 `## ` 为止（不含）或文件结尾，写进 `release-notes.md` | 第 6–9 条的手工输出 |
+| 5 | 第 4 步在两种情况下 `::error::` ＋ `exit 1`：**找不到那一行**、**取出来去掉空行后是空的**。不许降级成自动生成说明，不许绿着过去 | 第 8、9 条的手工输出 |
+| 6 | **手工证据 ①**：本机跑那段 shell，版本号用 `0.9.0`，输出的头尾要跟 `CHANGELOG.md` 第 12 行到第 184 行对得上，行数相符 | 报告里贴命令和真实输出 |
+| 7 | **手工证据 ②（前缀重叠）**：本机造一份假 `CHANGELOG.md`，里面同时有 `## 0.1.0 — x` 和 `## 0.10.0 — y` 两节。用 `0.1.0` 跑 → 只能取到 `x` 那一节；用 `0.10.0` 跑 → 只能取到 `y` 那一节 | 报告里贴两段真实输出 |
+| 8 | **手工证据 ③（找不到）**：版本号用一个 `CHANGELOG.md` 里没有的号（例如 `9.9.9`）→ 必须非零退出，且打出一句人看得懂的话 | 报告里贴输出 ＋ `echo $?` |
+| 9 | **手工证据 ④（空小节）**：造一份假 `CHANGELOG.md`，某一节标题下面只有空行 → 必须非零退出 | 报告里贴输出 ＋ `echo $?` |
+| 10 | 第 8 步就是 `gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md`，带 `GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}`。**不许有 `--draft`、`--prerelease`、`--generate-notes`** | 人读 diff ＋ `grep` |
+| 11 | **`npm test` 全绿**，包括 T-100 那几条新 pin。用例总数不减 | PM 在静树上跑，两次的检查结果相同 |
+| 12 | 不改 `.github/workflows/publish.yml` 以外的任何文件。**假 `CHANGELOG.md` 一律放在临时目录，不许留在仓库里** | `git status --porcelain` 只剩那一个文件 |
+
+## 不许做的事
+
+- **不许碰 `tools/verify-mount.mjs`。** 那是 T-100 的文件。pin 报的红要靠改 YAML 变绿，
+  不许靠改 pin 变绿。
+- **不许把那段 shell 挪到 `tools/` 下面的脚本里。** 用户面谈第 5 条明确要求写在 YAML 里。
+- **不许真的推 tag、真的发包、真的建 release。** 本任务只改文件。
+
+---
+## T-102 — 再加一条 pin：`publish.yml` 的 `permissions` 必须是 `contents: write`
+
+- **Verdicts**：code: not run — 本仓库 0.9.0 起三轮评审在里程碑结尾并行跑一轮，M1 还没到那一步 ｜ security: not run — 同上 ｜ qa: not run — 同上（QA 也是里程碑一轮） ｜ doc: not run — 同上
+
+- **里程碑**：M1 ｜ **形状**：单人（solo）
+- **拥有的文件**：`tools/verify-mount.mjs`
+- **依赖**：**T-100 已落地**（同一个文件，串行）。**必须在 T-101 之前落地。**
+- **要求来源**：**T-100 的工程师在回报里点出来的**，2026-08-22。
+
+## 这个任务为什么存在（PM 自己的漏洞）
+
+`docs/design/prd-2026-08-22-gh-release.md` 第八节 M1 的 DoD 第 2 条写着：
+
+> job 的 `permissions` 是 `contents: write` ＋ `id-token: write`，仍然只有一个 job
+> —— 别人怎么验：`node tools/verify-mount.mjs`
+
+**但 T-100 的 12 条 DoD 里没有这一条**，所以没有任何任务在做它。这是 PM 写 DoD 时的漏洞，
+不是工程师的。T-100 的工程师发现了，**没有替 PM 悄悄加进自己的任务**，而是写在报告里交回来 ——
+这是对的做法。
+
+**这不是改 DoD**（M1 的 DoD 第 2 条一个字没动），**所以不走 CRD**，只是补上交付它的任务。
+
+## 为什么值得 pin
+
+`contents: write` 是 `gh release create` 能写 release 的唯一原因。有人把它改回 `contents: read`
+的话，`npm test` 全绿，`publish.yml` 看起来也正常 —— 直到真的推 tag：**包发出去了，
+建 release 那一步失败，run 变红。** 而按面谈第 3 条，那个状态**重推 tag 补不回来**。
+也就是说，这一个字的改动，代价正好落在这次作业已知的那个洞上。
+
+## 这个任务也是「先写失败的测试」
+
+今天 `publish.yml` 写的是 `contents: read`。所以这条 pin 一写完就是红的，
+**T-101 把它改成 `contents: write` 之后才变绿。**
+
+## DoD（PM 写）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | pin 判发布用 workflow 的 job 里有 `contents: write`。是 `contents: read` → 红 | 变异证明 ① |
+| 2 | `permissions:` 整块缺失 → 红（GitHub 的默认权限会跟着仓库设置走，不能靠它） | 变异证明 ② |
+| 3 | pin 同时判 `id-token: write` 还在 —— 那是 trusted publishing（OIDC）的命根子。删掉 → 红 | 变异证明 ③ |
+| 4 | 作用范围是 `publishers` 那份名单，**不作用在 `test.yml`** | 跟 T-100 第 8 条同样的作用范围证明 |
+| 5 | 复用 T-100 已经抽好的 `stepOpenersOf` / `stepBlockAt` 和现有的 `publishers`、`publishCommand`，**不新造第二套 YAML 读法** | 人读 diff ＋ code review |
+| 6 | `fail()` / `ok()` 点名读的是哪个文件 | 人读 diff |
+| 7 | **`ok()` 那句话里不许出现 `workflow files under .github/workflows/ carry a live \`npm publish\`` 这一串**。理由见下面「一个真踩过的坑」 | `bash docs/qa/run-all.sh` 在模拟 T-101 的副本上全绿 |
+| 8 | **变异证明至少 3 次**（第 1–3 条各一次），都在**抛弃副本**上做。**外加一次假红测试**：把 `publish.yml` 正当地改一下 → 不许多报 | 报告里 4 段真实输出 ＋ `git status --porcelain` |
+| 9 | 原有的 pin 一条都没弱：`ok(...)` 行数只增不减，原有每一行文字不变（含 T-100 新加的那两条） | 报告里贴改动前后两次输出的 diff |
+| 10 | **交付时 `npm test` 仍然是红的**，`verify-mount` 的红从 2 条变成 3 条，**只多你这一条**。报告要贴出来 | 报告 ＋ PM 复跑 |
+| 11 | 在**模拟 T-101 的完整副本**上（把 `publish.yml` 改成 PRD 第七节的样子，含 `contents: write`）跑整套 `npm test` → **exit 0，32 个 QA 任务全绿** | 报告里贴那次输出 |
+| 12 | 不改 `tools/verify-mount.mjs` 以外的任何文件 | `git status --porcelain` |
+
+## 一个真踩过的坑（T-100 的工程师栽过，写下来免得再栽）
+
+`docs/qa/T-42/case-06、-07、-08、-16` 四条用例的做法是：破坏 `publish.yml` 的 tag 过滤或测试门，
+然后断言「**没有任何 `ok` 行还敢说这个文件夹没问题**」。它们靠一串 needle 文字认人。
+
+T-100 第一版的 `ok` 里带了那串 needle，于是在那四条用例的变异下，它的 `ok` 满足了 needle，
+**把四条用例全弄红了**。工程师改的是**自己的措辞**（`docs/qa/` 不归工程师碰），
+并在代码里留了注释说明为什么这句话故意不复用那个短语。
+
+**你写 `ok()` 的时候要避开同一个坑。** 第 7 条和第 11 条就是为此。
+
+## 不许做的事
+
+- **不许碰 `.github/workflows/publish.yml`。** 那是 T-101 的文件。
+- **不许为了让测试变绿而放宽 pin。** 红是这个任务的产出。

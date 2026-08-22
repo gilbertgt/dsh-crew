@@ -164,6 +164,32 @@ const workflowFiles = workflowNames.map((name) => ({ name, text: readFileSync(jo
 const testCommand = /^[ \t]*(?:(?:-[ \t]+)?run:[ \t]*)?npm test\b([^\n]*)/m;
 const publishCommand = /^[ \t]*(?:(?:-[ \t]+)?run:[ \t]*)?npm publish\b/m;
 
+// ------------------------------------------ where one step ends and the next
+// begins, written ONCE. Two pins read this: the `npm test` step of a publishing
+// workflow (T-41, T-46) and the two release-notes steps below (T-100). Two ways
+// of cutting a step apart would answer the same question two different ways —
+// this file has been bitten by that twice already — so both callers cut with
+// these two functions and with nothing else.
+//
+// A step opens with a list item whose first key is one of the keys a step can
+// legally start with. It is not a YAML parser: it cannot tell a `- name:` in a
+// `run: |` body from a real one, and a step whose first key is something else
+// (`continue-on-error:` first, say) is not seen as an opener at all. What it is
+// good for is exactly what both callers need — reading one step's settings
+// without borrowing the neighbouring step's.
+const stepOpenersOf = (text) =>
+  [...text.matchAll(/^[ \t]*-[ \t]+(?:name|uses|run|id|if|shell|env|with):/gm)].map((match) => match.index);
+/**
+ * The one step that the character at `index` belongs to: from the list item
+ * that opens it to the one that opens the next step, or to the end of the file
+ * when it is the last step. `""` when nothing opened a step above `index`.
+ */
+const stepBlockAt = (text, index, openers = stepOpenersOf(text)) => {
+  const opens = openers.filter((i) => i <= index);
+  const closes = openers.filter((i) => i > index);
+  return opens.length ? text.slice(Math.max(...opens), closes.length ? Math.min(...closes) : text.length) : "";
+};
+
 // -------------------------------- full history, for every workflow that tests
 // `npm test` ends in `bash docs/qa/run-all.sh`, and some of those cases read
 // this repository's own commits (docs/qa/T-01/case-26-repo-diff-scope.mjs looks
@@ -347,12 +373,8 @@ function checkPublishWorkflow(rel, release) {
   // The step the `npm test` line belongs to: from the list item that opens it to
   // the one that opens the next step. Needed because a step that is skipped or
   // allowed to fail sits in the right place and still gates nothing.
-  const stepOpeners = [...release.matchAll(/^[ \t]*-[ \t]+(?:name|uses|run|id|if|shell|env|with):/gm)].map((m) => m.index);
-  const opens = testStep ? stepOpeners.filter((i) => i <= testStep.index) : [];
-  const closes = testStep ? stepOpeners.filter((i) => i > testStep.index) : [];
-  const testStepBlock = opens.length
-    ? release.slice(Math.max(...opens), closes.length ? Math.min(...closes) : release.length)
-    : "";
+  const stepOpeners = stepOpenersOf(release);
+  const testStepBlock = testStep ? stepBlockAt(release, testStep.index, stepOpeners) : "";
   // Is the test step allowed to fail? Every `continue-on-error:` line of that
   // step, with a trailing comment and any trailing whitespace taken off, so the
   // VALUE can be judged on its own.
@@ -452,6 +474,153 @@ if (publishers.length === 0) {
   // file they are worried about.
   if (failures === failuresBefore) {
     ok(`${publishers.length} of ${workflowNames.length} workflow files under .github/workflows/ carry a live \`npm publish\` (${publishers.map((workflow) => workflow.name).join(", ")}), and every one of those is tag-only on push (a v* tag filter, no branches filter) and runs npm test — unconditionally, in the same job — before npm publish`);
+  }
+}
+
+// ------------------------- the GitHub release steps of a publishing workflow
+// Pushing a v* tag has to leave a GitHub release behind, with the words from
+// CHANGELOG.md in it. Seventeen tags were pushed from this repository and not
+// one of them made a release page, so npm had every version's notes and GitHub
+// had a bare list of tags (the gh-release job's PRD, section one).
+//
+// This pin lives in a section of its OWN, after the block above and outside its
+// local failure counter, on purpose. That block's `ok` line claims one thing —
+// tag-only, and npm test before npm publish — and a release-notes step that is
+// missing must not silence a claim that is still true. Two questions, two
+// counters, two lines: the same lesson the test.yml pin above writes down.
+//
+// WHAT THIS PIN READS, and — the more useful half — what it does not. It reads
+// the POSITION of two steps and whether they carry an `if:`. It does not read
+// one character of the shell inside them: whether the notes really come out of
+// CHANGELOG.md, whether an empty section is caught, whether `0.1.0` matches
+// `0.10.0`. Nothing here runs that shell, and the job that wrote it chose not to
+// test it (interview answer 6; `docs/qa/gaps.md` carries that hole). A pin that
+// claimed more than it read would be worse than no pin, and a pin that reds a
+// correct file teaches people to stop reading it — T-46's lesson, up in the
+// continue-on-error comment. So both steps are matched by the exact `name:`
+// their contract fixes, and everything else about them is left alone.
+//
+// The two names ARE the contract, written down in section seven of
+// `docs/design/prd-2026-08-22-gh-release.md`. Renaming a step means changing
+// this pin in the same commit; that is the price of pinning by name, and it is
+// the only handle a text pin has on "which step is this".
+const NOTES_STEP_NAME = "Read the release notes from CHANGELOG.md";
+const NOTES_STEP_ID = "notes";
+const RELEASE_STEP_NAME = "Create the GitHub release";
+
+/**
+ * The step whose `name:` is exactly `name`, as a match with an `.index`, or
+ * `null`.
+ *
+ * Line-anchored, like every workflow pin in this file: `[ \t]` never crosses a
+ * newline and `#` is not whitespace, so a commented-out step satisfies nothing
+ * and a step name quoted in somebody's prose does not either. All three YAML
+ * quotings of a scalar are accepted, because redding a correctly quoted name
+ * would be redding a correct file, and a trailing `# comment` comes off the
+ * same way the fetch-depth and continue-on-error pins take theirs off.
+ */
+const stepNamed = (text, name) => {
+  const literal = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^[ \\t]*(?:-[ \\t]+)?name:[ \\t]*(?:${literal}|"${literal}"|'${literal}')[ \\t]*(?:#.*)?$`, "m").exec(text);
+};
+
+/**
+ * Both release-notes pins on ONE publishing workflow. Every message names the
+ * file it read, because "a workflow is wrong" is not actionable in a folder of
+ * them — the house rule the block above states and this one follows.
+ *
+ * @param rel - the file's path from the repository root, for the messages
+ * @param release - the file contents
+ */
+function checkReleaseNotesSteps(rel, release) {
+  // The same `publishCommand` the folder filter and the pin above use, so
+  // "which step is the publish" means ONE thing in this file. Writing a second
+  // answer to that question here is what the task forbids, and rightly: two
+  // definitions of publishing would let a release move out from under one pin
+  // while the other still called it green.
+  const publishStep = publishCommand.exec(release);
+  // Cannot happen while the caller picks its files with `publishCommand`, and
+  // an unguarded `.index` here would throw and take every later check in this
+  // run down with it — the same guard, for the same reason, as the pin above.
+  if (!publishStep) {
+    fail(`${rel} publishes, but this pin cannot find the \`npm publish\` step it just matched, so it cannot say which side of the publish the release steps are on — re-pin it against however publishing is done now (T-100)`);
+    return;
+  }
+  const openers = stepOpenersOf(release);
+  const notesStep = stepNamed(release, NOTES_STEP_NAME);
+  const releaseStep = stepNamed(release, RELEASE_STEP_NAME);
+
+  // ---- the step that reads the notes out of CHANGELOG.md
+  if (!notesStep) {
+    fail(`${rel} publishes and has no step named "${NOTES_STEP_NAME}", so a v* tag would publish with nothing read out of CHANGELOG.md and the GitHub release page would stay empty (T-100)`);
+  } else {
+    const notesBlock = stepBlockAt(release, notesStep.index, openers);
+    // The `id:` is half the contract: the step after it, and anything else that
+    // wants the notes, reaches them through `steps.notes`. A step with the right
+    // name and no id is a step nothing can refer to.
+    if (!/^[ \t]*id:[ \t]*(?:notes|"notes"|'notes')[ \t]*(?:#.*)?$/m.test(notesBlock)) {
+      fail(`${rel}: the step named "${NOTES_STEP_NAME}" does not set \`id: ${NOTES_STEP_ID}\`, so nothing else in that job can refer to it (T-100)`);
+    }
+    // Order, against the ONE definition of publishing. Reading the notes after
+    // the publish is the whole defect the interview's answer 2 refuses: a
+    // CHANGELOG with no section for this version has to stop the run BEFORE the
+    // version is on npm for ever.
+    if (notesStep.index > publishStep.index) {
+      fail(`${rel} runs the step named "${NOTES_STEP_NAME}" AFTER \`npm publish\`, so a missing CHANGELOG section would be found only once the version was published and could no longer be pulled back (T-100)`);
+    }
+    // No `if:` on it, so it runs on every tag. An `if:` here is how the run goes
+    // green with no notes at all: the release step later would then have no file
+    // to read, or would quietly publish yesterday's words.
+    if (/^[ \t]*if:/m.test(notesBlock)) {
+      fail(`${rel} puts an \`if:\` on the step named "${NOTES_STEP_NAME}", so the release notes can be skipped — that step has to run on every v* tag (T-100)`);
+    }
+  }
+
+  // ---- the step that creates the GitHub release
+  if (!releaseStep) {
+    fail(`${rel} publishes and has no step named "${RELEASE_STEP_NAME}", so a v* tag would publish to npm and leave GitHub's Releases page empty — which is the whole thing this workflow was changed to stop (T-100)`);
+    return;
+  }
+  const releaseBlock = stepBlockAt(release, releaseStep.index, openers);
+  if (releaseStep.index < publishStep.index) {
+    fail(`${rel} runs the step named "${RELEASE_STEP_NAME}" BEFORE \`npm publish\`, so a release page could announce a version that the publish then failed to put on npm (T-100)`);
+  }
+  // It must be gated on the same guard the publish is gated on. Re-pushing a tag
+  // whose version is already on npm sets `publish=false` and skips the publish;
+  // an ungated release step would then run on its own. The condition is read as
+  // two substrings and not as one exact string, because `${{ … }}` around it,
+  // extra spaces and a longer `&&` chain are all correct spellings of the same
+  // gate, and redding those would be redding a correct file (T-46).
+  const ifLine = /^[ \t]*if:[ \t]*([^\n]*)$/m.exec(releaseBlock);
+  if (!ifLine) {
+    fail(`${rel}: the step named "${RELEASE_STEP_NAME}" has no \`if:\`, so re-pushing a tag whose version is already on npm would skip the publish and still create a release (T-100)`);
+  } else if (!ifLine[1].includes("steps.guard.outputs.publish") || !ifLine[1].includes("'true'")) {
+    fail(`${rel}: the \`if:\` on the step named "${RELEASE_STEP_NAME}" is not gated on the publish guard — it has to name \`steps.guard.outputs.publish\` and \`'true'\`, so the release is created exactly when the publish happens (T-100): if: ${ifLine[1].trim()}`);
+  }
+}
+
+if (publishers.length === 0) {
+  // Said out loud rather than left silent: a green that read nothing looks
+  // exactly like a green that read everything. The block above has already
+  // decided whether having no publisher at all is a failure.
+  ok(`nothing under .github/workflows/ publishes, so there was no release step to pin — this pin checked nothing (workflow files read: ${workflowNames.join(", ") || "none"})`);
+} else {
+  // A local counter, so an unrelated failure earlier in this run cannot silence
+  // the `ok` line, and one broken workflow cannot let a green one claim the
+  // folder is fine.
+  const failuresBefore = failures;
+  for (const workflow of publishers) checkReleaseNotesSteps(`.github/workflows/${workflow.name}`, workflow.text);
+  // The wording below deliberately does NOT reuse the phrase "workflow files
+  // under .github/workflows/ carry a live `npm publish`". That sentence is the
+  // needle four shipped QA cases match on — docs/qa/T-42/case-06, -07, -08 and
+  // -16 each break the tag filter or the test gate and then assert that NO `ok`
+  // line still claims the folder is fine. This pin is a different question and
+  // stays green through those mutations, so an `ok` line that happened to
+  // contain their needle turned all four red. Measured, not guessed: the first
+  // draft of this line did exactly that. Keep this sentence distinguishable from
+  // that one (T-100).
+  if (failures === failuresBefore) {
+    ok(`the GitHub release steps are in place in ${publishers.length} publishing workflow of ${workflowNames.length} file(s) under .github/workflows/ (${publishers.map((workflow) => workflow.name).join(", ")}): each reads its notes before the publish (a step named "${NOTES_STEP_NAME}", id ${NOTES_STEP_ID}, no \`if:\`) and creates the release after it, gated on steps.guard.outputs.publish == 'true' — the shell inside those two steps is read by no check anywhere (T-100, docs/qa/gaps.md)`);
   }
 }
 
