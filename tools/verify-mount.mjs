@@ -190,6 +190,29 @@ const stepBlockAt = (text, index, openers = stepOpenersOf(text)) => {
   return opens.length ? text.slice(Math.max(...opens), closes.length ? Math.min(...closes) : text.length) : "";
 };
 
+// ------------------------------------------- everything under `jobs:`, and how
+// many jobs that is, written ONCE for the same reason the two functions above
+// are. Two pins read this: the `npm test`-gates-the-publish pin (T-41), which
+// refuses to compare step positions across two jobs, and the `permissions:` pin
+// (T-102), which needs to know it is reading the ONE job that publishes.
+//
+// Job names are the shallowest keys under `jobs:`; the walk stops at the next
+// top-level key. Like the step reader, this is not a YAML parser — a job name
+// on the same line as something else, or a `jobs:` written in flow style, is
+// not seen. What it is good for is the shape every workflow in this repository
+// and every workflow a QA case writes actually has.
+const jobsRegionOf = (text) => {
+  const jobsKey = /^jobs:[ \t]*(?:#.*)?$/m.exec(text);
+  const afterJobs = jobsKey ? text.slice(jobsKey.index + jobsKey[0].length) : "";
+  const nextTopLevel = /^\S/m.exec(afterJobs);
+  return nextTopLevel ? afterJobs.slice(0, nextTopLevel.index) : afterJobs;
+};
+/** How many jobs a `jobs:` region holds. `0` when nothing in it reads as a job. */
+const jobCountOf = (jobsRegion) => {
+  const keyIndents = [...jobsRegion.matchAll(/^([ \t]+)[A-Za-z0-9_.-]+:[ \t]*(?:#.*)?$/gm)].map((match) => match[1].length);
+  return keyIndents.filter((indent) => indent === Math.min(...keyIndents)).length;
+};
+
 // -------------------------------- full history, for every workflow that tests
 // `npm test` ends in `bash docs/qa/run-all.sh`, and some of those cases read
 // this repository's own commits (docs/qa/T-01/case-26-repo-diff-scope.mjs looks
@@ -363,13 +386,9 @@ function checkPublishWorkflow(rel, release) {
   // `needs:` edge would, and this file has no YAML parser to read one — so a
   // file that grew a second job is refused out loud rather than waved through
   // by a pin that can no longer read it. Job names are the shallowest keys
-  // under `jobs:`; the walk stops at the next top-level key.
-  const jobsKey = /^jobs:[ \t]*(?:#.*)?$/m.exec(release);
-  const afterJobs = jobsKey ? release.slice(jobsKey.index + jobsKey[0].length) : "";
-  const nextTopLevel = /^\S/m.exec(afterJobs);
-  const jobsRegion = nextTopLevel ? afterJobs.slice(0, nextTopLevel.index) : afterJobs;
-  const keyIndents = [...jobsRegion.matchAll(/^([ \t]+)[A-Za-z0-9_.-]+:[ \t]*(?:#.*)?$/gm)].map((m) => m[1].length);
-  const jobCount = keyIndents.filter((n) => n === Math.min(...keyIndents)).length;
+  // under `jobs:`; the walk stops at the next top-level key. Read through the
+  // shared pair up top, so "how many jobs is this" means one thing in this file.
+  const jobCount = jobCountOf(jobsRegionOf(release));
   // The step the `npm test` line belongs to: from the list item that opens it to
   // the one that opens the next step. Needed because a step that is skipped or
   // allowed to fail sits in the right place and still gates nothing.
@@ -621,6 +640,169 @@ if (publishers.length === 0) {
   // that one (T-100).
   if (failures === failuresBefore) {
     ok(`the GitHub release steps are in place in ${publishers.length} publishing workflow of ${workflowNames.length} file(s) under .github/workflows/ (${publishers.map((workflow) => workflow.name).join(", ")}): each reads its notes before the publish (a step named "${NOTES_STEP_NAME}", id ${NOTES_STEP_ID}, no \`if:\`) and creates the release after it, gated on steps.guard.outputs.publish == 'true' — the shell inside those two steps is read by no check anywhere (T-100, docs/qa/gaps.md)`);
+  }
+}
+
+// ---------------- the `permissions:` a publishing workflow needs for a release
+// `gh release create` writes to `contents`, and a job that was granted
+// `contents: read` cannot make a release page. That one word is the whole
+// difference, and nothing else in this repository notices it: the file parses,
+// every other pin above stays green, and the mistake surfaces only when a v*
+// tag is pushed — the package goes to npm, the release step fails, the run
+// turns red. By the interview's answer 3 that state cannot be repaired by
+// re-pushing the tag: the second run sees the version already on npm, sets
+// `publish=false`, and skips the release step with it (section three of
+// `docs/design/prd-2026-08-22-gh-release.md`, and the manual `gh release create`
+// written down there and in docs/qa/gaps.md is then the only way back). So the
+// cost of the missing word lands exactly on the hole this job already knows
+// about, which is why it is worth a pin of its own (T-102).
+//
+// `id-token: write` is pinned in the same breath. It is what mints the OIDC
+// credential npm trusted publishing authenticates with — there is no secret
+// behind it — so deleting it does not weaken the publish, it stops it. It is
+// easy to lose while editing the block next to it.
+//
+// A section of its OWN, with its own counter, for the same reason the two above
+// have theirs: this asks a different question from "is the release tag-only and
+// tested" and from "are the two release steps in place", and a red here must not
+// silence an `ok` line whose claim is still true.
+//
+// WHAT THIS PIN READS: the permissions block that governs the publishing job,
+// and two scopes in it. It does not read what the job then does with them, and
+// it has no opinion on a block that grants MORE than those two — that is a
+// security review's question, not this pin's, and redding a file that works
+// would be redding a correct file (T-46, up in the continue-on-error comment).
+
+const PERMISSIONS_KEY = /^([ \t]*)permissions[ \t]*:[ \t]*([^\n]*)$/m;
+// The two scopes a release run cannot do without, and why — the message has to
+// say what breaks, not just which word is missing.
+const RELEASE_SCOPES = [
+  { scope: "contents", why: "`gh release create` writes the release page through it, so the release step fails on the very tag that already published the package to npm" },
+  { scope: "id-token", why: "npm trusted publishing mints its short-lived OIDC token from it, and this repository stores no npm secret to fall back on" },
+];
+
+/**
+ * Everything that belongs to a mapping key: the value written on the key's own
+ * line, plus every following line indented deeper than that key. Trailing
+ * `# comments` come off — the same way the fetch-depth and continue-on-error
+ * pins take theirs off — and a blank line is skipped rather than read as the end
+ * of the block, exactly as the `push:` filter walk above does it.
+ */
+const valueTextOf = (text, keyMatch) => {
+  const uncomment = (line) => line.replace(/(^|[ \t])#.*$/, "$1").trimEnd();
+  const indent = keyMatch[1].length;
+  const lines = [uncomment(keyMatch[2])];
+  for (const line of text.slice(keyMatch.index + keyMatch[0].length).split("\n").slice(1)) {
+    if (line.trim().length === 0) continue;     // a blank line is not a sibling key
+    if (line.search(/\S/) <= indent) break;     // back out to a sibling key
+    lines.push(uncomment(line));
+  }
+  return lines.join("\n");
+};
+
+/**
+ * What a permissions block grants for one scope, or `null` when it names that
+ * scope nowhere. Both YAML spellings of the same mapping are read — a block
+ * (`contents:` on its own line) and a flow (`{ contents: write, id-token: write }`)
+ * — which is why a `{` or a `,` opens a key here just as a line start does.
+ * Quotes come off the key and the value, because here — unlike the boolean the
+ * continue-on-error pin reads — `write` and `"write"` are the same string to
+ * YAML and to GitHub. Redding any of those spellings would be redding a correct
+ * file (T-46).
+ */
+const grantIn = (permissionsText, scope) =>
+  new RegExp(`(?:^|[{,])[ \\t]*['"]?${scope}['"]?[ \\t]*:[ \\t]*['"]?([A-Za-z-]+)['"]?`, "m").exec(permissionsText)?.[1] ?? null;
+
+/**
+ * The release permissions of ONE publishing workflow. Every message names the
+ * file it read, the house rule the two blocks above follow: "a workflow is
+ * wrong" is not something anyone can act on in a folder of them.
+ *
+ * @param rel - the file's path from the repository root, for the messages
+ * @param release - the file contents
+ */
+function checkReleasePermissions(rel, release) {
+  // `permissions:` is a key of a JOB (or of the whole workflow), never of a
+  // step, so this pin has to know which job it is reading. The one-job shape is
+  // already required a block above, by the pin that compares step positions;
+  // this one needs it for a different reason and so asks for it again rather
+  // than assuming the other pin ran. Read through the shared pair, so "how many
+  // jobs is this" has one answer in this file.
+  const jobsRegion = jobsRegionOf(release);
+  const jobCount = jobCountOf(jobsRegion);
+  if (jobCount !== 1) {
+    fail(`${rel} has ${jobCount} jobs, so this pin cannot tell which job's \`permissions:\` governs the publish — permissions are per job, and reading the wrong job's block would vouch for a grant the release never gets. Re-pin it (T-102)`);
+    return;
+  }
+  // The same `publishCommand` that picked this file out of the folder, now to
+  // confirm the one job it found is the job that publishes. One definition of
+  // publishing in this file, and no second answer written here.
+  if (!publishCommand.test(jobsRegion)) {
+    fail(`${rel} publishes, but this pin cannot find the \`npm publish\` step under \`jobs:\`, so it cannot say whose \`permissions:\` it just read — re-pin it against however publishing is done now (T-102)`);
+    return;
+  }
+  // The job's own header: from the top of the jobs region down to the first step
+  // opener, cut with the shared step reader. Anything below that first opener
+  // belongs to a step, and a `permissions:` written inside a step's body (in a
+  // `run: |` script, say) must not be read as the job's grant.
+  const openers = stepOpenersOf(jobsRegion);
+  const header = openers.length ? jobsRegion.slice(0, Math.min(...openers)) : jobsRegion;
+  // A job-level block REPLACES the workflow-level one — GitHub does not merge
+  // the two — so the job's own is read when it has one, and the workflow's only
+  // when it has none. An empty indent capture means column zero, which in a
+  // workflow file can only be a top-level key.
+  const jobLevel = PERMISSIONS_KEY.exec(header);
+  const fileLevel = PERMISSIONS_KEY.exec(release);
+  const permissions = jobLevel ?? (fileLevel && fileLevel[1].length === 0 ? fileLevel : null);
+  const owner = jobLevel ? "the publishing job" : "the workflow";
+  if (!permissions) {
+    fail(`${rel} publishes and sets no \`permissions:\` at all, on the job or on the workflow, so what the release run may write is whatever the repository's default happens to be that day — say it in the file: \`contents: write\` and \`id-token: write\` (T-102)`);
+    return;
+  }
+  const granted = valueTextOf(jobLevel ? header : release, permissions);
+  // The shorthand that grants every scope write access. It really does cover
+  // both scopes below, so redding it would be redding a file that publishes and
+  // releases perfectly well. Whether it grants too much is a security review's
+  // question and not this pin's.
+  if (granted.trim().replace(/^['"]|['"]$/g, "") === "write-all") return;
+  for (const { scope, why } of RELEASE_SCOPES) {
+    const value = grantIn(granted, scope);
+    if (value === null) {
+      fail(`${rel}: ${owner}'s \`permissions:\` block names no \`${scope}:\` scope, and a block that lists scopes grants nothing it does not list — ${why} (T-102)`);
+    } else if (value !== "write") {
+      fail(`${rel}: ${owner} grants \`${scope}: ${value}\`, not \`${scope}: write\` — ${why} (T-102)`);
+    }
+  }
+}
+
+if (publishers.length === 0) {
+  // Said out loud rather than left silent, the same rule the two blocks above
+  // follow: a green that read nothing looks exactly like a green that read
+  // everything. Whether having no publisher at all is a failure was already
+  // decided further up.
+  ok(`nothing under .github/workflows/ publishes, so no job's release \`permissions:\` were read — this pin checked nothing (workflow files read: ${workflowNames.join(", ") || "none"})`);
+} else {
+  // A local counter, so an unrelated failure earlier in this run cannot silence
+  // the `ok` line, and one broken workflow cannot let a green one claim the
+  // folder is fine.
+  const failuresBefore = failures;
+  for (const workflow of publishers) checkReleasePermissions(`.github/workflows/${workflow.name}`, workflow.text);
+  // Only the files in `publishers` are read, and that matters: test.yml is
+  // granted `contents: read` on purpose and is completely correct that way. A
+  // pin let loose on the whole folder would red it, and a gate that reds correct
+  // files teaches people to stop reading it (T-46).
+  //
+  // The wording below deliberately does NOT reuse the sentence "workflow files
+  // under .github/workflows/ carry a live `npm publish`". That is the needle
+  // four shipped QA cases match on — docs/qa/T-42/case-06, -07, -08 and -16 each
+  // break the tag filter or the test gate and then assert that NO `ok` line
+  // still claims the folder is fine. This pin asks a different question and
+  // stays green through those mutations, so an `ok` line carrying their needle
+  // would turn all four red. Measured, not guessed: T-100's first draft did
+  // exactly that, one section up. Keep this sentence distinguishable from that
+  // one (T-100, T-102).
+  if (failures === failuresBefore) {
+    ok(`the release grants are in place in ${publishers.length} publishing workflow of ${workflowNames.length} file(s) read under .github/workflows/ (${publishers.map((workflow) => workflow.name).join(", ")}): the job that publishes is granted \`contents: write\` (what \`gh release create\` writes through) and \`id-token: write\` (what trusted publishing mints its OIDC token from) — nothing here reads what the job does with either (T-102)`);
   }
 }
 
