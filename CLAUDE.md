@@ -96,7 +96,7 @@ test gate). `tools/verify-mount.mjs` pins the rest of it too: both step names, t
 positions either side of the publish, the `if` on the second and the absence of one on the first,
 and both grants.
 
-Two prices, both chosen on 2026-08-22 and both written down in
+Two prices, both written down in
 `docs/qa/gaps.md` rather than implied. **No check anywhere runs the shell inside those two
 steps.** `docs/qa/T-101/case-07` reads its *text* — the version comes from `package.json`, the
 heading match keeps its trailing space, the failures use `::error::` and `exit 1` — and goes red if
@@ -105,8 +105,9 @@ user picked an inline `run:` over a testable `tools/` script and then picked no 
 one, so the first thing that really runs it is a real `v*` tag. And **a version
 that reached npm without its release page cannot be repaired by re-pushing the tag**: that run
 finds the version already published, skips the publish, and so skips the release too. Fixing that
-takes one `gh release create` by hand. `v0.1.0` to `v0.9.0` have no release pages and are not
-getting any — 8 of those 17 tags have no `CHANGELOG.md` section at all.
+takes one `gh release create` by hand. Of the 17 existing tags only `v0.9.0` has a release page,
+and it was made that way. The other 16 have none and are not getting any — 8 of them have no
+`CHANGELOG.md` section at all, so their pages would be empty.
 
 ## The two planes (the main thing to understand)
 
@@ -346,17 +347,15 @@ is**, never who made it:
 | `docs/release/` | a release and an upgrade plan for each milestone the user ships: `<milestone>-release.md` and `<milestone>-upgrade.md`; plus `<milestone>-gaps.md`, the **shipping gap list**, for a milestone that does not ship (not to be confused with `docs/qa/gaps.md`) |
 | `docs/research/` | one answer per question the PM sent to a researcher: `<short-name>.md` |
 
-Today this repository has `docs/decisions/`, `docs/qa/`, `docs/research/`, the one task table at
-`docs/design/tasks.md`, and one PRD and one HLD per job under `docs/design/`. The task table came
-first, rebuilt after the fact for the `pm-merge-step` job so its checks stop being lost work. The
-PRD and the HLD arrived with the `paired-engineers` job — the first of each in this repository, and
-both written in the order the flow asks for: the PRD before the task rows, the HLD by the architect.
-Those two were called `docs/design/prd.md` and `docs/design/hld.md` until 0.9.0; the `apply-req` job
-renamed them, because a fixed name means the next job's opening document silently overwrites the
-last one's and no check goes red. `docs/research/` arrived with that same job, which asked a
-researcher what each kind of document actually holds and another one whether the findings it was
-given were still true. What is still missing is `docs/design/api/` and `docs/release/`: no job here
-has needed either. That is correct, not missing.
+Today this repository has `docs/decisions/`, `docs/qa/`, `docs/release/`, `docs/research/`, the one
+task table at `docs/design/tasks.md`, and one PRD and one HLD per job under `docs/design/`. The PRD
+comes before the task rows and the HLD is written by the architect, which is the order the flow
+asks for. Both carry the date and the job slug in their file names —
+`prd-<date>-<job-slug>.md`, `hld-<date>-<job-slug>.md` — because a fixed name means the next job's
+opening document silently overwrites the last one's and no check goes red. Those two were called
+`docs/design/prd.md` and `docs/design/hld.md` until 0.9.0; never create either name again. `docs/release/` holds
+one shipping gap list and no plan: no milestone here has shipped yet. A module boundary contract
+goes in `docs/design/api/`, one file per pair of modules that talk.
 
 **How a job runs, since 0.9.0.** Three of these changed together, and the reasons and the measured
 cost are in `docs/decisions/crd/0020-apply-req-speed-items.md` and `principles.md` 6, 13 and 18:
@@ -436,6 +435,17 @@ assemble breaks the session.
 
 ## Documentation
 
+**This file says how the repository works today. It is not a change log.** Somebody reading it is
+about to do work here, and every sentence they have to read is a cost. So write the rule, the
+layout and the reason a rule exists — never the story of how something got that way. "X used to be
+called Y, and job Z renamed it on date D" is history: it belongs in `CHANGELOG.md`, and the
+decision behind it belongs in its CRD or ADR. **The reason a rule exists is not history and stays
+here**, even when it names one past event: "QA is deliberately not in that list", "this check
+exists because 20 code reviews were skipped and nothing went red". Delete that and the next person
+undoes the rule. The test is which question the sentence answers — *what changed when* goes out,
+*why it is like this* stays. And when a fact here stops being true, correct it in place: a stale
+sentence in this file is worse than a missing one, because it is read as current.
+
 `principles.md` holds the **reasons** behind the crew's rules: one entry per
 principle, each with the rule, why it exists, the files that carry it, and the
 outside source it came from — plus a table of ideas that were looked at and
@@ -447,7 +457,7 @@ distilled from `docs/research/document-types.md`. That last one is a reference
 list, not a rule, which is why it has no number (`ADR 0021`). Role prompts are written short and bossy on purpose, so the reasoning
 has to live somewhere else. When you change a rule in `roles/*.md`, update the
 principle that carries it; when you reject an idea, add it to the table so the
-next person does not re-run the same search. **The file ships with the npm package** (`package.json`'s `files` names it), so a PM in any repository can read the reasons behind the rules it is following. That changed on 2026-08-22 (`CRD 0026`, the user's decision) — it used to be contributors-only. Two things follow. Its opening block tells the reader which `docs/...` paths mean **their own** repository (the generic destinations: `docs/design/tasks.md`, `docs/qa/gaps.md`, `docs/decisions/adr/`, and the rest) and which mean this package's own (the numbered CRDs and ADRs, now written as links to `blob/main`). And **renaming a numbered CRD or ADR breaks those links, and no check will notice** — so they are named by number and not renamed.
+next person does not re-run the same search. **The file ships with the npm package** (`package.json`'s `files` names it), so a PM in any repository can read the reasons behind the rules it is following. Two things follow. Its opening block tells the reader which `docs/...` paths mean **their own** repository (the generic destinations: `docs/design/tasks.md`, `docs/qa/gaps.md`, `docs/decisions/adr/`, and the rest) and which mean this package's own (the numbered CRDs and ADRs, now written as links to `blob/main`). And **renaming a numbered CRD or ADR breaks those links, and no check will notice** — so they are named by number and not renamed.
 
 `README.md` (English) and `README-zh.md` (Chinese) say the same thing and must be updated together
 whenever user-visible behaviour changes; write the English first, then match the Chinese. Keep the

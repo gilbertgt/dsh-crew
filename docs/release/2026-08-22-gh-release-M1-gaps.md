@@ -2,7 +2,7 @@
 
 - **日期**：2026-08-22
 - **里程碑**：M1（`gh-release` 作业唯一的里程碑）
-- **状态**：**不发布**
+- **状态**：**不发布**（一处例外：手工补了 `v0.9.0` 的 release 页面，见下，`CRD 0027`）
 
 ## 为什么这个文件叫这个名字
 
@@ -16,7 +16,13 @@
 
 它改的是**发布机器本身**，不是用户装的东西。`package.json` 仍然是 `0.9.0`，
 `CHANGELOG.md` 顶上那一节仍然标着 `## 0.10.0 — unreleased`。
-**没有推过任何东西**：没有 push、没有 tag、没有 `npm publish`、没有 `gh release create`。
+**没有推过任何东西**：没有 push、没有 tag、没有 `npm publish`。
+
+**一个例外，用户在 M1 评审时要求的**（`CRD 0027`）：手工给 `v0.9.0` 建了 release 页面 ——
+<https://github.com/stuarthu/dsh-crew/releases/tag/v0.9.0>。用的是现成的 tag
+（`--verify-tag`），**没有推 tag，所以没有触发 `publish.yml`，没有发任何包**；
+事后核过远端仍然是 17 个 tag。**它没有验证这次做的机器** —— 手工命令跟 workflow 里
+那两个步骤走的不是同一条路，唯一共用的是那条 `awk` 的逻辑。下面第 1 条仍然成立。
 
 ## 要发 `0.10.0` 之前还缺什么
 
@@ -82,7 +88,8 @@
 ## 已经就绪的
 
 - `npm test` **exit 0**，35 个任务 35 个通过（本作业新增 25 条用例、210 条断言）；
-- 三个评审全部 pass：代码 4 轮、安全 3 轮、文档 3 轮；
+- 三个评审全部 pass：代码 4 轮、安全 3 轮、文档 4 轮（第 4 轮读的是 `CRD 0027` 那次落地，
+  报了 2 条 blocking，都已改）；
 - `gh auth status` 已登录 `stuarthu`；npm 走 trusted publishing（OIDC），**没有 secret 要配**；
 - `CHANGELOG.md` 的 `## 0.10.0` 一节已经写好，四条 bullet，含两个代价。
 

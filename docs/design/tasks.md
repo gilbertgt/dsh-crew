@@ -2463,7 +2463,7 @@ T-63                                             （一个人做，别的全部�
 
 ## T-80 — `CLAUDE.md`：跟着改的仓库规则
 
-- **Verdicts**：code: not run — 散文不在代码评审的范围里；它的范围是 `host/`、`tools/` 和 53 条用例文件（`crew-code-reviewer`，M1） ｜ security: not run — `CLAUDE.md` 不是提示词，不在安全评审读的那 3001 行里 ｜ qa: pass — `docs/qa/T-80/` 2 条用例（5 ＋ 16 条断言）全绿 ｜ doc: pass — `crew-doc-reviewer` 读了本节全文，无发现
+- **Verdicts**：code: not run — 散文不在代码评审的范围里；它的范围是 `host/`、`tools/` 和 53 条用例文件（`crew-code-reviewer`，M1） ｜ security: not run — `CLAUDE.md` 不是提示词，不在安全评审读的那 3001 行里 ｜ qa: pass — `docs/qa/T-80/` 2 条用例（5 ＋ 16 条断言）全绿；**2026-08-22 起只剩 1 条**，`case-01` 随 DoD 第 5 条一起作废删除 ｜ doc: pass — `crew-doc-reviewer` 读了本节全文，无发现
 
 - **里程碑**：M1
 - **形状**：单人（solo）
@@ -2480,7 +2480,7 @@ T-63                                             （一个人做，别的全部�
 | 2 | **A7：3 处旧路径改成新形状**，「State and documents」那张表里 `prd.md` 和 `hld.md` 两行跟着改。**改名那件事的记录留下**：禁的是**指针**（「去读 `docs/design/prd.md`」），不是**提及**（「它以前叫 `docs/design/prd.md`」）——PRD 的 DoD 第 11 条第 6 版写着提及必须留下，否则改名这件事在仓库里就没有记录了 | **不要用 `grep -c 'docs/design/prd\.md\|docs/design/hld\.md' CLAUDE.md` ＝ 0**：今天它是 **1**，那 1 处是第 321 行的改名记录（`Those two were called ... until 0.9.0; the \`apply-req\` job renamed them, because ...`），而 PRD 第 11 条第 6 版**要求它留着**——照那条命令验，这一格从写下起就永远过不了（`crew-qa-C36` 报回，2026-08-22）。改成按**句**判：`pointers CLAUDE.md`（见本文件最上面「验法怎么跑」第一节）必须打出 **`pointer 0`**，而且 **`mention` ≥ 1**。长期承载：`node docs/qa/T-67/case-04-old-document-names-gone.mjs`（同一判据，同一批标记词） |
 | 3 | **`docs/qa/T-60/case-09` 在同一个提交里改断言**（承载格，**活由 QA 做**；`ADR 0018`）。它今天断言 `CLAUDE.md` 里有 `` `prd.md` — the opening document of **both** lanes `` ——B5 和 A7 各改掉这句话的一半 | `npm test` 绿；`bash docs/qa/T-60/run.sh` 绿 |
 | 4 | **A1b、A1c、A1d 的新形状进「State and documents」和「Commands」两节**：QA 一轮、三评审各一轮、通道只剩两条 | 读那两节；三件事都在 |
-| 5 | **那句已经不成立的话改掉**：「What is still missing is `docs/design/api/`, `docs/release/` and `docs/research/`」——**`docs/research/` 已经有两份文件了**（`req-part-b-audit.md`、`document-types.md`），是 researcher 自己顺手报回来的。另外两半仍然成立 | `flat CLAUDE.md \| grep -o 'no job here has written one' \| wc -l` ＝ 0；新句子只说 `docs/design/api/` 和 `docs/release/` |
+| 5 | ~~**那句已经不成立的话改掉**：「What is still missing is `docs/design/api/`, `docs/release/` and `docs/research/`」——**`docs/research/` 已经有两份文件了**（`req-part-b-audit.md`、`document-types.md`），是 researcher 自己顺手报回来的。另外两半仍然成立~~ **（PM 2026-08-22 作废，用户的决定：整句「还缺什么」从 `CLAUDE.md` 里删掉。它是状态不是规则，会过期，而且不告诉读者该怎么干活。这一格重蹈了它自己指出的毛病——`gh-release` 作业建了 `docs/release/`，句子没跟着改，而 `docs/qa/T-80/case-01` 正钉着那句假话保证它改不了。用例已删。）** | ~~`flat CLAUDE.md \| grep -o 'no job here has written one' \| wc -l` ＝ 0；新句子只说 `docs/design/api/` 和 `docs/release/`~~ **作废：不再有承载用例，`CLAUDE.md` 里也不再有这句话** |
 | 6 | **A6 的一行**：八种文档类型「装什么」的清单在 `principles.md` 里，`CLAUDE.md` 的「Documentation」一节要提一句它在哪 | 读那一节 |
 | 7 | **A3 的一行**：十份角色提示词各有一段「你能写什么」，权威原文在 `principles.md`，改它要同一个提交里改十份 | 读「Adding or changing a role」那一节；**~~那六步要跟着变成七步~~ **（PM 2026-08-22 更正，`crew-qa-C60` 报的：作业开始那个提交 `d06a19e` 里那一节是 **7 步**，不是六步；今天是 **8 步**，T-80 的提交信息自己写的也是「grows from seven steps to eight」。**格子的意思仍然成立**，错的只是数字。）**七步要跟着变成八步或在某一步里加上这件事**——新加一个角色的人必须知道要抄那两段 |
 | 8 | **本作业动过的每一条仓库规则都跟着改了** | 拿 `git log --oneline d06a19e..HEAD` 列出的每个任务，对着 `CLAUDE.md` 逐条问「这条规则动了吗」；报告里逐条写答案 |
