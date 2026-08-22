@@ -8,6 +8,32 @@ Every version bump rewrites `$DSH_HOME/.agent-presets/crew`. Files you edited
 there are kept as `<name>.bak` and named in the boot log, but your settings do
 **not** come back on their own. Copy them into the new file after an upgrade.
 
+## 0.10.0 — unreleased
+
+### Added
+
+- **Pushing a `v*` tag now also creates the GitHub release**, not only the npm
+  version. Its text is the matching section of `CHANGELOG.md` — the same words
+  you are reading, sent to the place people actually look. The repository had 17
+  tags and 0 releases before this, so anyone arriving from npm saw a row of bare
+  tags with nothing written on them.
+  Three things about how it behaves are worth knowing, because each one was a
+  deliberate choice:
+  - **The notes are read before anything is published.** A version with no
+    `CHANGELOG.md` section written for it, or with an empty one, stops the run
+    right there and publishes nothing. An npm version cannot be pulled back, so
+    the check that can still save you has to happen first.
+  - **The release is created only when the publish really happened.** Re-pushing
+    a tag whose version is already on npm skips the publish, and it skips the
+    release with it. So if a version ever reaches npm without its release page,
+    re-pushing the tag will not repair it — that takes one
+    `gh release create` by hand.
+  - **Old tags are not getting release pages.** `v0.1.0` to `v0.9.0` stay as they
+    are; 8 of those 17 tags have no section in this file at all, so the pages
+    would have been empty.
+  There is nothing for you to configure, and nothing changes about how you
+  install or use the plugin.
+
 ## 0.9.0 — 2026-08-22
 
 ### Changed

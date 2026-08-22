@@ -75,6 +75,28 @@ user would notice), bump `version` in `package.json`, commit, push `main`, then 
 Only the tag triggers `.github/workflows/publish.yml`. The workflow fails loudly if the tag and
 `package.json` disagree. Auth is npm trusted publishing (OIDC) — there is no secret to set.
 
+**That tag run also creates the GitHub release**, and `CHANGELOG.md` is where its text comes
+from. Two steps do it, both inside the one job that rule 7 allows. Before `npm test` and before
+`npm publish`, the step named `Read the release notes from CHANGELOG.md` (`id: notes`) takes the
+section whose heading starts `## <version> ` — the space after the version is the boundary, which
+is why `0.1.0` cannot match `## 0.10.0 —` — and writes it to `release-notes.md`. **A missing or
+empty section stops the run there**, with nothing published, because npm cannot be un-published.
+After the publish, `Create the GitHub release` runs `gh release create` with that file, gated on
+the same `steps.guard.outputs.publish == 'true'` as the publish itself. So the job needs
+`contents: write`, and `npm publish` runs with that grant too — there is no low-privilege split,
+because rule 7 allows only one job. `tools/verify-mount.mjs` pins all of it: both step names, the
+`id`, their positions either side of the publish, the `if` on the second and the absence of one on
+the first, and both grants.
+
+Two prices, both chosen on 2026-08-22 and both written down in
+`docs/qa/gaps.md` rather than implied. **The shell inside those two steps is read by no check
+anywhere** — the user picked an inline `run:` over a testable `tools/` script and then picked no
+test harness over one, so the first thing that really runs it is a real `v*` tag. And **a version
+that reached npm without its release page cannot be repaired by re-pushing the tag**: that run
+finds the version already published, skips the publish, and so skips the release too. Fixing that
+takes one `gh release create` by hand. `v0.1.0` to `v0.9.0` have no release pages and are not
+getting any — 8 of those 17 tags have no `CHANGELOG.md` section at all.
+
 ## The two planes (the main thing to understand)
 
 dsh separates the **host plane** (your profile: always loaded, no model-facing tools) from the
