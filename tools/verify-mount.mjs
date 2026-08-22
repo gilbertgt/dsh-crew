@@ -165,11 +165,12 @@ const testCommand = /^[ \t]*(?:(?:-[ \t]+)?run:[ \t]*)?npm test\b([^\n]*)/m;
 const publishCommand = /^[ \t]*(?:(?:-[ \t]+)?run:[ \t]*)?npm publish\b/m;
 
 // ------------------------------------------ where one step ends and the next
-// begins, written ONCE. Two pins read this: the `npm test` step of a publishing
-// workflow (T-41, T-46) and the two release-notes steps below (T-100). Two ways
-// of cutting a step apart would answer the same question two different ways —
-// this file has been bitten by that twice already — so both callers cut with
-// these two functions and with nothing else.
+// begins, written ONCE. Three pins read this: the `npm test` step of a
+// publishing workflow (T-41, T-46), the two release-notes steps below (T-100),
+// and the `permissions:` pin, which needs the first opener to know where the job
+// header stops (T-102). Two ways of cutting a step apart would answer the same
+// question two different ways — this file has been bitten by that twice
+// already — so every caller cuts with these functions and with nothing else.
 //
 // A step opens with a list item whose first key is one of the keys a step can
 // legally start with. It is not a YAML parser: it cannot tell a `- name:` in a
@@ -183,12 +184,48 @@ const stepOpenersOf = (text) =>
  * The one step that the character at `index` belongs to: from the list item
  * that opens it to the one that opens the next step, or to the end of the file
  * when it is the last step. `""` when nothing opened a step above `index`.
+ *
+ * `openers` is `stepOpenersOf(text)`, passed in rather than defaulted: every
+ * caller reads several steps of the same text and would otherwise scan it once
+ * per step. It used to be a defaulted parameter that no call site ever left
+ * out — dead code, and dead code in a pin reads like a supported way of calling
+ * it (T-103).
  */
-const stepBlockAt = (text, index, openers = stepOpenersOf(text)) => {
+const stepBlockAt = (text, index, openers) => {
   const opens = openers.filter((i) => i <= index);
   const closes = openers.filter((i) => i > index);
   return opens.length ? text.slice(Math.max(...opens), closes.length ? Math.min(...closes) : text.length) : "";
 };
+
+// ------------------------------------ one KEY of one step, in both spellings.
+// A step's first key is written on the list item itself — `- if: false`, `- id:
+// notes`, `- name: …` — and every other key of that step is a plain line under
+// it. YAML reads the two as the same key of the same step, and so must every
+// pin here.
+//
+// Written ONCE, in this one fragment, because the file has already paid for the
+// other way. `stepNamed` below accepted both spellings while the three pins that
+// read `id:` and `if:` accepted only the plain one, and that gap was a live false
+// green: moving `if: false` up to the front of the release-notes step — the same
+// keys, only reordered — skipped that step on every tag while the one pin that
+// exists for it printed `no if:`. The mirror image was a false red, twice
+// over: `- id: notes` or `- if: …` written first was reported as an id or a
+// condition that was not there at all. A gate that reds correct files teaches
+// people to stop reading it (T-46, T-103).
+//
+// This cannot borrow a neighbour's key. Every one of `- if:`, `- id:` and
+// `- name:` is itself a step opener above, so inside a block cut by
+// `stepBlockAt` such a line can only be the block's own first line; every line
+// below it belongs to this step.
+const STEP_KEY = "^[ \\t]*(?:-[ \\t]+)?";
+/**
+ * One key of ONE step block, matched on its own line in either spelling, with
+ * the rest of that line captured. `null` when the block does not carry it.
+ *
+ * @param block - one step, as cut by `stepBlockAt`
+ * @param key - the key's name, a plain word
+ */
+const stepKeyLine = (block, key) => new RegExp(`${STEP_KEY}${key}:[ \\t]*([^\\n]*)$`, "m").exec(block);
 
 // ------------------------------------------- everything under `jobs:`, and how
 // many jobs that is, written ONCE for the same reason the two functions above
@@ -462,7 +499,11 @@ function checkPublishWorkflow(rel, release) {
   // chaining another command stays green.
   } else if (/\||;[ \t]*\S|&[ \t]*$/.test(testStep[1])) {
     fail(`${rel} throws the \`npm test\` exit code away, so a failing test never stops the publish (T-41): npm test${testStep[1]}`);
-  } else if (/^[ \t]*if:/m.test(testStepBlock)) {
+  // Read through the shared step-key reader, so `- if: false` written as the
+  // step's FIRST key is the same condition as an `if:` written under the name.
+  // It was not, until T-103: the step could be skipped on every tag with this
+  // pin still calling the release tested.
+  } else if (stepKeyLine(testStepBlock, "if")) {
     fail(`${rel} puts an \`if:\` on the \`npm test\` step, so the release can skip its own tests (T-41)`);
   } else if (mayFailAt !== -1) {
     fail(`${rel} lets the \`npm test\` step fail without failing the run, so the tests gate nothing — the only values this pin reads as "not allowed to fail" are a bare \`false\`, \`False\` and \`FALSE\` (T-41, T-46): continue-on-error: ${JSON.stringify(continueOnError[mayFailAt])}`);
@@ -528,6 +569,19 @@ const NOTES_STEP_ID = "notes";
 const RELEASE_STEP_NAME = "Create the GitHub release";
 
 /**
+ * A scalar in all three YAML quotings, as one alternation: `x`, `"x"`, `'x'`.
+ * Redding a correctly quoted file would be redding a correct file (T-46).
+ *
+ * Every regex metacharacter is escaped first, so a constant at the top of this
+ * section that one day grows a `.` or a `[` stays a literal here instead of
+ * quietly turning into a wildcard.
+ */
+const quotedOf = (scalar) => {
+  const literal = scalar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return `(?:${literal}|"${literal}"|'${literal}')`;
+};
+
+/**
  * The step whose `name:` is exactly `name`, as a match with an `.index`, or
  * `null`.
  *
@@ -537,11 +591,12 @@ const RELEASE_STEP_NAME = "Create the GitHub release";
  * quotings of a scalar are accepted, because redding a correctly quoted name
  * would be redding a correct file, and a trailing `# comment` comes off the
  * same way the fetch-depth and continue-on-error pins take theirs off.
+ *
+ * `STEP_KEY` is the shared opener fragment, so `- name:` and `name:` are the
+ * same key here and in every other pin that reads a step's key.
  */
-const stepNamed = (text, name) => {
-  const literal = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`^[ \\t]*(?:-[ \\t]+)?name:[ \\t]*(?:${literal}|"${literal}"|'${literal}')[ \\t]*(?:#.*)?$`, "m").exec(text);
-};
+const stepNamed = (text, name) =>
+  new RegExp(`${STEP_KEY}name:[ \\t]*${quotedOf(name)}[ \\t]*(?:#.*)?$`, "m").exec(text);
 
 /**
  * Both release-notes pins on ONE publishing workflow. Every message names the
@@ -565,6 +620,18 @@ function checkReleaseNotesSteps(rel, release) {
     fail(`${rel} publishes, but this pin cannot find the \`npm publish\` step it just matched, so it cannot say which side of the publish the release steps are on — re-pin it against however publishing is done now (T-100)`);
     return;
   }
+  // Both halves below compare where two steps sit in the TEXT, and that is a
+  // sound order pin inside one job and nothing at all across two: two jobs run
+  // in whatever order their `needs:` edges say, which no text pin here can read.
+  // The gate the `npm test` pin and the `permissions:` pin each ask for, asked
+  // again here rather than assumed — this one shipped without it, so a two-job
+  // publisher got a green line saying its notes are read before the publish, on
+  // no evidence at all (T-100, T-103).
+  const jobCount = jobCountOf(jobsRegionOf(release));
+  if (jobCount !== 1) {
+    fail(`${rel} has ${jobCount} jobs, and file order proves nothing across jobs — which step runs before the publish is then decided by \`needs:\` edges this text pin cannot read. Re-pin it (T-103)`);
+    return;
+  }
   const openers = stepOpenersOf(release);
   const notesStep = stepNamed(release, NOTES_STEP_NAME);
   const releaseStep = stepNamed(release, RELEASE_STEP_NAME);
@@ -574,10 +641,20 @@ function checkReleaseNotesSteps(rel, release) {
     fail(`${rel} publishes and has no step named "${NOTES_STEP_NAME}", so a v* tag would publish with nothing read out of CHANGELOG.md and the GitHub release page would stay empty (T-100)`);
   } else {
     const notesBlock = stepBlockAt(release, notesStep.index, openers);
-    // The `id:` is half the contract: the step after it, and anything else that
-    // wants the notes, reaches them through `steps.notes`. A step with the right
-    // name and no id is a step nothing can refer to.
-    if (!/^[ \t]*id:[ \t]*(?:notes|"notes"|'notes')[ \t]*(?:#.*)?$/m.test(notesBlock)) {
+    // The `id:` is the other half of the contract PRD section seven fixes.
+    // Nothing reads `steps.notes` today — the release step takes the words from
+    // the file `release-notes.md` — so this pin is the only thing keeping the id
+    // there, and it is kept because the contract says so. It is the handle
+    // anything else in that job would have to use to reach this step: an output,
+    // a condition, a second reader. A step with the right name and no id is a
+    // step nothing can refer to. (This comment used to say the step after it
+    // already read `steps.notes`. Nothing ever did — T-103.)
+    //
+    // Built from `NOTES_STEP_ID`, not from the word `notes` typed again: the
+    // message below has always named the constant, so a hand-written pattern
+    // beside it meant anyone changing the constant got a check that still
+    // demanded the old id while telling them the new one (T-103).
+    if (!new RegExp(`${STEP_KEY}id:[ \\t]*${quotedOf(NOTES_STEP_ID)}[ \\t]*(?:#.*)?$`, "m").test(notesBlock)) {
       fail(`${rel}: the step named "${NOTES_STEP_NAME}" does not set \`id: ${NOTES_STEP_ID}\`, so nothing else in that job can refer to it (T-100)`);
     }
     // Order, against the ONE definition of publishing. Reading the notes after
@@ -590,7 +667,12 @@ function checkReleaseNotesSteps(rel, release) {
     // No `if:` on it, so it runs on every tag. An `if:` here is how the run goes
     // green with no notes at all: the release step later would then have no file
     // to read, or would quietly publish yesterday's words.
-    if (/^[ \t]*if:/m.test(notesBlock)) {
+    //
+    // Read through the shared step-key reader. This is the pin the reordering
+    // `- if: false` / `name:` / `id: notes` walked straight past — same keys,
+    // same step, one different line, and the only check that exists for this
+    // printed `no if:` (T-103).
+    if (stepKeyLine(notesBlock, "if")) {
       fail(`${rel} puts an \`if:\` on the step named "${NOTES_STEP_NAME}", so the release notes can be skipped — that step has to run on every v* tag (T-100)`);
     }
   }
@@ -609,8 +691,11 @@ function checkReleaseNotesSteps(rel, release) {
   // an ungated release step would then run on its own. The condition is read as
   // two substrings and not as one exact string, because `${{ … }}` around it,
   // extra spaces and a longer `&&` chain are all correct spellings of the same
-  // gate, and redding those would be redding a correct file (T-46).
-  const ifLine = /^[ \t]*if:[ \t]*([^\n]*)$/m.exec(releaseBlock);
+  // gate, and redding those would be redding a correct file (T-46). Read
+  // through the shared step-key reader for the same reason: a gate written as
+  // the step's first key (`- if: steps.guard…`) is the same gate, and this pin
+  // used to report a correct file as having no `if:` at all (T-103).
+  const ifLine = stepKeyLine(releaseBlock, "if");
   if (!ifLine) {
     fail(`${rel}: the step named "${RELEASE_STEP_NAME}" has no \`if:\`, so re-pushing a tag whose version is already on npm would skip the publish and still create a release (T-100)`);
   } else if (!ifLine[1].includes("steps.guard.outputs.publish") || !ifLine[1].includes("'true'")) {
@@ -672,6 +757,9 @@ if (publishers.length === 0) {
 // it has no opinion on a block that grants MORE than those two — that is a
 // security review's question, not this pin's, and redding a file that works
 // would be redding a correct file (T-46, up in the continue-on-error comment).
+// Having no opinion is not the same as saying nothing: the one grant that skips
+// the scope-by-scope read entirely, `write-all`, is named out loud below so the
+// green line does not read as a reading it never did (T-103).
 
 const PERMISSIONS_KEY = /^([ \t]*)permissions[ \t]*:[ \t]*([^\n]*)$/m;
 // The two scopes a release run cannot do without, and why — the message has to
@@ -713,6 +801,9 @@ const valueTextOf = (text, keyMatch) => {
 const grantIn = (permissionsText, scope) =>
   new RegExp(`(?:^|[{,])[ \\t]*['"]?${scope}['"]?[ \\t]*:[ \\t]*['"]?([A-Za-z-]+)['"]?`, "m").exec(permissionsText)?.[1] ?? null;
 
+/** Publishing workflows whose grant was the `write-all` shorthand, filled in below. */
+const writeAllPublishers = [];
+
 /**
  * The release permissions of ONE publishing workflow. Every message names the
  * file it read, the house rule the two blocks above follow: "a workflow is
@@ -742,9 +833,17 @@ function checkReleasePermissions(rel, release) {
     return;
   }
   // The job's own header: from the top of the jobs region down to the first step
-  // opener, cut with the shared step reader. Anything below that first opener
-  // belongs to a step, and a `permissions:` written inside a step's body (in a
-  // `run: |` script, say) must not be read as the job's grant.
+  // opener, cut with the shared step reader. A `permissions:` written inside a
+  // step's body (in a `run: |` script, say) is then not read as the job's grant.
+  //
+  // WHAT THAT CUT COSTS, said plainly because the comment here used to claim the
+  // opposite ("anything below the first opener belongs to a step"): it does not.
+  // A job's keys may be written in any order, so a job-level `permissions:`
+  // placed AFTER its `steps:` list is legal YAML and governs the run — and this
+  // pin cannot see it. It reads the header and nothing else, so such a file is
+  // reported as granting nothing rather than vouched for wrongly: the pin errs
+  // red, which is the safe direction, and the fix is to move the block above
+  // `steps:` where every workflow in this repository already keeps it (T-103).
   const openers = stepOpenersOf(jobsRegion);
   const header = openers.length ? jobsRegion.slice(0, Math.min(...openers)) : jobsRegion;
   // A job-level block REPLACES the workflow-level one — GitHub does not merge
@@ -764,7 +863,19 @@ function checkReleasePermissions(rel, release) {
   // both scopes below, so redding it would be redding a file that publishes and
   // releases perfectly well. Whether it grants too much is a security review's
   // question and not this pin's.
-  if (granted.trim().replace(/^['"]|['"]$/g, "") === "write-all") return;
+  //
+  // But it is NOT a scope-by-scope read, and the `ok` line at the bottom of this
+  // block is written as though it were: "the job that publishes is granted
+  // `contents: write` … and `id-token: write`" is what it says, and on a
+  // `write-all` file it is granted every other scope too — including on the job
+  // that runs `npm publish` and `npm install -g`. The security review of this
+  // job called that sentence untrue on its own. So the file is remembered here
+  // and said out loud beside that line, rather than passing in silence: the
+  // green stands, and it no longer stands alone (T-103).
+  if (granted.trim().replace(/^['"]|['"]$/g, "") === "write-all") {
+    writeAllPublishers.push(rel);
+    return;
+  }
   for (const { scope, why } of RELEASE_SCOPES) {
     const value = grantIn(granted, scope);
     if (value === null) {
@@ -787,6 +898,18 @@ if (publishers.length === 0) {
   // folder is fine.
   const failuresBefore = failures;
   for (const workflow of publishers) checkReleasePermissions(`.github/workflows/${workflow.name}`, workflow.text);
+  // Said before the vouch below and NOT behind the counter that gates it: this
+  // is a caveat about what was not read, not a claim that anything is fine, and
+  // a caveat that only prints on a green run is a caveat that disappears exactly
+  // when the file is being changed. `write-all` is a correct way to make this
+  // release work, so it is not a failure here — but the line below reads like a
+  // scope-by-scope reading of the file, and on its own it would let `write-all`
+  // on the job that runs `npm publish` and `npm install -g` pass unremarked,
+  // with this pin the only thing in the repository looking at those grants at
+  // all. Nothing anywhere judges whether that grant is too wide (T-103).
+  if (writeAllPublishers.length > 0) {
+    ok(`${writeAllPublishers.join(", ")}: the grant read is the \`write-all\` shorthand, which gives every scope write access — the release works, and this pin did NOT read the two scopes one by one there, so the line below vouches for those two being covered and for nothing being narrow. Whether a job that runs \`npm publish\` and \`npm install -g\` should hold every scope is a question no check here asks (T-102, T-103, docs/qa/gaps.md item 55)`);
+  }
   // Only the files in `publishers` are read, and that matters: test.yml is
   // granted `contents: read` on purpose and is completely correct that way. A
   // pin let loose on the whole folder would red it, and a gate that reds correct
