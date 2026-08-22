@@ -177,7 +177,7 @@ v6.1.0 / v5.1.0 / v4.4.0 / v3.7.0 / v2.8.0。
 
 ---
 
-## 我查了但没有用上的东西
+## 我查了但没有用上的东西（第一轮）
 
 - `https://github.com/actions/checkout/releases/tag/v7.0.0` 和
   `.../v6.0.0`：GitHub 的 release 页面靠 JS 加载，抓下来一堆
@@ -190,6 +190,181 @@ v6.1.0 / v5.1.0 / v4.4.0 / v3.7.0 / v2.8.0。
   "The security default we change in GitHub's checkout action"）出现在搜索结果里，
   我**没有**打开它，也没有引用它 —— 官方仓库的 `action.yml` 已经直接回答了问题。
 
-## 需要 PM 跑的命令
+## 需要 PM 跑的命令（第一轮）
 
-没有。这个问题全部靠读文件和网页就答完了。
+没有。第一轮的问题全部靠读文件和网页就答完了。
+
+---
+
+# 第二轮：`persist-credentials: false` 是「拉完再撤」还是「根本不给」
+
+（提问日期：2026-08-22。这一轮只读一个文件：v7 tag 的 `src/git-source-provider.ts`。）
+
+**一句话答案：是「先认证、拉完再撤」。** `configureAuth()` 在 fetch 和 checkout **之前**
+无条件执行（第 150 行），跟 `persistCredentials` 没有关系；`persistCredentials` 只在
+`getSource()` 最后的 `finally` 块里被读一次（第 319 行），用来决定要不要
+`removeAuth()`（第 321 行）。
+
+**所以 `fetch-depth: 0` 不受影响，私有仓库也不会坏。** 这一段抄进私有仓库是安全的。
+把握：`certain`（代码内容和行号都核过了，行号是 PM 用下面那条 `curl` 命令拿到的）。
+
+## 证据一：`finally` 块（逐字引用）
+
+```typescript
+finally {
+  // Remove auth
+  if (authHelper) {
+    if (!settings.persistCredentials) {
+      core.startGroup('Removing auth')
+      await authHelper.removeAuth()
+      core.endGroup()
+    }
+    authHelper.removeGlobalConfig()
+  }
+}
+```
+
+和评审猜的写法一样，只是外面多包了一层 `if (authHelper)`。这是 `getSource()` 的
+`finally`（从第 316 行开始），也就是**代码已经拉完、已经 checkout 完之后**才跑。
+
+## 证据二：`configureAuth()` 的位置（逐字引用）
+
+```typescript
+    // If we didn't initialize it above, do it now
+    if (!authHelper) {
+      authHelper = gitAuthHelper.createAuthHelper(git, settings)
+    }
+    // Configure auth
+    core.startGroup('Setting up auth')
+    await authHelper.configureAuth()
+    core.endGroup()
+
+    // Determine the default branch
+    if (!settings.ref && !settings.commit) {
+      core.startGroup('Determining the default branch')
+      if (settings.sshKey) {
+        settings.ref = await git.getDefaultBranch(repositoryUrl)
+      } else {
+        settings.ref = await githubApiHelper.getDefaultBranch(
+          settings.authToken,
+          settings.repositoryOwner,
+          settings.repositoryName,
+          settings.githubServerUrl
+        )
+      }
+      core.endGroup()
+    }
+```
+
+**这里没有任何 `if (settings.persistCredentials)`。** `configureAuth()` 是无条件调用的，
+在第 150 行。
+
+## 证据三：`getSource()` 里的先后顺序
+
+我按文件顺序，把 `getSource()` 里的 `core.startGroup('...')` 字符串和几个关键语句
+列了一遍（逐字引用那些字符串），行号来自下面那条 `curl` 命令的输出：
+
+| 顺序 | 内容 | 行号 |
+| --- | --- | --- |
+| 1 | `"Getting Git version info"` | — |
+| 2 | `try {` | — |
+| 3 | `"Setting up auth"` | — |
+| 4 | `await authHelper.configureAuth()` ← **认证在这里配好** | **150** |
+| 5 | `"Determining the default branch"` | — |
+| 6 | `"Fetching the repository"` | — |
+| 7 | `await git.fetch(refSpec, fetchOptions)`（三处）← **`fetch-depth: 0` 在这里生效，凭据还在** | **194 / 200 / 219** |
+| 8 | `"Determining the checkout info"` | — |
+| 9 | `"Fetching LFS objects"` | — |
+| 10 | `"Setting up sparse checkout"` | — |
+| 11 | `"Checking out the ref"` | — |
+| 12 | `await git.checkout(checkoutInfo.ref, checkoutInfo.startPoint)` | **271** |
+| 13 | `"Setting up auth for fetching submodules"` | — |
+| 14 | `"Fetching submodules"` | — |
+| 15 | `"Persisting credentials for submodules"`（在 `if (settings.persistCredentials)` 里） | **292** |
+| 16 | `} finally {` | **316** |
+| 17 | `if (!settings.persistCredentials)` | **319** |
+| 18 | `"Removing auth"` / `await authHelper.removeAuth()` ← **撤销在这里，全部拉取动作之后** | **321** |
+
+顺序清清楚楚：**配置认证（150）→ 拉取（194–219）→ checkout（271）→ 撤销（321）。**
+没有行号的那几行是 `core.startGroup(...)`，PM 那条 `grep` 没有匹配它们，只匹配了
+函数调用；它们的相对顺序来自我三次读源码得到的一致文本。
+
+## 证据四：`persistCredentials` 在这个文件里只被读两次
+
+一次在上面那个 `finally` 里（第 319 行）；另一次是子模块的凭据（第 292 行），
+也在拉取**之后**：
+
+```typescript
+      // Persist credentials
+      if (settings.persistCredentials) {
+        core.startGroup('Persisting credentials for submodules')
+        await authHelper.configureSubmoduleAuth()
+        core.endGroup()
+      }
+```
+
+注意这一条的含义：`persist-credentials: false` 时，**子模块的凭据不会被写下去**。
+本仓库没有子模块，所以无所谓；但抄这段配置的人如果用了私有子模块，要自己验一下。
+（这一段的上下文我只读到 6 行，没读到它上面的 `git.submoduleUpdate` 具体怎么调用，
+所以「私有子模块会不会坏」我写 `unknown`，不猜。）
+
+文件里还有第二个 `await authHelper.removeAuth()`，在第 **367** 行，它属于导出的
+`cleanup()` 函数（post-job 清理），**不在** `getSource()` 里；第 **368** 行是那个函数
+自己的 `} finally {`：
+
+```typescript
+    await authHelper.removeAuth()
+  } finally {
+    await authHelper.removeGlobalConfig()
+  }
+}
+```
+
+## 出处与日期
+
+- 出处：<https://raw.githubusercontent.com/actions/checkout/v7/src/git-source-provider.ts>
+- 读到日期：2026-08-22（代码内容由我读，行号由 PM 在同一天核出）
+- 把握：`certain`（同一个文件我读了三次，问法各不相同，三次拿回来的**代码文本完全一致**；
+  行号另有 `curl | grep -n` 的真实输出佐证，和代码文本自洽）
+
+## 行号是怎么核出来的，以及它们会烂
+
+**第一次我没敢写行号，那是对的。** `WebFetch` 拿到的是转成 markdown 的纯文本，行号是
+那个小模型自己数的 —— 我问了两次，同一行 `await authHelper.configureAuth()` 第一次说是
+第 66 行，第二次说是第 192 行。两个数至少有一个是错的（事实证明两个都错），所以我当时
+一个都没写进结论，只写了代码文本。
+
+**后来 PM 跑了真命令，行号坐实了。** 2026-08-22 跑的，原始输出：
+
+```
+$ curl -sL https://raw.githubusercontent.com/actions/checkout/v7/src/git-source-provider.ts \
+    | grep -n 'configureAuth\|removeAuth\|persistCredentials\|^  } finally\|git.fetch(\|git.checkout('
+150:    await authHelper.configureAuth()
+194:      await git.fetch(refSpec, fetchOptions)
+200:        await git.fetch(refSpec, fetchOptions)
+219:      await git.fetch(refSpec, fetchOptions)
+271:    await git.checkout(checkoutInfo.ref, checkoutInfo.startPoint)
+292:      if (settings.persistCredentials) {
+316:  } finally {
+319:      if (!settings.persistCredentials) {
+321:        await authHelper.removeAuth()
+367:    await authHelper.removeAuth()
+368:  } finally {
+```
+
+**这些行号会烂，而且没人会告诉你。** 它们指的是 `actions/checkout` 仓库 `v7` 标签下的
+`src/git-source-provider.ts`，**不是本仓库的代码**。本仓库不下载那个文件，没有任何检查
+读它，所以 upstream 一改，这里的数字就悄悄错掉，`npm test` 照样全绿。查证日期是
+**2026-08-22**。要重新核，直接再跑一遍上面那条 `curl`，不要相信这一页上的数字。
+（同样的道理，`v7` 是一个会移动的大版本标签：今天它指向 v7.0.1，明天可能指向 v7.0.2，
+行号就变了。）
+
+## 第二轮我没有做的事（两件 `unknown`，仍然开着）
+
+- 没有读 README，没有读 CHANGELOG，没有看任何第三方说法 —— 这一轮要的就是源码这一条
+  证据，所以只读了那一个 URL。
+- **私有子模块会不会坏：`unknown`。** 见上面证据四。本仓库没有子模块，不适用；
+  下一个抄这段配置的人要自己验。
+- **`removeAuth()` 有没有把 `$RUNNER_TEMP` 那个凭据文件删干净：`unknown`。**
+  我没有读 `src/git-auth-helper.ts` 里 `removeAuth()` 的实现。如果安全评审关心的是
+  「撤销之后磁盘上还剩什么」，那要另开一个问题。

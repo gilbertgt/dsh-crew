@@ -31,6 +31,11 @@ there are kept as `<name>.bak` and named in the boot log, but your settings do
   - **Old tags are not getting release pages.** `v0.1.0` to `v0.9.0` stay as they
     are; 8 of those 17 tags have no section in this file at all, so the pages
     would have been empty.
+  - **The code that reads those notes has never been run by a test.** That was
+    chosen, not overlooked: the shell lives inline in the workflow and no test
+    harness executes it, so the first real run is the first `v*` tag after this
+    version. Nothing you install is affected — a mistake there stops a release
+    instead of shipping one.
   There is nothing for you to configure, and nothing changes about how you
   install or use the plugin.
 

@@ -290,8 +290,8 @@ prove a review happened — a `code: pass` typed by the PM passes it」。
 
 **该怎么办**：先决定（`CRD`），再改钉子，再补用例。
 
-**2026-08-22 更新（`gh-release` 作业）**：上面那句「今天这个仓库只用 `npm publish`」
-**已经不准了**。`.github/workflows/publish.yml` 现在同时有 `npm publish` **和**
+**2026-08-22 更新（`gh-release` 作业）**：这一条写下来的时候，本仓库唯一的发布说法是
+`npm publish`。**现在不是了。** `.github/workflows/publish.yml` 现在同时有 `npm publish` **和**
 `gh release create` 两种说法。**这一条的实质没有变**：钉子仍然靠 `npm publish` 这一串
 把文件挑出来，那一串还在，所以这个文件仍然被钉着；guard 的 `branchPushTriggers()` 读到的
 仍然是 tag-only，答案一个字没变。变的是那个例子 —— 第二段说 `gh release create` 常出现在
@@ -1927,11 +1927,11 @@ PM 去仓库里查，发现**做法已经存在但没有被写成规则**（PM �
 
 ---
 
-## 54. 发版本时取 CHANGELOG 文字的那段 shell，没有任何测试执行过它
+## 54. 发版本时取 CHANGELOG 文字的那段 shell 没有任何测试执行过它，以及「npm 上有、GitHub 上没有 release」补不回来
 
 **谁报的**：`crew-qa`，M1 一轮（`gh-release` 作业，2026-08-22）。
 
-**这不是疏忽，是用户听过代价之后选的**（面谈第 5、6 条，
+**为什么**：**这不是疏忽，是用户听过代价之后选的**（面谈第 5、6 条，
 `docs/design/prd-2026-08-22-gh-release.md` 第三节）。PM 建议过把它写成
 `tools/changelog-notes.mjs`（能写单元测试、能写 QA 用例、`npm test` 每次都跑得到），
 也建议过写一个 harness 把 YAML 里那段 `run:` 抠出来用 bash 真跑。两条都被否掉，理由是简单。
@@ -1965,8 +1965,13 @@ PM 去仓库里查，发现**做法已经存在但没有被写成规则**（PM �
 
 ```sh
 gh release create v0.10.0 --title v0.10.0 \
-  --notes-file <(sed -n '/^## 0.10.0 /,/^## /p' CHANGELOG.md)
+  --notes-file <(awk '/^## 0\.10\.0 /{f=1;next} f&&/^## /{exit} f' CHANGELOG.md)
 ```
+
+**别用 `sed -n '/^## 0.10.0 /,/^## /p'`。** `sed` 的区间两端都打印，做出来的说明头上多一行
+`## 0.10.0 — unreleased`、尾巴上多挂一行 `## 0.9.0 — 2026-08-22`。文档评审 2026-08-22
+抓到的，PM 跑过确认 —— 而这条命令正好是人在最糟的时刻（npm 已发、release 没建）
+照着敲的那一条。
 
 没有任何自动检查能发现这个状态：它要同时问 npm 和 GitHub 两个网站，而 QA 用例不上网。
 `gh` 在 runner 上到底在不在、`GITHUB_TOKEN` 的权限到底够不够，也在同一条船上 ——
@@ -2008,11 +2013,22 @@ PAT 来代替 job 级的短命令牌，那更差。
 换成了 `$RUNNER_TEMP/git-credentials-<uuid>.config` —— 换个文件存不等于没存。
 出处见 `docs/research/actions-checkout-persist-credentials.md`。）
 
+**但那个键没有任何检查守着。** `tools/verify-mount.mjs` 不读它，也没有任何 QA 用例判它，
+PRD 第七节那张 8 步契约表第 1 行只写了 `fetch-depth: 0`。下一个人整理 `with:` 的时候
+把它删掉，**`npm test` 照样全绿**。要它长期在，得再加一条 pin 或一条用例
+（文档评审 2026-08-22 报的）。
+
 **没做的两件事，写下来**：`npm install -g npm@latest` 没有钉版本，
 `id-token: write` 同样是 job 级的。两条都**在这次改动之前就存在**，
 不是这次带进来的，也没有便宜的修法。
 
 **该怎么办**：不用做什么。哪天 `jobCount` 那条规矩因为别的原因被重新决定，
 把这一条一起拿出来看。
+
+**同一块地方的另一半**：这条 pin 为什么不拦 `permissions: write-all`（它会放行，
+只多打一句「本 pin 没有逐个 scope 读」），决定记在
+`docs/decisions/adr/0025-write-all-is-reworded-not-refused.md`。
+**那句实话不拦任何人** —— 它只在有人已经改成 `write-all` 之后才出现，
+真正拦住这件事的仍然是「有人读那次 diff」。
 
 **状态**：未关闭，**刻意的**，安全评审判为可接受。

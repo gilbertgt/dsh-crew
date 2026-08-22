@@ -584,9 +584,9 @@ npm test        # git 保护规则、插件挂载、所有 QA 用例，最后是
 ```
 
 本仓库自己的 CI 会在**每次推送**时跑 `npm test`，只有推 `v*` 标签才会发布。推标签那一次
-还会建 GitHub release，文字取自 `CHANGELOG.md` 里对应版本那一节——在 `npm publish`
-**之前**就取出来，所以没写这一节的版本会让整次运行停下，而不是发出去。只有真的发布了，
-才会建 release。有一个缺口值得知道：在没有装 `@deepseek-ai/dsh-tool-subagent` 的机器上，`tools/verify-mount.mjs`
+还会建 GitHub release，文字取自 `CHANGELOG.md` 里对应版本那一节。这段文字在
+`npm publish` **之前**就取出来——所以没写这一节的版本会让整次运行停下，而不是发出去。
+只有真的发布了，才会建 release。有一个缺口值得知道：在没有装 `@deepseek-ai/dsh-tool-subagent` 的机器上，`tools/verify-mount.mjs`
 会跳过角色工具那一半检查，而 CI 就是这样的机器。它会出声说明跳过了哪一半，所以一次
 全绿的意思是"公共运行器能检查的都检查了"，不是"全都检查了"。
 

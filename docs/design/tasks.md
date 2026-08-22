@@ -3482,7 +3482,7 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 | 3 | 仍然**只有一个 job**；仍然 `on: push: tags: ["v*"]`，**没有 `branches:`**；`npm test` 仍然在发布前无条件跑 | `node tools/verify-mount.mjs`（设计规矩第 7 条那几条老 pin，一条都不许红） |
 | 4 | 第 4 步从 `package.json` 读版本号（**不从 tag 读**），在 `CHANGELOG.md` 里找开头正好是 `## <版本号><空格>` 的行，取到下一个 `## ` 为止（不含）或文件结尾，写进 `release-notes.md` | 第 6–9 条的手工输出 |
 | 5 | 第 4 步在两种情况下 `::error::` ＋ `exit 1`：**找不到那一行**、**取出来去掉空行后是空的**。不许降级成自动生成说明，不许绿着过去 | 第 8、9 条的手工输出 |
-| 6 | **手工证据 ①**：本机跑那段 shell，版本号用 `0.9.0`，输出的头尾要跟 `CHANGELOG.md` 第 12 行到第 184 行对得上，行数相符 | 报告里贴命令和真实输出 |
+| 6 | **手工证据 ①**：本机跑那段 shell，版本号用 `0.9.0`，输出要跟 `CHANGELOG.md` 里 `## 0.9.0` 那一节**逐字节相同**、行数相符（173 行）。**行号会漂**，用 `grep -n '^## ' CHANGELOG.md` 现算 —— 写这一格时是第 12–184 行，`cb76e3b` 加了 `0.10.0` 一节之后变成第 38–210 行 | 报告里贴命令和真实输出 |
 | 7 | **手工证据 ②（前缀重叠）**：本机造一份假 `CHANGELOG.md`，里面同时有 `## 0.1.0 — x` 和 `## 0.10.0 — y` 两节。用 `0.1.0` 跑 → 只能取到 `x` 那一节；用 `0.10.0` 跑 → 只能取到 `y` 那一节 | 报告里贴两段真实输出 |
 | 8 | **手工证据 ③（找不到）**：版本号用一个 `CHANGELOG.md` 里没有的号（例如 `9.9.9`）→ 必须非零退出，且打出一句人看得懂的话 | 报告里贴输出 ＋ `echo $?` |
 | 9 | **手工证据 ④（空小节）**：造一份假 `CHANGELOG.md`，某一节标题下面只有空行 → 必须非零退出 | 报告里贴输出 ＋ `echo $?` |
@@ -3604,7 +3604,7 @@ release 说明永远取不到，而**唯一为这件事存在的那条 pin 说�
 | 3 | **旧代码里判 `npm test` 那步 `if:` 的地方有一模一样的洞**（评审说的可选那半条）。同一个 commit 里一起改成同样写法 —— 这个文件反复写过「同一个问题只许有一个答案」 | 人读 diff ＋ 变异证明 ④ |
 | 4 | `NOTES_STEP_ID` 这个常量要真的用进正则。今天 `notes` 手写了三遍，只有 fail 消息用常量 —— 改常量的人会得到「消息说要 `id: X`，检查的还是 `notes`」的静默漂移 | 人读 diff ＋ 变异证明 ⑤（改常量 → 检查跟着变） |
 | 5 | `checkReleaseNotesSteps` 补一道 `jobCount !== 1` 的闸，跟 `checkReleasePermissions` 已有的那道一致。跨两个 job 时文件先后位置什么都不证明 | 变异证明 ⑥（造一个两 job 的发布 workflow → 这条 pin 出声拒绝，不再打那句它没证明的绿话） |
-| 6 | **安全评审报的**：`permissions: write-all` 时那条 `ok` 会说一句不真的话（「授的是 `contents: write` 和 `id-token: write`」，实际授的是全部）。要么 `fail()`，要么把 `ok()` 改成如实说「这个文件授的是 `write-all`，本 pin 没有逐个 scope 读」。**跑 `npm publish` 和 `npm install -g` 的 job 用 `write-all` 是不可接受的**，而这条 pin 是今天唯一盯这块的东西 | 变异证明 ⑦ |
+| 6 | **安全评审报的**：`permissions: write-all` 时那条 `ok` 会说一句不真的话（「授的是 `contents: write` 和 `id-token: write`」，实际授的是全部）。**`ADR 0025` 已经替这一格选定：把 `ok()` 改成如实说（`write-all` 仍然放行），不许改成 `fail()`。** 理由见 `docs/decisions/adr/0025-write-all-is-reworded-not-refused.md`。安全评审第 1 轮的原话是「跑 `npm publish` 和 `npm install -g` 的 job 用 `write-all` 是不可接受的」，而这条 pin 是今天唯一盯这块的东西 —— 这句实话不拦任何人，缺口记在 `docs/qa/gaps.md` 第 55 条 | 变异证明 ⑦ |
 | 7 | 两处注释要说实话：①「后面那一步通过 `steps.notes` 拿说明文字」—— **成品里没有任何东西读 `steps.notes`**，第 8 步读的是文件 `release-notes.md`；②「第一个 opener 以下的东西都属于步骤」—— 不成立，应说明「本 pin 只读第一个步骤之前的 job 头；写在 `steps:` 之后的 job 级 `permissions:` 它看不见」 | 人读 diff |
 | 8 | 删掉死代码：`stepBlockAt` 的默认参数 `openers = stepOpenersOf(text)`，两个调用点都显式传了值，从来没用过 | 人读 diff |
 | 9 | **变异证明至少 7 次**（第 1–6 条），都在抛弃副本上做。**外加一次假红测试**：正确的 `publish.yml` 加一句注释 → 仍绿 | 报告里 8 段真实输出 ＋ `git status --porcelain` |
@@ -3664,3 +3664,53 @@ release 说明永远取不到，而**唯一为这件事存在的那条 pin 说�
 
 - **不许碰 `tools/verify-mount.mjs`**（T-103 的文件）和 `docs/qa/`（QA 的文件）。
 - **不许改那 8 个步骤的名字、`id`、顺序或 `if` 条件** —— 那是 PRD 第七节的契约。
+
+---
+## T-105 — 第五处同类洞：`- continue-on-error:` 写在最前面时，测试门整个躲过 pin
+
+- **Verdicts**：code: not run — 修完跑第 4 轮代码评审 ｜ security: not run — 修完由安全评审复核（它已判定这类洞的后果是「测试被跳过、包照发、pin 不出声」）｜ qa: not run — 修完重跑 35 个任务 ｜ doc: not run — 最后一轮文档评审复核那三处措辞
+
+- **里程碑**：M1 ｜ **形状**：单人（solo）
+- **拥有的文件**：`tools/verify-mount.mjs`
+- **依赖**：**QA 修完它那一轮的用例之后才能开工**（第 5 条要改的那句话被 `docs/qa/T-100/case-01:33` 钉着，QA 会先把用例改成认新措辞；不许同树并行跑 `npm test`）。
+- **要求来源**：第 1–3 条 **代码评审第 3 轮**；第 4 条 **安全评审第 2 轮**；第 5 条 **文档评审最后一轮（阻塞）**。
+
+## 第 1 条是真洞，先说它
+
+`continue-on-error` **不在 `stepOpenersOf` 的键表里**。所以下面这个步骤不算「有自己的块起点」：
+
+```yaml
+      - continue-on-error: true
+        name: Run checks
+        run: npm test
+```
+
+块会从**上一个步骤**开始切，而读 `continue-on-error` 的那处正则只认不带 `- ` 的写法，
+于是 `mayFailAt === -1`，pin 判定「测试不许失败」。**实际上它可以失败 ——
+测试红了照样发包，而那条专门防这件事的 pin 一声不吭。**
+
+安全评审第 2 轮已经独立确认过这一类洞的后果：**「tag 一推、测试整个被跳过、包照发。」**
+
+这是 T-103 刚在四处修掉的同一类洞的**第五处**，在同一个文件里，守的是设计规矩第 7 条
+「发布前必须无条件跑 `npm test`」。代码评审判它可选，理由是旧代码、不在上一轮范围里。
+**PM 不同意**：我们正好在这个文件里，刚为这一类洞写过修法，留着第五处等于写下
+「我们知道它在那儿」。
+
+## DoD（PM 写）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | **真洞**：`- continue-on-error: true` 写在 `Run checks` 那一步最前面 → **必须红**。修法要同时动两处：`continue-on-error` 加进 `stepOpenersOf` 的键表，且读它的那处正则走 `STEP_KEY`（T-103 抽好的那个共享片段）。**不许只改一处** —— 只加键表不改正则，块切对了但仍读不到带 `-` 的那行 | 变异证明 ①②，改前绿、改后红两段都要 |
+| 2 | 加键表**不许弄坏别的块边界**。`continue-on-error` 成为 opener 之后，不带 `- ` 的 `continue-on-error:` 行为一个字不变 | 改动前后 `node tools/verify-mount.mjs` 输出 diff 为空 ＋ 35 个任务全绿 |
+| 3 | **代码评审第 3 轮第 1 条**：`write-all` 那条 caveat 里写着 `so the line below vouches for …`，但红的 run 里「下面那行」被计数器挡住，读的人会去找一条不存在的行。改成条件句，评审给的措辞：`… so where this pin does vouch below, that green covers those two scopes and says nothing about anything being narrow.` | 人读 diff |
+| 4 | **代码评审第 3 轮第 2 条 ＋ 安全评审第 2 轮第 1 条**：T-103 新写的两段注释宣称的比它成立的范围大。① 一段说「every pin here」都读两种写法 —— 第 1 条修完之后这句才成立，所以两件事要在同一个 commit 里；② 另一段的「借不到邻居的键」那个论证**只覆盖带 `- ` 的写法**，不带 `-` 的写法如果出现在某一步的 `run:` 正文里会被算成这一步的键（今天不会发生，而且方向是红）。两段都要改成实话 | 人读 diff |
+| 5 | **文档评审阻塞第 1 条**：第 727 行那条 `ok` 里的 `the shell inside those two steps is read by no check anywhere` **是假的** —— `docs/qa/T-101/case-07` 就在读那段 shell 的**文字**（它自己抬头第 2 行写着 `the TEXT of the notes step's shell`）。改成下面这句**一字不差**（QA 会把 `docs/qa/T-100/case-01` 改成认这句）：<br>`no check anywhere runs the shell inside those two steps — docs/qa/T-101/case-07 reads its text, nothing executes it` | `bash docs/qa/T-100/run.sh` 全绿 |
+| 6 | **变异证明至少 2 次**（第 1 条的两半各一次）＋ **一次假红测试**（正确的 `publish.yml` 加一句注释 → 仍绿），都在 `git clone` 的抛弃副本上做 | 报告里 3 段真实输出 ＋ `git status --porcelain` |
+| 7 | 原有的 `ok(...)` 行只增不减；**除第 5 条那一句以外，所有既有消息一个字不许动**。改任何措辞之前先 `grep docs/qa/` 看有没有用例钉着它 | 报告里贴改动前后输出的 diff |
+| 8 | **`npm test` 全绿，35 个任务 35 个通过** | PM 在静树上跑，两次结果相同 |
+| 9 | 不改 `tools/verify-mount.mjs` 以外的任何文件 | `git status --porcelain` |
+
+## 不许做的事
+
+- **不许碰 `docs/qa/`**（QA 的）、`.github/workflows/`、`docs/` 下任何文档。
+- **不许为了让测试变绿而放宽 pin。**

@@ -1,6 +1,6 @@
 # PRD：发版本的时候自动建 GitHub release（`gh-release` 作业）
 
-- **版本**：3
+- **版本**：4
 - **日期**：2026-08-22
 - **作业 slug**：`gh-release`
 - **提出人**：用户
@@ -66,8 +66,13 @@ Releases 页面是空的。从 npm 页面点过来的人，看到的只是一排
 只能人手敲一次：
 
 ```sh
-gh release create v0.10.0 --title v0.10.0 --notes-file <(sed -n '/^## 0.10.0 /,/^## /p' CHANGELOG.md)
+gh release create v0.10.0 --title v0.10.0 \\
+  --notes-file <(awk '/^## 0\\.10\\.0 /{f=1;next} f&&/^## /{exit} f' CHANGELOG.md)
 ```
+
+（**不要用 `sed -n '/^## 0.10.0 /,/^## /p'`** —— `sed` 的区间两端都打印，做出来的说明
+头上多一行 `## 0.10.0 — unreleased`、尾巴上多挂一行 `## 0.9.0 — 2026-08-22`。
+文档评审 2026-08-22 抓到的，PM 跑过确认。上面这条 `awk` 跟 workflow 里那段逻辑一致。）
 
 这条代价会同时写进 `docs/qa/gaps.md`，不靠这份 PRD 记着。
 
@@ -171,7 +176,7 @@ permissions:
 
 改成 `contents: write`（`id-token: write` 保留）。`gh release create` 要写
 `contents`。因为只能有一个 job，没有「把发布和建 release 拆成两个权限不同的 job」这条路。
-这一点会在 T-101 的 ADR 里写下来。
+这一点写在 `docs/decisions/adr/0026-contents-write-on-the-one-job.md` 里 —— 那份 ADR 把三个选项和它们输在哪都记下来了，因为这是里程碑评审时你可以推翻的那一类决定。
 
 **这两个 step 的 `id` 和 `name` 是契约。** T-100 那个 pin 靠它们找到步骤。
 改名字就要同时改 pin，两件事在同一个 commit 里。
@@ -226,7 +231,7 @@ bash docs/qa/run-all.sh
 | 4 | `tools/verify-mount.mjs` 新增的 pin 能抓到四种坏改法（见 T-100 的 DoD） | T-100 的变异证明 ＋ QA 用例 |
 | 5 | `docs/qa/gaps.md` 里有一条新条目，写明那段 shell 没有任何测试跑过它，并写明第 3 条决定留下的手工补救命令 | 人读 ＋ QA 用例判存在 |
 | 6 | `npm test` 全绿，用例总数**不减** | 归 PM |
-| 7 | `CLAUDE.md` 里 `## Documentation` 上面那段 `Releases:` 说明，跟改完之后的真实流程一致 | 文档评审 |
+| 7 | `CLAUDE.md` 里 **`## The two planes` 上面**那段以 `Releases:` 开头的说明（含新加的两段），跟改完之后的真实流程一致 | 文档评审 |
 | 8 | 两份 README 和 `CHANGELOG.md` 按第 14 步处理，改了就两份一起改 | 文档评审 |
 
 **M1 不发版本。** 按第 13 步，它拿的是一份 `docs/release/` 下的「发布缺口清单」，不是发布计划。
@@ -255,6 +260,15 @@ PM 会在第 13 步之前把这个问题单独拿给你决定，不在这里替�
 **为什么不并行：** 两个人在同一棵工作树里各自跑 `npm test`，会被对方写了一半的文件搞红，
 然后去修一个不存在的缺陷 —— 这正是本仓库 `ADR 0022`
 （`no-engineer-runs-npm-test-in-a-shared-tree`）记下来的那件事。
+
+**M1 实际跑了五个任务，全部串行。** 上面那张表是开工时的计划。后来加的三个都写在
+`docs/design/tasks.md` 里：`T-102`（补 `permissions` 的 pin —— PM 写 DoD 时漏的，
+T-100 的工程师报回来的）、`T-103`（代码评审的阻塞发现：`- if:` 写在最前面时 pin 漏判）、
+`T-104`（awk 退出码撞 mawk 自己的 2 ＋ `persist-credentials: false`）、
+`T-105`（同一类洞的第五处：`- continue-on-error:` 写在最前面时测试门整个躲过 pin）。
+**`T-100`／`T-102`／`T-103`／`T-105` 共用 `tools/verify-mount.mjs`，`T-101`／`T-104`
+共用 `.github/workflows/publish.yml`** —— 靠**串行**避开冲突，不是靠分文件，
+每一段任务行都写明了依赖和 `ADR 0022` 的理由。
 
 **不属于任何任务的文件**（按 playbook 由 PM 自己写、自己单独 commit）：
 `docs/qa/gaps.md`、这份 PRD、`docs/design/tasks.md`、ADR、CRD、`docs/release/M1-gaps.md`、

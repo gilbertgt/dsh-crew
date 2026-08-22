@@ -758,10 +758,10 @@ npm test        # the guard rules, the mount, every QA case, then the Verdicts g
 ```
 
 This repository's own CI runs `npm test` on every push, and publishes only when a
-`v*` tag is pushed. That tag run also creates the GitHub release, and its text is
-the matching section of `CHANGELOG.md` — read out before `npm publish`, so a
-version with no section written for it stops the run instead of shipping. The
-release is created only when the publish really happened. One gap is worth
+`v*` tag is pushed. That tag run also creates the GitHub release. Its text is the
+matching section of `CHANGELOG.md`, read out before `npm publish` — so a version
+with no section written for it stops the run instead of shipping. The release is
+created only when the publish really happened. One gap is worth
 knowing about: `tools/verify-mount.mjs`
 skips its role-tool half on any machine without `@deepseek-ai/dsh-tool-subagent`
 installed, and CI is such a machine. It says out loud which half it skipped, so a
