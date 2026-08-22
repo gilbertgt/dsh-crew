@@ -1,6 +1,6 @@
 # PRD：发版本的时候自动建 GitHub release（`gh-release` 作业）
 
-- **版本**：4
+- **版本**：5
 - **日期**：2026-08-22
 - **作业 slug**：`gh-release`
 - **提出人**：用户
@@ -66,8 +66,8 @@ Releases 页面是空的。从 npm 页面点过来的人，看到的只是一排
 只能人手敲一次：
 
 ```sh
-gh release create v0.10.0 --title v0.10.0 \\
-  --notes-file <(awk '/^## 0\\.10\\.0 /{f=1;next} f&&/^## /{exit} f' CHANGELOG.md)
+gh release create v0.10.0 --title v0.10.0 \
+  --notes-file <(awk '/^## 0\.10\.0 /{f=1;next} f&&/^## /{exit} f' CHANGELOG.md)
 ```
 
 （**不要用 `sed -n '/^## 0.10.0 /,/^## /p'`** —— `sed` 的区间两端都打印，做出来的说明
@@ -261,7 +261,7 @@ PM 会在第 13 步之前把这个问题单独拿给你决定，不在这里替�
 然后去修一个不存在的缺陷 —— 这正是本仓库 `ADR 0022`
 （`no-engineer-runs-npm-test-in-a-shared-tree`）记下来的那件事。
 
-**M1 实际跑了五个任务，全部串行。** 上面那张表是开工时的计划。后来加的三个都写在
+**M1 实际跑了六个任务，全部串行。** 上面那张表是开工时的计划。后来加的三个都写在
 `docs/design/tasks.md` 里：`T-102`（补 `permissions` 的 pin —— PM 写 DoD 时漏的，
 T-100 的工程师报回来的）、`T-103`（代码评审的阻塞发现：`- if:` 写在最前面时 pin 漏判）、
 `T-104`（awk 退出码撞 mawk 自己的 2 ＋ `persist-credentials: false`）、

@@ -1931,11 +1931,6 @@ PM 去仓库里查，发现**做法已经存在但没有被写成规则**（PM �
 
 **谁报的**：`crew-qa`，M1 一轮（`gh-release` 作业，2026-08-22）。
 
-**为什么**：**这不是疏忽，是用户听过代价之后选的**（面谈第 5、6 条，
-`docs/design/prd-2026-08-22-gh-release.md` 第三节）。PM 建议过把它写成
-`tools/changelog-notes.mjs`（能写单元测试、能写 QA 用例、`npm test` 每次都跑得到），
-也建议过写一个 harness 把 YAML 里那段 `run:` 抠出来用 bash 真跑。两条都被否掉，理由是简单。
-
 **缺口**：`.github/workflows/publish.yml` 第 4 步（`id: notes`）里那段 awk，
 负责从 `CHANGELOG.md` 里切出这一版的小节、写进 `release-notes.md`。
 **没有任何测试、任何用例、任何检查执行过它一行。** 它要处理的边界情况至少五种：
@@ -1951,6 +1946,11 @@ PM 去仓库里查，发现**做法已经存在但没有被写成规则**（PM �
 它自己的 `ok` 行就是这么说的。`docs/qa/T-101/case-07` 判的也只是那段 shell 的
 **文字**（版本从 `package.json` 读、匹配串带空格、有 `::error::` 和 `exit 1`），
 一样没有执行它。
+
+**为什么**：**这不是疏忽，是用户听过代价之后选的**（面谈第 5、6 条，
+`docs/design/prd-2026-08-22-gh-release.md` 第三节）。PM 建议过把它写成
+`tools/changelog-notes.mjs`（能写单元测试、能写 QA 用例、`npm test` 每次都跑得到），
+也建议过写一个 harness 把 YAML 里那段 `run:` 抠出来用 bash 真跑。两条都被否掉，理由是简单。
 
 **第一次真的验证它，是第一次推 `v0.10.0` 的时候。**
 
@@ -2042,20 +2042,123 @@ PRD 第七节那张 8 步契约表第 1 行只写了 `fetch-depth: 0`。下一�
 
 **缺口**：`tools/verify-mount.mjs` 的 `stepOpenersOf` 决定「哪一行算一个步骤的开头」。
 GitHub 的步骤键一共 11 个，它现在认 9 个，**差 `timeout-minutes` 和 `working-directory`**。
+（那 11 个是 `jobs.<id>.steps.*` 的键：`name`／`id`／`if`／`uses`／`run`／`shell`／`with`／`env`／
+`working-directory`／`continue-on-error`／`timeout-minutes`，读到日期 2026-08-22。）
 所以 `- timeout-minutes: 5` 开头的步骤仍然不算 opener，块会从上一个步骤切起。
 
 **这一类洞的前四处在 `T-103` 修掉、第五处（`continue-on-error`）在 `T-105` 修掉**，
 两次都是同一个成因：读键的写法和切块的键表对不上。
 
-**今天咬不到人，方向也大多是安全的那一边**：对「`npm test` 不许被跳过」那条 pin，
-块变大 → 借到上一步的键 → **误红**，不是假绿。唯一能变成假绿的路径很窄：
-**第一个**步骤用这两个键开头，那样 `permissions:` 那条 pin 切出来的 job 头会伸进步骤里，
-把步骤 `run:` 正文里的一行 `permissions:` 读成 job 的授权。要构造它得是有意为之。
+**今天咬不到人，但假绿的路不止一条 —— 第一版这一条记轻了，代码评审第 4 轮纠正过。**
+
+对「`npm test` 不许被跳过」那条 pin，块变大 → 借到上一步的键 → **误红**，不是假绿。
+但另外**两条**路是假绿：
+
+**假绿路径一（`permissions:` 那条 pin）**：**第一个**步骤用这两个键开头，
+job 头会伸进步骤里，把步骤 `run:` 正文里的一行 `permissions:` 读成 job 的授权。
+
+**假绿路径二（建 release 那条 gate pin），不需要是第一个步骤**：
+
+```yaml
+      - name: Publish
+        if: steps.guard.outputs.publish == 'true'
+        run: npm publish --provenance --access public
+
+      - timeout-minutes: 5
+        name: Create the GitHub release
+        run: |
+          gh release create "$GITHUB_REF_NAME" …
+```
+
+`- timeout-minutes:` 不是 opener → 建 release 那一步没有自己的块起点 →
+块从 `- name: Publish` 切起 → pin 读 `if:` 时取到的是**上一步的**那一条，
+两个子串都在 → **判绿**。而建 release 这一步**自己一个 gate 都没有**：
+重推一个已经在 npm 上的 tag，publish 跳过、建 release 照跑，
+`gh release create` 撞上已存在的 release —— 正是面谈第 3 条那个补不回来的状态。
+
+**为什么仍然不开任务**：`continue-on-error` 那一处**一次**编辑就同时造成缺陷并把它藏起来；
+这两条要**两次**独立编辑（既用这两个键开头，又把 gate 删掉或写错）。
+但严重性要记准 —— 记轻了就是下一个人不去修它的理由。
+
+**谁会先撞上它**：下一次有人在 `.github/workflows/` 里写 `- timeout-minutes:` 或者
+`- working-directory:` 开头的步骤时，这一条就活了。在那之前它是死的。
 
 **该怎么办**：加那两个键，并且**两半一起改**（键表 ＋ 读它的正则走 `STEP_KEY`）。
 `T-105` 证过：只改键表是假绿，只改正则是**误红** —— 它构造了一个「测试步正确、
 后面另有一步真的允许失败」的文件，只改正则的版本会去红那个测试步。
 所以真要做，要带上跟 `T-105` 同样形状的三段变异证明和一次「输出 diff 为空」。
 
+**别想着一劳永逸。** 把键表换成「任何 `- <词>:` 都算 opener」看着能根治，其实更糟：
+那会让 `run: |` 正文和嵌套列表里的 `- foo: bar` 都变成块边界，块变小，
+**方向反而是假绿**。继续一个一个枚举是对的选择（代码评审第 4 轮的话）。
+
 **状态**：未关闭，**已知且刻意**。窄，且大多数方向是误红而不是假绿。
+
+---
+
+## 57. 「发布前必须跑 `npm test`」这道门，还有三个入口能绕过去，而 pin 会打绿
+
+**谁报的**：`crew-security-reviewer`，M1 第 3 轮（`gh-release` 作业，2026-08-22）。
+PM 问的是「T-105 关掉的那条路关上了吗」，它把**整条路的所有入口**找了一遍。
+**三个都是这次改动之前就在的，`T-105` 一个都没有变宽。**
+
+**背景**：`T-103` 和 `T-105` 合起来堵了五处「pin 读不到步骤第一个键」的洞。
+那五处堵完之后，这道门仍然不是密的。
+
+### 入口 A —— 发布步的 `if:`，**全仓库没有任何一条 pin 读它**（最宽）
+
+把 `.github/workflows/publish.yml` 里 `Publish` 那一步的 `if:` 改成：
+
+```yaml
+        if: always() && steps.guard.outputs.publish == 'true'
+```
+
+`npm test` 红了、job 算失败，但 `always()` 让这一步照跑，**包照发**。
+而 pin 走完整条判断链 —— 测试步在、排在发布步前面、没有 `if:`、
+`continue-on-error` 全是 false、退出码没被丢掉 —— **全绿**，并且照旧打印那句
+`runs npm test — unconditionally, in the same job — before npm publish`。
+跟 `T-105` 修掉的那个假绿是同一句反话，只是换了个地方写。
+
+**代价**：一次编辑，一个词，不需要懂 shell。
+
+**证据**：`stepKeyLine` 全仓库只有三个调用点 —— 测试步、notes 步、release 步。
+**发布步不在里面。**
+
+**要修的话有个坑，先写在这里**：照抄 release 那条 pin 的写法（只判 `if:` 里含
+`steps.guard.outputs.publish` 和 `'true'`）**关不掉它** ——
+`always() && steps.guard.outputs.publish == 'true'` 把两个 needle 都含了。
+新 pin 必须**同时拒绝 `always()` / `failure()` / `cancelled()`**。
+release 那一步今天有同一个洞（后果轻得多：只是给一次失败的 run 建了 release 页），
+所以一条 pin 把两步一起判，安全评审估计大约五行。
+
+### 入口 B —— 在 `run:` 正文里中和，pin 读不到正文
+
+```yaml
+      - name: Run checks
+        run: |
+          set +e
+          npm test
+          exit 0
+```
+
+或者 `shell: bash {0}`（默认是 `bash -e {0}`，这里把 `-e` 拿掉了）。
+pin 判「退出码有没有被丢掉」只读 `npm test` **那一行后面剩下的字**，
+这两种写法里那一行后面什么都没有，所以三个检查一个都不响；`shell:` 那一行没有任何 pin 读。
+
+**一条文本 pin 关不掉这个** —— 真要判它就得读 shell 语义，那是另一件产品。
+
+### 入口 C —— 在更前面放一个诱饵 `npm test` 行（最做作）
+
+`testCommand` 取的是**文件里第一处**匹配。在前面某一步的 `run:` 正文里写一行以
+`npm test` 开头的字，那一行就成了「测试步」，pin 从此读的是**那一步**的块；
+真正的 `Run checks` 就可以随便挂 `continue-on-error: true`。
+
+### 该怎么办
+
+- **A 值得开一个任务**（安全评审唯一建议现在做的一条）。PM **没有开** ——
+  它跟「建 GitHub release」这件事无关，是这次改动之前就在的，而 M1 已经从 2 个任务长到 6 个。
+  **这是范围问题，2026-08-22 摆给用户决定。**
+- **B 和 C 不开任务**：文本 pin 关不掉，归这份清单。
+
+**状态**：未关闭。A 等用户的决定，B、C 是这类文本 pin 的固有上限。
 

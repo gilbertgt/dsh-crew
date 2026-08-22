@@ -17,7 +17,7 @@ there are kept as `<name>.bak` and named in the boot log, but your settings do
   you are reading, sent to the place people actually look. The repository had 17
   tags and 0 releases before this, so anyone arriving from npm saw a row of bare
   tags with nothing written on them.
-  Three things about how it behaves are worth knowing, because each one was a
+  Four things about how it behaves are worth knowing, because each one was a
   deliberate choice:
   - **The notes are read before anything is published.** A version with no
     `CHANGELOG.md` section written for it, or with an empty one, stops the run
