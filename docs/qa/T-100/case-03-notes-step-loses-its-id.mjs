@@ -1,10 +1,19 @@
 // T-100 DoD item 1, the second half: the notes step must set `id: notes`.
 //
-// The id is half the contract in section seven of the PRD. A step with the right
-// name and no id is a step nothing else in the job can refer to: `steps.notes`
-// resolves to nothing, and anything that later wants the notes — an output, a
-// condition, a second reader — silently gets an empty value instead of an error.
-// The file would look right in a diff.
+// The id is the other half of the contract in section seven of the PRD.
+//
+// Say plainly what it is NOT. Nothing in publish.yml reads `steps.notes` today —
+// the release step takes the words from the file `release-notes.md`, not from a
+// step output — so losing the id would break nothing on the next tag. This pin
+// is the only thing keeping it there, and it is kept because the contract says
+// so: the id is the handle anything else in that job would have to use to reach
+// this step (an output, a condition, a second reader), and a step with the right
+// name and no id is a step nothing can refer to.
+//
+// The earlier version of this comment claimed the step after it already read
+// `steps.notes`. Nothing ever did. tools/verify-mount.mjs carried the same false
+// sentence and T-103 corrected it there; this is the same correction, so the two
+// files say one thing.
 
 import { check, done, tempRepo, runCheck, cleanUp, edit, expectRed, expectGreen, saidOk } from "../lib/qa.mjs";
 
@@ -31,8 +40,9 @@ withCopy((dir) => edit(dir, PUBLISH_YML, "\n        id: notes\n", "\n"), (run) =
   check("and no `ok` line still claims the release steps are in place", !saidOk(run, OK), run.out);
 });
 
-// Red: an id that is not the one the contract fixed. `steps.notes` is the name
-// the rest of the job would have to use, so a different id is the same outage.
+// Red: an id that is not the one the contract fixed. `steps.notes` is the handle
+// the rest of the job would have to use, so a different id breaks the contract
+// the same way deleting it does.
 withCopy((dir) => edit(dir, PUBLISH_YML, "        id: notes\n", "        id: changelog\n"), (run) => {
   expectRed(run, NO_ID, "a different id is red");
 });

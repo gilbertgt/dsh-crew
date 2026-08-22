@@ -25,12 +25,31 @@ try {
     okLines(run).some((line) => line.includes(OK) && line.includes("publish.yml")),
     okLines(run).filter((line) => line.includes(OK)).join("\n"),
   );
-  // It also has to say what it did NOT read. A pin that claimed the release
-  // notes were correct would be worse than no pin: the shell inside those two
-  // steps is executed by nothing, anywhere.
+  // It also has to say what it did NOT do, and say it in the one word that
+  // matters: RUNS. A pin that claimed the release notes were correct would be
+  // worse than no pin.
+  //
+  // The distinction is not word-play. This line used to read "the shell inside
+  // those two steps is read by no check anywhere", and that was false — and
+  // false in the dangerous direction. docs/qa/T-101/case-07 reads that shell's
+  // text, so somebody trusting the old sentence would think they could edit the
+  // awk program freely and nothing would answer, when in fact `npm test` goes
+  // red. What is true is narrower and more useful: nothing EXECUTES it. The
+  // last real test of that code is still the first v* tag pushed after it
+  // landed (interview answer 6, docs/qa/gaps.md item 54).
+  //
+  // The wording is fixed by T-105's DoD item 5 in docs/design/tasks.md, which
+  // owns tools/verify-mount.mjs. Two short substrings are pinned rather than the
+  // whole sentence: the verb that carries the distinction, and the half that
+  // says reading is not executing.
   check(
-    "and it admits the shell inside those steps is read by no check",
-    okLines(run).some((line) => line.includes(OK) && /shell inside those two steps is read by no check/.test(line)),
+    "and it admits nothing RUNS the shell inside those steps",
+    okLines(run).some((line) => line.includes(OK) && line.includes("runs the shell inside those two steps")),
+    okLines(run).filter((line) => line.includes(OK)).join("\n"),
+  );
+  check(
+    "and it points at the case that does read that shell's text, so 'unread' cannot be inferred",
+    okLines(run).some((line) => line.includes(OK) && line.includes("nothing executes it")),
     okLines(run).filter((line) => line.includes(OK)).join("\n"),
   );
 } finally {

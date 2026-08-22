@@ -29,9 +29,23 @@ const jobsAt = code.search(/^jobs:[ \t]*$/m);
 check(`${PUBLISH_YML}: it has a top-level \`jobs:\` key`, jobsAt !== -1, code.slice(0, 200));
 
 const jobsRegion = jobsAt === -1 ? "" : code.slice(jobsAt);
-// A job is a key at the first indent under `jobs:`. Anything deeper belongs to
-// one of them.
-const jobLines = jobsRegion.split("\n").slice(1).filter((line) => /^[ \t]{1,4}[A-Za-z_][\w-]*:[ \t]*$/.test(line) && line.search(/\S/) === 2);
+// Everything belonging to `jobs:`: from the key down to the next line that
+// starts in column zero, which can only be another top-level key.
+const jobsBody = [];
+for (const line of jobsRegion.split("\n").slice(1)) {
+  if (line.trim().length === 0) continue;
+  if (line.search(/\S/) === 0) break;
+  jobsBody.push(line);
+}
+// A job is a key at the SHALLOWEST indent inside that region — worked out from
+// the file, never assumed. Two-space indentation is this repository's style, not
+// a rule: four spaces is legal YAML and a common house style, and a hard-coded
+// `=== 2` here reds a correct file. Measured, not guessed — with the indent
+// pinned at two, this case failed a correct four-space copy of publish.yml with
+// "exactly one job (none)", which is both a false red and a misleading one.
+// Redding correct files is how a check teaches people to stop reading it (T-46).
+const jobIndent = jobsBody.length ? Math.min(...jobsBody.map((line) => line.search(/\S/))) : 0;
+const jobLines = jobsBody.filter((line) => line.search(/\S/) === jobIndent && /^[ \t]*[A-Za-z_][\w-]*:[ \t]*$/.test(line));
 check(
   `${PUBLISH_YML}: it still has exactly one job (${jobLines.map((line) => line.trim()).join(", ") || "none"})`,
   jobLines.length === 1,

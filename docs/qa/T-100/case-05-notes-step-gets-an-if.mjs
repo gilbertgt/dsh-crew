@@ -19,11 +19,11 @@ const NOTES = "Read the release notes from CHANGELOG.md";
 const HAS_IF = `puts an \`if:\` on the step named "${NOTES}"`;
 const OK = "the GitHub release steps are in place in";
 
-const withIf = (line, assert) => {
+const withIf = (line, assert, where = {}) => {
   const dir = tempRepo();
   try {
     expectGreen(runCheck(dir, "tools/verify-mount.mjs"), "the untouched copy is green (so the red below is the mutation)");
-    addToStep(dir, PUBLISH_YML, NOTES, line);
+    addToStep(dir, PUBLISH_YML, NOTES, line, where);
     assert(runCheck(dir, "tools/verify-mount.mjs"));
   } finally {
     cleanUp(dir);
@@ -41,7 +41,16 @@ withIf("        if: steps.guard.outputs.publish == 'true'", (run) => {
 // whether the step CAN be skipped, not whether it usually is.
 withIf("        if: always()", (run) => expectRed(run, HAS_IF, "`if: always()` on the notes step is red"));
 
-// Red: an `if:` written after the id, further down the step's body.
-withIf("        if: github.event_name == 'push'", (run) => expectRed(run, HAS_IF, "any `if:` on the notes step is red"));
+// Red: the same key at a different POSITION — below the id, on the last line of
+// the step's body rather than the first. The two mutations above both land
+// directly under the step's opening line, so on their own they only vary the
+// condition's text; a pin that read a step by peeking at its first two lines
+// would pass all three of them and still miss this one. `{ before: "run" }` is
+// what makes this a second position and not a third wording.
+withIf(
+  "        if: github.event_name == 'push'",
+  (run) => expectRed(run, HAS_IF, "an `if:` further down the step's body, under the id, is red too"),
+  { before: "run" },
+);
 
 done();

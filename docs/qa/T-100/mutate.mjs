@@ -77,11 +77,26 @@ export function moveStepAfter(dir, relative, name, afterName) {
 }
 
 /**
- * Add a line into a step's body, right after its opening line.
- * @throws when the step is not there
+ * Add a line into a step's body.
+ *
+ * By default it goes directly under the step's opening line. Pass
+ * `{ before: "run" }` to put it further down instead, immediately above that
+ * key — which is a genuinely different POSITION in the block, not the same edit
+ * with different text. That distinction is the point: a pin that walked a step
+ * by reading only its first two lines would catch an `if:` at the top and miss
+ * one at the bottom, and three mutations that all landed on line two could
+ * never tell the two pins apart.
+ *
+ * @throws when the step is not there, or when `before` names a key it does not have
  */
-export function addToStep(dir, relative, name, line) {
+export function addToStep(dir, relative, name, line, { before } = {}) {
   const lines = copyFile(dir, relative).split("\n");
-  const { start } = locate(lines, name);
-  put(dir, relative, [...lines.slice(0, start + 1), line, ...lines.slice(start + 1)].join("\n"));
+  const { start, stop } = locate(lines, name);
+  let at = start + 1;
+  if (before) {
+    const found = lines.slice(start, stop).findIndex((text) => new RegExp(`^[ \\t]*${before}[ \\t]*:`).test(text));
+    if (found <= 0) throw new Error(`the step named ${JSON.stringify(name)} has no \`${before}:\` key to insert above — the file's shape moved`);
+    at = start + found;
+  }
+  put(dir, relative, [...lines.slice(0, at), line, ...lines.slice(at)].join("\n"));
 }

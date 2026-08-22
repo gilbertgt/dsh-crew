@@ -39,8 +39,10 @@ try {
 }
 
 // The other spelling of the same silence: `permissions:` written with nothing
-// under it. YAML reads that as an empty mapping, which grants no scope at all —
-// so it must be red for a named-scope reason, not green because the key exists.
+// under it. YAML reads that value as null — not as an empty mapping — and
+// either way it names no scope, so it must be red for a named-scope reason and
+// not green merely because the key is present. (The assertion below was always
+// right; this comment used to say "empty mapping", which it is not.)
 const second = tempRepo();
 try {
   replaceKeyBlock(second, PUBLISH_YML, "permissions", ["    permissions:"]);

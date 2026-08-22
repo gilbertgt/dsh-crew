@@ -94,9 +94,16 @@ export function keyIn(step, key) {
 }
 
 /**
- * The shell a step runs: the body of its `run:`, comments and all, flattened to
- * single spaces so a check does not depend on where a backslash wraps a line.
+ * The shell a step runs: the body of its `run:`, comments and all, **exactly as
+ * written** — line breaks, indentation and backslash continuations all kept.
  * Returns "" for a step that runs nothing.
+ *
+ * It flattens nothing. A caller that needs a command on one line — to match
+ * across a `\` wrap, say — pipes the result through `flat()` from
+ * docs/qa/lib/qa.mjs itself, the way case-06 does. This doc used to promise the
+ * flattening happened here; it never did, and anyone writing a regex against
+ * that promise would have written one that matched nothing and passed for the
+ * wrong reason.
  */
 export function shellOf(step) {
   const lines = step.block.split("\n");

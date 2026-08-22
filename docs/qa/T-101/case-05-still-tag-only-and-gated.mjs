@@ -67,16 +67,24 @@ if (checksStep) {
     keyRaw(checksStep, "if") === null,
     `if is ${JSON.stringify(keyRaw(checksStep, "if"))}`,
   );
+  // Design rule 7 asks for the suite before the publish AND in the same job.
+  // This case reads only the first half — a line-number comparison — and that is
+  // enough here for one reason: `publishSteps()` walks the steps of a single
+  // job, so both steps it compared came out of the same one. What it does NOT
+  // do is check that the file still HAS only one job; that is
+  // case-04-permissions-and-one-job.mjs, and nothing in this file reads it. Two
+  // jobs and this comparison would be meaningless, which is why the two cases
+  // are worth having side by side.
   check(
-    `${PUBLISH_YML}: \`Run checks\` runs BEFORE \`npm publish\``,
+    `${PUBLISH_YML}: \`Run checks\` runs BEFORE \`npm publish\`, in the one job \`publishSteps()\` walked`,
     checksStep.line < publishStep.line,
     `Run checks on line ${checksStep.line + 1}, the publish on line ${publishStep.line + 1}`,
   );
 }
 
-// The whole workflow is one job, so "before the publish" and "in the same job"
-// are the same sentence here. Said out loud because that is the only reason the
-// line above is enough.
+// Provenance is the other thing about this publish that must not quietly go
+// away: it is what ties the published tarball to this workflow run, and it costs
+// nothing to keep an eye on while the file is being changed around it.
 check(
   `${PUBLISH_YML}: the publish still carries \`--provenance\``,
   /npm publish[^\n]*--provenance/.test(codeOnly(shellOf(publishStep))),

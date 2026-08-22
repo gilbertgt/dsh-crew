@@ -1,6 +1,12 @@
-// T-101 DoD items 4 and 5, as far as reading can go: the notes step takes its
-// version from package.json, matches a heading that ends in a SPACE, writes
-// `release-notes.md`, and refuses loudly instead of going green.
+// T-101 DoD items 4 and 5, as far as READING can go. Every check below is about
+// the TEXT of the notes step's shell: which strings that shell contains. Not one
+// of them observes the shell behaving.
+//
+// Every check name in this file therefore says "the shell text …". That is not
+// pedantry. The green output of this case is what a person actually reads, and
+// they read the check names, not these comments — so a name like "0.1.0 cannot
+// match 0.10.0" would hand somebody the exact false belief this milestone is
+// most at risk from: that the shell was tested. It was not.
 //
 // READ THIS BEFORE ADDING TO THIS FILE. Nothing here executes that shell, and
 // nothing here may. The user chose that on 2026-08-22 (interview answer 6,
@@ -34,12 +40,12 @@ if (notes) {
   // unless the tag and package.json agree, so reading the tag again here would
   // only add a second way for the two to disagree.
   check(
-    `${PUBLISH_YML}: the notes step reads the version from package.json`,
+    `${PUBLISH_YML}: the shell text takes its version from package.json, not from the tag`,
     /require\(['"]\.\/package\.json['"]\)\.version/.test(shell),
     shell,
   );
   check(
-    `${PUBLISH_YML}: the notes step does not read the version off the tag (\`GITHUB_REF_NAME\`)`,
+    `${PUBLISH_YML}: the shell text names no \`GITHUB_REF_NAME\` (read, not run)`,
     !shell.includes("GITHUB_REF_NAME"),
     shell,
   );
@@ -49,14 +55,14 @@ if (notes) {
   // this line exists to keep out, and it is invisible in a diff unless somebody
   // is looking for it.
   check(
-    `${PUBLISH_YML}: it matches the heading \`## <version><SPACE>\`, so 0.1.0 cannot match 0.10.0`,
+    `${PUBLISH_YML}: the shell text searches for "## $VERSION " — the trailing space is there (nothing here runs it, so "0.1.0 cannot match 0.10.0" stays unverified)`,
     /"##\s\$VERSION\s"/.test(shell) || /'##\s\$VERSION\s'/.test(shell),
     shell,
   );
 
-  check(`${PUBLISH_YML}: it reads CHANGELOG.md`, /\bCHANGELOG\.md\b/.test(shell), shell);
+  check(`${PUBLISH_YML}: the shell text names CHANGELOG.md`, /\bCHANGELOG\.md\b/.test(shell), shell);
   check(
-    `${PUBLISH_YML}: it writes the notes to \`release-notes.md\`, the file the release step reads`,
+    `${PUBLISH_YML}: the shell text names \`release-notes.md\`, the file the release step reads (read, not run)`,
     /\brelease-notes\.md\b/.test(shell),
     shell,
   );
@@ -65,12 +71,12 @@ if (notes) {
   // the version can still be stopped. Not a warning, not a fallback to
   // auto-generated notes — a red run, before `npm publish`.
   check(
-    `${PUBLISH_YML}: it reports failure through \`::error::\`, so the run annotates what went wrong`,
+    `${PUBLISH_YML}: the shell text carries at least two \`::error::\` annotations (read, not run)`,
     (shell.match(/::error::/g) ?? []).length >= 2,
     `${(shell.match(/::error::/g) ?? []).length} occurrence(s)`,
   );
   check(
-    `${PUBLISH_YML}: it exits non-zero rather than going green with no notes`,
+    `${PUBLISH_YML}: the shell text carries an \`exit 1\` on the failure paths (read, not run)`,
     /(^|\s)exit 1(\s|$)/m.test(shell),
     shell,
   );
@@ -78,7 +84,7 @@ if (notes) {
   // human reads at 2am: "no such section" and "the section is empty" are
   // different mistakes with different fixes.
   check(
-    `${PUBLISH_YML}: its messages tell "no such section" apart from "the section is empty"`,
+    `${PUBLISH_YML}: the shell text has separate wording for "no such section" and "the section is empty" (read, not run)`,
     /no section/i.test(shell) && /empty/i.test(shell),
     shell,
   );
