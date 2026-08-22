@@ -288,8 +288,16 @@ prove a review happened — a `code: pass` typed by the PM passes it」。
 的理由（`tools/verify-mount.mjs` 里 T-44 那段注释）。所以要先有一个决定：这七种里哪些算
 「必须先跑 `npm test`」的发布，哪些不算。
 
-**该怎么办**：先决定（`CRD`），再改钉子，再补用例。今天这个仓库只用 `npm publish`，所以
-**它自己是被盖住的**；这一条讲的是「换一种发布方式之后会静默失去保护」。
+**该怎么办**：先决定（`CRD`），再改钉子，再补用例。
+
+**2026-08-22 更新（`gh-release` 作业）**：上面那句「今天这个仓库只用 `npm publish`」
+**已经不准了**。`.github/workflows/publish.yml` 现在同时有 `npm publish` **和**
+`gh release create` 两种说法。**这一条的实质没有变**：钉子仍然靠 `npm publish` 这一串
+把文件挑出来，那一串还在，所以这个文件仍然被钉着；guard 的 `branchPushTriggers()` 读到的
+仍然是 tag-only，答案一个字没变。变的是那个例子 —— 第二段说 `gh release create` 常出现在
+**手动 `workflow_dispatch:`** 工作流里、一放宽就会误红。现在本仓库自己有了一个
+**tag-only 的 `gh release create`**，所以将来那个 CRD 放宽词汇表的时候，
+**必须保证不把 `publish.yml` 判红**。这是安全评审在 M1 那一轮核出来的。
 
 **状态**：未关闭，等一个决定。
 
@@ -1916,3 +1924,95 @@ PM 去仓库里查，发现**做法已经存在但没有被写成规则**（PM �
 所以下一个 PM 遇到这件事，得自己想出这个机制，或者**读到那三条用例的注释才会知道**。
 
 **状态**：未关闭，**刻意的**。做法是可用的、验证过的；缺的是「它是一条规则」这件事。
+
+---
+
+## 54. 发版本时取 CHANGELOG 文字的那段 shell，没有任何测试执行过它
+
+**谁报的**：`crew-qa`，M1 一轮（`gh-release` 作业，2026-08-22）。
+
+**这不是疏忽，是用户听过代价之后选的**（面谈第 5、6 条，
+`docs/design/prd-2026-08-22-gh-release.md` 第三节）。PM 建议过把它写成
+`tools/changelog-notes.mjs`（能写单元测试、能写 QA 用例、`npm test` 每次都跑得到），
+也建议过写一个 harness 把 YAML 里那段 `run:` 抠出来用 bash 真跑。两条都被否掉，理由是简单。
+
+**缺口**：`.github/workflows/publish.yml` 第 4 步（`id: notes`）里那段 awk，
+负责从 `CHANGELOG.md` 里切出这一版的小节、写进 `release-notes.md`。
+**没有任何测试、任何用例、任何检查执行过它一行。** 它要处理的边界情况至少五种：
+
+- 小节标题找不到；
+- 小节在，但里面只有空行；
+- `0.1.0` 不能误匹配到 `0.10.0`（靠版本号后面那个空格）；
+- 最后一个小节后面没有下一个 `## ` 收尾；
+- 标题里的破折号是 `—`（em dash），不是 `-`。
+
+**`tools/verify-mount.mjs` 挡不住这些。** 它那两条 pin（T-100、T-102）判的是
+**步骤的位置、`id`、`if` 条件和 job 的 `permissions`**，判不了 shell 里面的逻辑 ——
+它自己的 `ok` 行就是这么说的。`docs/qa/T-101/case-07` 判的也只是那段 shell 的
+**文字**（版本从 `package.json` 读、匹配串带空格、有 `::error::` 和 `exit 1`），
+一样没有执行它。
+
+**第一次真的验证它，是第一次推 `v0.10.0` 的时候。**
+
+**最坏会怎样，以及为什么还能接受**：取文字排在 `npm publish` **前面**（面谈第 2 条），
+所以这段 shell 出错的结果是**包没发出去**，不是发错了。红的 run 看得见，改完 CHANGELOG
+重推一次 tag 就好。
+
+**连着的第二个洞（面谈第 3 条留下的）**：只有 `publish=true` 才建 release。
+所以一旦出现「npm 上已经有 `0.10.0`、GitHub 上却没有 `v0.10.0` 的 release」这个状态，
+**重推 tag 补不回来** —— 第二次 run 会发现版本已在 npm 上，设 `publish=false`，
+连建 release 那一步一起跳过。唯一的出路是人手敲一次：
+
+```sh
+gh release create v0.10.0 --title v0.10.0 \
+  --notes-file <(sed -n '/^## 0.10.0 /,/^## /p' CHANGELOG.md)
+```
+
+没有任何自动检查能发现这个状态：它要同时问 npm 和 GitHub 两个网站，而 QA 用例不上网。
+`gh` 在 runner 上到底在不在、`GITHUB_TOKEN` 的权限到底够不够，也在同一条船上 ——
+本机测不了，要真发一次 tag 才知道。
+
+**该怎么办**：不用做什么，除非用户改主意。改主意的路是把那段 shell 搬进
+`tools/changelog-notes.mjs`，那时它就能有单元测试和 QA 用例了 —— 那是一次
+scope 改动，要走 CRD。在那之前，**推 `v0.10.0` 的人要自己看一眼 GitHub 的 Releases 页**，
+确认文字真的是 `CHANGELOG.md` 里那一节。
+
+**状态**：未关闭，**刻意的**。用户 2026-08-22 面谈里逐条确认过。
+
+---
+
+## 55. 发布那个 job 的 `contents: write`，`npm publish` 那一步也带着跑
+
+**谁报的**：`crew-security-reviewer`，M1 一轮（`gh-release` 作业，2026-08-22），
+`crew-qa` 同一轮独立提了同一件事。
+
+**缺口**：`gh release create` 要写 release 页面，所以 `.github/workflows/publish.yml`
+那个 job 现在被授予 `contents: write`。**GitHub 的授权是 job 级的，不是 step 级的** ——
+所以同一个 job 里的每一步都带着这个写权限跑，包括 `npm install -g npm@latest`
+（从网络下载并执行没有钉版本的第三方代码）和 `npm publish`（会跑 lifecycle 脚本）。
+**没有任何用例判得了「权限是不是最小的」。**
+
+**为什么不拆成两个 job**：`tools/verify-mount.mjs` 规定发布用的 workflow
+**只能有一个 job**（`jobCount` 那一段）。那条规矩有真实事故背书：跨两个 job 的时候，
+「取文字排在发布前面」这种靠文件先后位置的判断什么都证明不了。拆开还要引一个长期有效的
+PAT 来代替 job 级的短命令牌，那更差。
+
+**安全评审的判断（M1，2026-08-22）**：**可以接受，不用改那条规矩。** 两条理由 ——
+能推 tag 触发这个 workflow 的人本来就对仓库有写权限，所以对**人**不是提权；
+而这个 job 改动之前就有 `id-token: write`，那把钥匙能铸出发 npm 包的凭据，
+比改仓库历史更值钱。最贵的钥匙本来就在屋里。
+
+**已经做了的一件事**：`actions/checkout` 加了 `persist-credentials: false`，
+这样那份写权限凭据不会在整个 job 里留在磁盘上给后面每一步用。
+（`actions/checkout` 从 v4 到 v7 默认都是 `true`，从 v6.0.0 起存放位置从 `.git/config`
+换成了 `$RUNNER_TEMP/git-credentials-<uuid>.config` —— 换个文件存不等于没存。
+出处见 `docs/research/actions-checkout-persist-credentials.md`。）
+
+**没做的两件事，写下来**：`npm install -g npm@latest` 没有钉版本，
+`id-token: write` 同样是 job 级的。两条都**在这次改动之前就存在**，
+不是这次带进来的，也没有便宜的修法。
+
+**该怎么办**：不用做什么。哪天 `jobCount` 那条规矩因为别的原因被重新决定，
+把这一条一起拿出来看。
+
+**状态**：未关闭，**刻意的**，安全评审判为可接受。

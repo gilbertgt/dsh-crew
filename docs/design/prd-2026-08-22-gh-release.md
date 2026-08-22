@@ -1,6 +1,6 @@
 # PRD：发版本的时候自动建 GitHub release（`gh-release` 作业）
 
-- **版本**：2
+- **版本**：3
 - **日期**：2026-08-22
 - **作业 slug**：`gh-release`
 - **提出人**：用户
@@ -220,7 +220,7 @@ bash docs/qa/run-all.sh
 
 | # | 怎么算做完 | 别人怎么验 |
 | --- | --- | --- |
-| 1 | `.github/workflows/publish.yml` 里有第七节表格中的 8 个步骤，顺序一致，`if` 条件一致 | T-100 的 pin（`node tools/verify-mount.mjs`）|
+| 1 | `.github/workflows/publish.yml` 里有第七节表格中的 8 个步骤，顺序一致，`if` 条件一致。**pin 只判得了其中一部分** —— 两个新步骤相对 `npm publish` 的前后、它们的 `id` 和 `if`。它**不**判第 4 步排在 `npm test` 前面，也**不**判 checkout / setup-node / guard 三步的相对顺序（代码评审 M1 第 8 条报的：原来这一行的措辞比机器宽） | pin 判它那部分；**整张 8 步表由 `docs/qa/T-101/case-01` 逐行判** |
 | 2 | job 的 `permissions` 是 `contents: write` ＋ `id-token: write`，仍然**只有一个 job** | `node tools/verify-mount.mjs` |
 | 3 | `publish.yml` 仍然是 **tag-only**（有 `tags: ["v*"]`，没有 `branches:`），仍然在发布前跑 `npm test` —— 设计规矩第 7 条一个字没松 | `node tools/verify-mount.mjs` |
 | 4 | `tools/verify-mount.mjs` 新增的 pin 能抓到四种坏改法（见 T-100 的 DoD） | T-100 的变异证明 ＋ QA 用例 |

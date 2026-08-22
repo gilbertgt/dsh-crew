@@ -3402,7 +3402,7 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 ---
 ## T-100 — 给 `verify-mount.mjs` 加 pin：盯住 `publish.yml` 里那两个新步骤
 
-- **Verdicts**：code: not run — 本仓库 0.9.0 起三轮评审在里程碑结尾并行跑一轮，M1 还没到那一步 ｜ security: not run — 同上 ｜ qa: not run — 同上（QA 也是里程碑一轮） ｜ doc: not run — 同上
+- **Verdicts**：code: pass ｜ security: pass ｜ qa: pass ｜ doc: not run — M1 的文档评审在最后一轮，等 T-104 落地后连同 PRD、gaps.md、两份 README、CLAUDE.md 一起看
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`tools/verify-mount.mjs`
@@ -3448,7 +3448,7 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 ---
 ## T-101 — 给 `publish.yml` 加两个步骤：取 CHANGELOG 文字、建 GitHub release
 
-- **Verdicts**：code: not run — 任务还没开始，评审在 M1 结尾那一轮 ｜ security: not run — 同上 ｜ qa: not run — 同上 ｜ doc: not run — 同上
+- **Verdicts**：code: pass ｜ security: pass ｜ qa: pass ｜ doc: not run — M1 的文档评审在最后一轮，等 T-104 落地后连同 PRD、gaps.md、两份 README、CLAUDE.md 一起看
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`.github/workflows/publish.yml`
@@ -3500,7 +3500,7 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 ---
 ## T-102 — 再加一条 pin：`publish.yml` 的 `permissions` 必须是 `contents: write`
 
-- **Verdicts**：code: not run — 本仓库 0.9.0 起三轮评审在里程碑结尾并行跑一轮，M1 还没到那一步 ｜ security: not run — 同上 ｜ qa: not run — 同上（QA 也是里程碑一轮） ｜ doc: not run — 同上
+- **Verdicts**：code: pass ｜ security: pass ｜ qa: pass ｜ doc: not run — M1 的文档评审在最后一轮，等 T-104 落地后连同 PRD、gaps.md、两份 README、CLAUDE.md 一起看
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`tools/verify-mount.mjs`
@@ -3564,3 +3564,103 @@ T-100 第一版的 `ok` 里带了那串 needle，于是在那四条用例的变�
 
 - **不许碰 `.github/workflows/publish.yml`。** 那是 T-101 的文件。
 - **不许为了让测试变绿而放宽 pin。** 红是这个任务的产出。
+
+---
+## T-103 — 修代码评审的阻塞发现：`- if:` 写在最前面时 pin 会漏判
+
+- **Verdicts**：code: not run — 修完跑第 2 轮代码评审 ｜ security: not run — 只改检查脚本，不动权限、不动 shell、不加依赖 ｜ qa: not run — 修完重跑 M1 那一轮的 35 个任务 ｜ doc: not run — 最后一轮文档评审一起看
+
+- **里程碑**：M1 ｜ **形状**：单人（solo）
+- **拥有的文件**：`tools/verify-mount.mjs`
+- **依赖**：T-100、T-102 已落地。**必须在 T-104 之前**（两个任务都会跑 `npm test`，不许同树并行 —— `ADR 0022`）。
+- **要求来源**：**代码评审第 1 轮**（阻塞），2026-08-22。第 2–5 条是同一轮的可选发现，一起修；第 6 条来自**安全评审**同一轮。
+
+## 报告的是什么（PM 自己复现过）
+
+`stepNamed` 接受 `- name:` 和 `name:` 两种写法，但读 `id:` 和 `if:` 的三个正则**只接受不带
+`- ` 的**。而 `stepOpenersOf` 把 `- if:`、`- id:` 也当成步骤开头，所以块的第一行可能就是
+`      - if: ...`。
+
+**PM 在 `git clone` 的副本上复现过，只挪了键的顺序：**
+
+```yaml
+      - if: false
+        name: Read the release notes from CHANGELOG.md
+        id: notes
+```
+
+`node tools/verify-mount.mjs` → **`all mount checks passed`**。那一步永远不会跑，
+release 说明永远取不到，而**唯一为这件事存在的那条 pin 说一切正常**。这是**假绿**。
+
+同一个写法在另外两处造成**误红**（把正确的文件报红）。按本文件房规
+「a gate that reds correct files teaches people to stop reading it」，误红也够阻塞级。
+
+## DoD（PM 写）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | **阻塞**：读 `id:` 和 `if:` 的三处正则都接受 `- ` 前缀，写法跟 `stepNamed` 那处一致（`(?:-[ \t]+)?`）。上面那个 `- if: false` 的复现**必须变红** | 变异证明 ①，用 PM 那份复现原样跑 |
+| 2 | 另外两种误红消失：`- id: notes` 写在最前面 → **不许**报「没设 id」；`- if: ...` 写在建 release 那一步最前面 → **不许**报「没有 if:」 | 变异证明 ②③ |
+| 3 | **旧代码里判 `npm test` 那步 `if:` 的地方有一模一样的洞**（评审说的可选那半条）。同一个 commit 里一起改成同样写法 —— 这个文件反复写过「同一个问题只许有一个答案」 | 人读 diff ＋ 变异证明 ④ |
+| 4 | `NOTES_STEP_ID` 这个常量要真的用进正则。今天 `notes` 手写了三遍，只有 fail 消息用常量 —— 改常量的人会得到「消息说要 `id: X`，检查的还是 `notes`」的静默漂移 | 人读 diff ＋ 变异证明 ⑤（改常量 → 检查跟着变） |
+| 5 | `checkReleaseNotesSteps` 补一道 `jobCount !== 1` 的闸，跟 `checkReleasePermissions` 已有的那道一致。跨两个 job 时文件先后位置什么都不证明 | 变异证明 ⑥（造一个两 job 的发布 workflow → 这条 pin 出声拒绝，不再打那句它没证明的绿话） |
+| 6 | **安全评审报的**：`permissions: write-all` 时那条 `ok` 会说一句不真的话（「授的是 `contents: write` 和 `id-token: write`」，实际授的是全部）。要么 `fail()`，要么把 `ok()` 改成如实说「这个文件授的是 `write-all`，本 pin 没有逐个 scope 读」。**跑 `npm publish` 和 `npm install -g` 的 job 用 `write-all` 是不可接受的**，而这条 pin 是今天唯一盯这块的东西 | 变异证明 ⑦ |
+| 7 | 两处注释要说实话：①「后面那一步通过 `steps.notes` 拿说明文字」—— **成品里没有任何东西读 `steps.notes`**，第 8 步读的是文件 `release-notes.md`；②「第一个 opener 以下的东西都属于步骤」—— 不成立，应说明「本 pin 只读第一个步骤之前的 job 头；写在 `steps:` 之后的 job 级 `permissions:` 它看不见」 | 人读 diff |
+| 8 | 删掉死代码：`stepBlockAt` 的默认参数 `openers = stepOpenersOf(text)`，两个调用点都显式传了值，从来没用过 | 人读 diff |
+| 9 | **变异证明至少 7 次**（第 1–6 条），都在抛弃副本上做。**外加一次假红测试**：正确的 `publish.yml` 加一句注释 → 仍绿 | 报告里 8 段真实输出 ＋ `git status --porcelain` |
+| 10 | 原有的 `ok(...)` 行只增不减，文字不变 | 报告里贴改动前后输出的 diff |
+| 11 | **`npm test` 全绿，35 个任务 35 个通过。** QA 在 M1 那一轮新写了 25 条用例（`docs/qa/T-100/`、`T-101/`、`T-102/`），它们**专门在判你这两条 pin 会不会咬人**，一条都不许弄红 | PM 在静树上跑，两次结果相同 |
+| 12 | 不改 `tools/verify-mount.mjs` 以外的任何文件。**尤其不许碰 `docs/qa/` 下面任何东西** —— 那是 QA 的文件，改它就是被判的一方改考题 | `git status --porcelain` |
+
+## 不许做的事
+
+- **不许碰 `.github/workflows/publish.yml`**（T-104 的文件）和 `docs/qa/`（QA 的文件）。
+- **不许放宽 pin 来省事。** 这次修的就是「pin 太松」。
+
+---
+## T-104 — 两处 workflow 的小修：awk 退出码撞号，和 checkout 的凭据
+
+- **Verdicts**：code: not run — 修完跑第 2 轮代码评审 ｜ security: not run — 第 2 条**就是**安全评审要的，修完由它复核 ｜ qa: not run — 修完重跑 35 个任务 ｜ doc: not run — 最后一轮文档评审一起看
+
+- **里程碑**：M1 ｜ **形状**：单人（solo）
+- **拥有的文件**：`.github/workflows/publish.yml`
+- **依赖**：**T-103 必须先落地**（不许同树并行跑 `npm test`）。
+- **要求来源**：第 1 条 **代码评审第 1 轮**（可选）；第 2 条 **安全评审第 1 轮**（可选）＋
+  `docs/research/actions-checkout-persist-credentials.md`（研究员查的出处）。
+
+## DoD（PM 写）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `awk` 的两个自定义退出码从 `2` / `3` 改成 `10` / `11`，两处 `[ "$STATUS" -eq … ]` 和注释里「Exit codes out of awk」那几行跟着改。**理由**：awk 家族（runner 上是 mawk）**读不到文件时自己退出 2** —— 今天 `CHANGELOG.md` 万一不存在，会打出「没有 `## X ` 这一节，去把说明写进 CHANGELOG.md」，把人指到错的修法上。改完之后任何非 10/11 的非零值都落进那条「awk exited $STATUS」的兜底话 | 手工证据 ①②③ |
+| 2 | `actions/checkout` 那一步加 `persist-credentials: false`。**只加一个 `with:` 键，不加步骤、不动那张 8 步表** | 人读 diff ＋ `node tools/verify-mount.mjs` |
+| 3 | **手工证据 ①**：`CHANGELOG.md` 存在、版本号找不到 → 打「没有这一节」那句话，`exit 1` | 报告里贴输出 ＋ `echo $?` |
+| 4 | **手工证据 ②**：小节只有空白 → 打「这一节是空的」那句话，`exit 1` | 同上 |
+| 5 | **手工证据 ③（这条是这次的重点）**：把 `CHANGELOG.md` **删掉或改名**，让 awk 自己退出 2 → **必须**落进兜底那句「awk exited 2」，**不许**再说「没有这一节」 | 同上 |
+| 6 | **手工证据 ④**：正常取 `0.9.0`，仍然是 173 行，跟 `sed -n '12,184p' CHANGELOG.md` 逐字节相同 | 同上 |
+| 7 | 8 个步骤的顺序、名字、`id`、`if` 一个字没变；仍然只有一个 job；仍然 tag-only；`permissions` 仍然是 `contents: write` ＋ `id-token: write` | `node tools/verify-mount.mjs` ＋ `bash docs/qa/T-101/run.sh` |
+| 8 | **`npm test` 全绿，35 个任务 35 个通过。** QA 的 `docs/qa/T-101/case-07` 在判那段 shell 的**文字**，改退出码会碰到它 —— 它红了就是你改错了，**不许去改那条用例** | PM 在静树上跑 |
+| 9 | 假 `CHANGELOG.md` 一律放临时目录；跑完仓库里不许留 `release-notes.md`（`.gitignore` 已经加了它，但还是别留） | `git status --porcelain` 只剩那一个文件 |
+| 10 | 不改 `.github/workflows/publish.yml` 以外的任何文件 | `git status --porcelain` |
+
+## 这个任务同样没有单元测试
+
+理由跟 T-101 一样：改的是 YAML，那段 shell 按用户面谈第 6 条不测
+（`docs/qa/gaps.md` 第 54 条）。上面那四段是**证据，不是测试**，不进任何测试套件。
+
+## 为什么第 2 条要加，理由是查过出处的不是记忆
+
+安全评审说「`actions/checkout` 默认 `persist-credentials: true`，会把 job 的令牌写进
+`.git/config` 留一整个 job」。PM 起研究员核过（`docs/research/actions-checkout-persist-credentials.md`）：
+
+- **默认在 v4/v5/v6/v7 里全都是 `true`，从来没改过** —— 前提成立；
+- **但从 v6.0.0 起，令牌不再写进 `.git/config`**，改写进
+  `$RUNNER_TEMP/git-credentials-<uuid>.config`，`.git/config` 里只留一条 `include.path`。
+  所以那条理由的**文件路径是错的**，「整个 job 都留在磁盘上给后面每一步用」这半句**仍然对**；
+- **这个 job 里没有任何一步跑 `git push`**（最后那步 `gh release create` 走自己 `env` 里的
+  `GH_TOKEN`），所以加了**不会弄坏任何东西**。
+
+## 不许做的事
+
+- **不许碰 `tools/verify-mount.mjs`**（T-103 的文件）和 `docs/qa/`（QA 的文件）。
+- **不许改那 8 个步骤的名字、`id`、顺序或 `if` 条件** —— 那是 PRD 第七节的契约。
