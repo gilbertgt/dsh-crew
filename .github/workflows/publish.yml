@@ -56,6 +56,17 @@ jobs:
           # now asks this of EVERY workflow that runs `npm test`, so the next
           # workflow to run the suite cannot be forgotten the way this one was.
           fetch-depth: 0
+          # The job token is not needed by any step here for git: nothing in this
+          # workflow runs `git push`, and the last step authenticates `gh` through
+          # its own GH_TOKEN env. Left at its default (`true` in v4 through v7 —
+          # it has never changed), checkout writes that token to disk for the
+          # whole job. Since v6.0.0 it lands in
+          # $RUNNER_TEMP/git-credentials-<uuid>.config rather than .git/config,
+          # with .git/config holding only an `include.path` to it — a different
+          # file, not no file: every later step, action and npm package in this
+          # job could still read it and push with it. See
+          # docs/research/actions-checkout-persist-credentials.md.
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
@@ -122,21 +133,29 @@ jobs:
           # awk's index(), not a regex, so the dots in a version number are
           # literal dots and nothing has to be escaped.
           #
-          # Exit codes out of awk: 0 notes written, 2 no such heading, 3 the
+          # Exit codes out of awk: 0 notes written, 10 no such heading, 11 the
           # section is there but holds nothing except blank lines.
+          #
+          # 10 and 11, not 2 and 3, because the awk family exits 2 ON ITS OWN
+          # when it cannot read the input file — mawk, which is what a GitHub
+          # runner has, does exactly that. With 2 meaning "no such heading", a
+          # missing or unreadable CHANGELOG.md printed "write the notes for
+          # $VERSION into CHANGELOG.md", pointing whoever reads it at the wrong
+          # fix. Every non-zero value that is not 10 or 11 now falls through to
+          # the "awk exited $STATUS" catch-all below, where it belongs.
           set +e
           awk -v want="## $VERSION " '
             !done && index($0, want) == 1 { found = 1; next }
             found && !done && index($0, "## ") == 1 { done = 1 }
             found && !done { print; if ($0 ~ /[^ \t]/) filled = 1 }
-            END { if (!found) exit 2; if (!filled) exit 3 }
+            END { if (!found) exit 10; if (!filled) exit 11 }
           ' CHANGELOG.md > release-notes.md
           STATUS=$?
           set -e
-          if [ "$STATUS" -eq 2 ]; then
+          if [ "$STATUS" -eq 10 ]; then
             echo "::error::CHANGELOG.md has no section starting with '## $VERSION ' — write the notes for $VERSION into CHANGELOG.md, then re-tag. Nothing has been published."
             exit 1
-          elif [ "$STATUS" -eq 3 ]; then
+          elif [ "$STATUS" -eq 11 ]; then
             echo "::error::the '## $VERSION' section of CHANGELOG.md is empty — write what changed in $VERSION, then re-tag. Nothing has been published."
             exit 1
           elif [ "$STATUS" -ne 0 ]; then

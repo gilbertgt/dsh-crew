@@ -3637,7 +3637,7 @@ release 说明永远取不到，而**唯一为这件事存在的那条 pin 说�
 | 3 | **手工证据 ①**：`CHANGELOG.md` 存在、版本号找不到 → 打「没有这一节」那句话，`exit 1` | 报告里贴输出 ＋ `echo $?` |
 | 4 | **手工证据 ②**：小节只有空白 → 打「这一节是空的」那句话，`exit 1` | 同上 |
 | 5 | **手工证据 ③（这条是这次的重点）**：把 `CHANGELOG.md` **删掉或改名**，让 awk 自己退出 2 → **必须**落进兜底那句「awk exited 2」，**不许**再说「没有这一节」 | 同上 |
-| 6 | **手工证据 ④**：正常取 `0.9.0`，仍然是 173 行，跟 `sed -n '12,184p' CHANGELOG.md` 逐字节相同 | 同上 |
+| 6 | **手工证据 ④**：正常取 `0.9.0`，仍然是 173 行，跟 `0.9.0` 那一节逐字节相同。**行号会漂** —— 本作业 `cb76e3b` 在 `CHANGELOG.md` 顶上加了 `## 0.10.0 — unreleased`（26 行），所以那一节从第 12–184 行挪到了第 38–210 行。用 `grep -n '^## ' CHANGELOG.md` 现算，别照抄旧行号（T-104 的工程师报的） | 同上 |
 | 7 | 8 个步骤的顺序、名字、`id`、`if` 一个字没变；仍然只有一个 job；仍然 tag-only；`permissions` 仍然是 `contents: write` ＋ `id-token: write` | `node tools/verify-mount.mjs` ＋ `bash docs/qa/T-101/run.sh` |
 | 8 | **`npm test` 全绿，35 个任务 35 个通过。** QA 的 `docs/qa/T-101/case-07` 在判那段 shell 的**文字**，改退出码会碰到它 —— 它红了就是你改错了，**不许去改那条用例** | PM 在静树上跑 |
 | 9 | 假 `CHANGELOG.md` 一律放临时目录；跑完仓库里不许留 `release-notes.md`（`.gitignore` 已经加了它，但还是别留） | `git status --porcelain` 只剩那一个文件 |
