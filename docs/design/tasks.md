@@ -3402,7 +3402,7 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 ---
 ## T-100 — 给 `verify-mount.mjs` 加 pin：盯住 `publish.yml` 里那两个新步骤
 
-- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 2 轮）
+- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 3 轮）
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`tools/verify-mount.mjs`
@@ -3448,7 +3448,7 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 ---
 ## T-101 — 给 `publish.yml` 加两个步骤：取 CHANGELOG 文字、建 GitHub release
 
-- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 2 轮）
+- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 3 轮）
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`.github/workflows/publish.yml`
@@ -3500,7 +3500,7 @@ PM 给的两条路是「不动那 17 处」和「清掉那 17 处」。用户提
 ---
 ## T-102 — 再加一条 pin：`publish.yml` 的 `permissions` 必须是 `contents: write`
 
-- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 2 轮）
+- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 3 轮）
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`tools/verify-mount.mjs`
@@ -3568,7 +3568,7 @@ T-100 第一版的 `ok` 里带了那串 needle，于是在那四条用例的变�
 ---
 ## T-103 — 修代码评审的阻塞发现：`- if:` 写在最前面时 pin 会漏判
 
-- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 2 轮）
+- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮）｜ qa: pass ｜ doc: pass（第 3 轮）
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`tools/verify-mount.mjs`
@@ -3620,7 +3620,7 @@ release 说明永远取不到，而**唯一为这件事存在的那条 pin 说�
 ---
 ## T-104 — 两处 workflow 的小修：awk 退出码撞号，和 checkout 的凭据
 
-- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮，`persist-credentials` 那半是它要的，它复核后结掉了自己第 1 轮那条发现）｜ qa: pass ｜ doc: pass（第 2 轮）
+- **Verdicts**：code: pass（第 3 轮）｜ security: pass（第 2 轮，`persist-credentials` 那半是它要的，它复核后结掉了自己第 1 轮那条发现）｜ qa: pass ｜ doc: pass（第 3 轮）
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`.github/workflows/publish.yml`
@@ -3668,7 +3668,7 @@ release 说明永远取不到，而**唯一为这件事存在的那条 pin 说�
 ---
 ## T-105 — 第五处同类洞：`- continue-on-error:` 写在最前面时，测试门整个躲过 pin
 
-- **Verdicts**：code: pass（第 4 轮）｜ security: pass（第 3 轮，判为「一次真的加固」）｜ qa: pass ｜ doc: pass（第 2 轮）
+- **Verdicts**：code: pass（第 4 轮）｜ security: pass（第 3 轮，判为「一次真的加固」）｜ qa: pass ｜ doc: pass（第 3 轮）
 
 - **里程碑**：M1 ｜ **形状**：单人（solo）
 - **拥有的文件**：`tools/verify-mount.mjs`

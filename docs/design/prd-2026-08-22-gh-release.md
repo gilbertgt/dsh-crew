@@ -1,6 +1,6 @@
 # PRD：发版本的时候自动建 GitHub release（`gh-release` 作业）
 
-- **版本**：5
+- **版本**：6
 - **日期**：2026-08-22
 - **作业 slug**：`gh-release`
 - **提出人**：用户
@@ -261,7 +261,7 @@ PM 会在第 13 步之前把这个问题单独拿给你决定，不在这里替�
 然后去修一个不存在的缺陷 —— 这正是本仓库 `ADR 0022`
 （`no-engineer-runs-npm-test-in-a-shared-tree`）记下来的那件事。
 
-**M1 实际跑了六个任务，全部串行。** 上面那张表是开工时的计划。后来加的三个都写在
+**M1 实际跑了六个任务，全部串行。** 上面那张表是开工时的计划。后来加的四个都写在
 `docs/design/tasks.md` 里：`T-102`（补 `permissions` 的 pin —— PM 写 DoD 时漏的，
 T-100 的工程师报回来的）、`T-103`（代码评审的阻塞发现：`- if:` 写在最前面时 pin 漏判）、
 `T-104`（awk 退出码撞 mawk 自己的 2 ＋ `persist-credentials: false`）、
