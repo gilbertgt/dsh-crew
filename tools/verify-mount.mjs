@@ -174,12 +174,32 @@ const publishCommand = /^[ \t]*(?:(?:-[ \t]+)?run:[ \t]*)?npm publish\b/m;
 //
 // A step opens with a list item whose first key is one of the keys a step can
 // legally start with. It is not a YAML parser: it cannot tell a `- name:` in a
-// `run: |` body from a real one, and a step whose first key is something else
-// (`continue-on-error:` first, say) is not seen as an opener at all. What it is
-// good for is exactly what both callers need — reading one step's settings
-// without borrowing the neighbouring step's.
+// `run: |` body from a real one, and a step whose first key is a key NOT in the
+// list below is not seen as an opener at all. What it is good for is exactly
+// what every caller needs — reading one step's settings without borrowing the
+// neighbouring step's.
+//
+// `continue-on-error` is in the list, and it is the fifth key put there the hard
+// way. It used to be the comment's own example of a key this function does not
+// know, and that example was a live false green: written first,
+//
+//     - continue-on-error: true
+//       name: Run checks
+//       run: npm test
+//
+// opened no step, so the test step's block started at the step ABOVE it, and the
+// one pin that exists for "the release cannot skip its own tests" read a block
+// that was not the test step's and called the release tested. A tag would then
+// publish with `npm test` red. Adding the key here is only half of that fix —
+// the pin also has to read the key in both spellings, which is what `STEP_KEY`
+// below is for; the key table alone cuts the right block and still cannot see a
+// `- continue-on-error:` line inside it (T-105).
+//
+// Adding a key here changes NOTHING about the plain spelling: only a line that
+// already begins with `- ` can be an opener, so `continue-on-error:` written
+// under a `- name:` is the same key of the same step it always was.
 const stepOpenersOf = (text) =>
-  [...text.matchAll(/^[ \t]*-[ \t]+(?:name|uses|run|id|if|shell|env|with):/gm)].map((match) => match.index);
+  [...text.matchAll(/^[ \t]*-[ \t]+(?:name|uses|run|id|if|shell|env|with|continue-on-error):/gm)].map((match) => match.index);
 /**
  * The one step that the character at `index` belongs to: from the list item
  * that opens it to the one that opens the next step, or to the end of the file
@@ -199,9 +219,12 @@ const stepBlockAt = (text, index, openers) => {
 
 // ------------------------------------ one KEY of one step, in both spellings.
 // A step's first key is written on the list item itself — `- if: false`, `- id:
-// notes`, `- name: …` — and every other key of that step is a plain line under
-// it. YAML reads the two as the same key of the same step, and so must every
-// pin here.
+// notes`, `- continue-on-error: true`, `- name: …` — and every other key of that
+// step is a plain line under it. YAML reads the two as the same key of the same
+// step, and so must every pin here. Since T-105 every pin here does: `if:`,
+// `id:`, `name:` and `continue-on-error:` are all read through this fragment,
+// and `continue-on-error` was the last one still reading only the plain
+// spelling.
 //
 // Written ONCE, in this one fragment, because the file has already paid for the
 // other way. `stepNamed` below accepted both spellings while the three pins that
@@ -213,19 +236,46 @@ const stepBlockAt = (text, index, openers) => {
 // condition that was not there at all. A gate that reds correct files teaches
 // people to stop reading it (T-46, T-103).
 //
-// This cannot borrow a neighbour's key. Every one of `- if:`, `- id:` and
-// `- name:` is itself a step opener above, so inside a block cut by
-// `stepBlockAt` such a line can only be the block's own first line; every line
-// below it belongs to this step.
+// The `- ` SPELLING cannot borrow a neighbour's key. Every one of `- if:`,
+// `- id:`, `- name:` and `- continue-on-error:` is itself a step opener above,
+// so inside a block cut by `stepBlockAt` such a line can only be the block's own
+// first line; every line below it belongs to this step.
+//
+// That argument covers the `- ` spelling and NOTHING ELSE, which is narrower
+// than it used to be written here. The plain spelling has no opener behind it:
+// a `continue-on-error:` or an `if:` written inside a step's own `run: |` body
+// is a line of shell to YAML and a key of that step to these pins, because this
+// is a text scan and not a parser. It is not borrowed from a neighbour — the
+// block really is this step's — it is simply read as a setting when it is not
+// one. No workflow in this repository writes such a line today, and the
+// direction is the safe one: the step would be reported as skippable or as
+// allowed to fail when it is neither, which is a red on a correct file and gets
+// looked at, not a green on a broken one (T-105).
 const STEP_KEY = "^[ \\t]*(?:-[ \\t]+)?";
 /**
- * One key of ONE step block, matched on its own line in either spelling, with
- * the rest of that line captured. `null` when the block does not carry it.
+ * EVERY line of ONE step block carrying `key`, each matched in either spelling,
+ * with the rest of its line captured. `[]` when the block does not carry it.
+ *
+ * Every line and not just the first, because a step may legally repeat a key and
+ * the pins here judge the value: `continue-on-error: false` followed by
+ * `continue-on-error: true` is a step that may fail.
  *
  * @param block - one step, as cut by `stepBlockAt`
  * @param key - the key's name, a plain word
  */
-const stepKeyLine = (block, key) => new RegExp(`${STEP_KEY}${key}:[ \\t]*([^\\n]*)$`, "m").exec(block);
+const stepKeyLines = (block, key) => [...block.matchAll(new RegExp(`${STEP_KEY}${key}:[ \\t]*([^\\n]*)$`, "gm"))];
+/**
+ * The FIRST line of ONE step block carrying `key`, in either spelling, with the
+ * rest of that line captured. `null` when the block does not carry it.
+ *
+ * Built on `stepKeyLines` rather than beside it: one question, one answer. Two
+ * regexes spelling the same key line is exactly the shape that cost this file
+ * T-103 and T-105.
+ *
+ * @param block - one step, as cut by `stepBlockAt`
+ * @param key - the key's name, a plain word
+ */
+const stepKeyLine = (block, key) => stepKeyLines(block, key)[0] ?? null;
 
 // ------------------------------------------- everything under `jobs:`, and how
 // many jobs that is, written ONCE for the same reason the two functions above
@@ -473,7 +523,15 @@ function checkPublishWorkflow(rel, release) {
   // Read from the step block, so a `continue-on-error:` on a neighbouring step
   // is neither borrowed as an exemption nor blamed on this one. Every line in
   // the block is read, not just the first: `false` followed by `true` is red.
-  const continueOnError = [...testStepBlock.matchAll(/^[ \t]*continue-on-error:[ \t]*([^\n]*)$/gm)]
+  //
+  // Read through the shared step-key reader, so `- continue-on-error: true`
+  // written as the step's FIRST key is the same setting as one written under the
+  // name. It was not, until T-105, and that was the worst false green this pin
+  // has had: the step opener table did not know the key either, so the block was
+  // cut from the step ABOVE and the value could not be seen at all. The run went
+  // green, and the sentence it printed — `runs npm test — unconditionally` —
+  // was the opposite of the truth. A v* tag would publish with the suite red.
+  const continueOnError = stepKeyLines(testStepBlock, "continue-on-error")
     .map((match) => match[1].replace(/[ \t]+#.*$/, "").trimEnd());
   const mayFailAt = continueOnError.findIndex((value) => !/^(?:false|False|FALSE)$/.test(value));
   if (onAt === -1 || (onInline.length === 0 && pushAt === -1)) {
@@ -724,7 +782,7 @@ if (publishers.length === 0) {
   // draft of this line did exactly that. Keep this sentence distinguishable from
   // that one (T-100).
   if (failures === failuresBefore) {
-    ok(`the GitHub release steps are in place in ${publishers.length} publishing workflow of ${workflowNames.length} file(s) under .github/workflows/ (${publishers.map((workflow) => workflow.name).join(", ")}): each reads its notes before the publish (a step named "${NOTES_STEP_NAME}", id ${NOTES_STEP_ID}, no \`if:\`) and creates the release after it, gated on steps.guard.outputs.publish == 'true' — the shell inside those two steps is read by no check anywhere (T-100, docs/qa/gaps.md)`);
+    ok(`the GitHub release steps are in place in ${publishers.length} publishing workflow of ${workflowNames.length} file(s) under .github/workflows/ (${publishers.map((workflow) => workflow.name).join(", ")}): each reads its notes before the publish (a step named "${NOTES_STEP_NAME}", id ${NOTES_STEP_ID}, no \`if:\`) and creates the release after it, gated on steps.guard.outputs.publish == 'true' — no check anywhere runs the shell inside those two steps — docs/qa/T-101/case-07 reads its text, nothing executes it (T-100, docs/qa/gaps.md)`);
   }
 }
 
@@ -907,8 +965,13 @@ if (publishers.length === 0) {
   // on the job that runs `npm publish` and `npm install -g` pass unremarked,
   // with this pin the only thing in the repository looking at those grants at
   // all. Nothing anywhere judges whether that grant is too wide (T-103).
+  //
+  // Being printed before the counter is why the caveat below talks about the
+  // vouch CONDITIONALLY ("where this pin does vouch below"). On a red run this
+  // line prints and the vouch does not, and the first wording sent the reader
+  // looking for a line that is not there (T-105).
   if (writeAllPublishers.length > 0) {
-    ok(`${writeAllPublishers.join(", ")}: the grant read is the \`write-all\` shorthand, which gives every scope write access — the release works, and this pin did NOT read the two scopes one by one there, so the line below vouches for those two being covered and for nothing being narrow. Whether a job that runs \`npm publish\` and \`npm install -g\` should hold every scope is a question no check here asks (T-102, T-103, docs/qa/gaps.md item 55)`);
+    ok(`${writeAllPublishers.join(", ")}: the grant read is the \`write-all\` shorthand, which gives every scope write access — the release works, and this pin did NOT read the two scopes one by one there, so where this pin does vouch below, that green covers those two scopes and says nothing about anything being narrow. Whether a job that runs \`npm publish\` and \`npm install -g\` should hold every scope is a question no check here asks (T-102, T-103, docs/qa/gaps.md item 55)`);
   }
   // Only the files in `publishers` are read, and that matters: test.yml is
   // granted `contents: read` on purpose and is completely correct that way. A
