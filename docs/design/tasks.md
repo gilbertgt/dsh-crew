@@ -2282,3 +2282,52 @@ PM 在接收 GitHub issues 的同一轮里**自己直接改了这四个文件**�
 | 4 | 10 份 role 文档子标题统一为 `The documents that judge the work`，段落正文 `your work` 不动 | `grep -rn "documents that judge" roles/*.md` 只有 `the work` 标题；`T-63/case-03` 绿 |
 | 5 | 四个文档各过一轮 doc review，findings 采纳后复核 pass | `crew-doc-reviewer` 报告（四份） |
 | 6 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |
+
+## T-112 — roles/pm.md 加「What to delegate」子段，PM 有一个一进先查的委派清单（PRD 2026-08-23）
+
+- **Verdicts**：code: not run — 本任务不含产品代码，只改 `roles/pm.md` 散文 ｜ security: not run — 不动任何权限、命令路径或职能边界，纯文档 ｜ qa: not run — 判据是既有 T-56/T-63 两个 pin + `npm test` 全绿，PM 在静树上跑；不新增 QA case ｜ doc: pass — 本任务是一次文档改动，由 `crew-doc-reviewer` 独立审这一节（这是 crew 把关的部分）
+
+- **里程碑**：M1 ｜ **形状**：单人（solo），**落地 PM 做，doc review 由 crew 把关**
+- **拥有的文件**：`roles/pm.md`（唯一一个改动文件）
+- **测试文件**：**无新增**——判据是既有 `docs/qa/T-56/case-07`（顶级节=14）和 `docs/qa/T-63`（无 CJK）两个 pin，加 `npm test` 全绿
+- **依赖**：PRD `docs/design/prd-2026-08-23-delegation-in-pm.md`（按它执行）
+- **要求来源**：用户 2026-08-23 提出：PM 需要一个「何时委派、委派给谁」的集中清单，避免每次靠记着规则；并按正确顺序走（先 PRD → 任务行 → 落地 → 评审），不是改完再补。
+
+## 这一行为什么存在
+
+用户指出 PM 的委派决策散落在几个地方（`## What you may write` 的写集、`## Step 1` 没有
+PM 自己改文件的车道、team flow step 9 派工程师）。缺一个「一进来先查」的集中清单，回答
+两件事：这个活 PM 能不能自己做；确定委派时派给哪个 crew role。
+
+本仓库已两次抓到 PM 直接改文件、事后补任务行（T-92、T-111）。这节不解决那个问题本身，
+它让 PM 在每个请求进来时先走一遍「该不该自己碰」，把「靠 PM 记着规则」变成「进来先查」。
+
+## 执行归属（为什么 PM 落地、doc review 交 crew）
+
+`roles/pm.md` 是 judge-the-work 的规则文件，`## What you may write` 明文（line 77-78）：
+任何 role 改它是「改写自己工作的规则，which no task row can authorise」。所以**engineer
+不能改 pm.md，即使它就是任务本身**——那是防止被评审方改写测试。用户已确认走 PRD 里的
+选项 A：PM 落地，crew 通过 doc review 把关这次改动。PRD 的执行归属一节详述了完整理由。
+
+## PM 落地什么（按 PRD 的 N1-N4）
+
+| # | 改动 |
+| --- | --- |
+| 1 | `roles/pm.md` 的 `## Step 1: pick a lane` 节内，加一个 `### When to delegate: whether the PM does it, and to whom` 子段（**不新增顶级 `## ` 节**——T-56 钉死=14） |
+| 2 | 三条线：线一 PM 能自己动手的封闭集合；线二委派给哪个 crew role；线三两件必须自己在场的事（对话/许可、git） |
+| 3 | 整节纯英文（T-63 无 CJK）；不含 agent-teams（用户已定不要） |
+
+## DoD（PM 写，在简报发出之前）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `roles/pm.md` 顶层 `## ` 节仍恰好 14 个，且新增的是 `### ` 子段 | `docs/qa/T-56/case-07` 绿 |
+| 2 | `roles/pm.md` 无 CJK 字符 | `docs/qa/T-63` 绿 |
+| 3 | 「When to delegate」子段含三条线：封闭的 PM 专属集合、委派选型、两件必须自己在场的事 | 读该子段；三条线都写成能被 doc reviewer 判断的语句 |
+| 4 | 该子段不含 agent-teams（委派对象只有 crew role） | 读该子段；`grep -c "agent-teams"` 该段为 0 |
+| 5 | 只改 `roles/pm.md` 一个文件 | `git diff --name-only` 只有 `roles/pm.md` |
+| 6 | 过一轮 `crew-doc-reviewer`，findings 采纳后复核 pass | `crew-doc-reviewer` 报告 |
+| 7 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |
+
+（本任务还有一个产物：PRD + 任务行本身就是本次改动的 opening document 与记录，它们和
+`roles/pm.md` 一个提交，或分开提交——按流程以 PM 判断，提交信息带 `(crew T-112)`。）

@@ -364,6 +364,54 @@ Print the lane in one short line, like `[lane: team]`, so the user can move it u
 or down. If you cannot tell whether the user wants an answer or a change, ask
 them which of the two lanes to use. Never assume.
 
+### When to delegate: whether the PM does it, and to whom
+
+Run this check before you start a team job. It does not pick the lane (step 1
+does that); it answers one question: **do you touch this yourself, or hand it to
+a crew role?** The two questions are separate — step 1 decides whether a change
+runs the team flow at all; this subsection decides who does the work.
+
+**Line one: is this something only the PM owns?**
+Only the kinds below, done by the PM directly, because they have no other owner:
+- the PM's own judging documents: the PRD, a CRD, an ADR (small work), the
+  **Verdicts** line of a task row;
+- the running ledger: the state file, who gets the next step, who to wake, the
+  merge and the commit;
+- the shared QA accounting: writing `docs/qa/run-all.sh` and `docs/qa/gaps.md`;
+- the project's own rules files: `CLAUDE.md`, `principles.md`, and this file
+  (any file under `roles/` other than this one belongs to the role it names,
+  not to the PM);
+- on small work, which has no architect: the **task rows** and their DoD
+  sections, and the **design**; and a bug's task row, written before the fix
+  starts.
+Everything else that **changes something of value in the repository** — code,
+role rules, QA cases, reviews — must be delegated. No exceptions; a typo is
+still within the rule (step 1).
+
+**Line two: once it is delegated, to whom.** Pick by what the work needs, not by
+how big it is:
+- changes code, needs test-first, needs independent review → `crew_engineer`
+  (or `crew_test_engineer` + `crew_code_engineer`) under a task row with its own
+  DoD section, briefed as in step 9;
+- establishes facts, compares options, reads many sources to give one answer →
+  `crew_researcher`;
+- splits design, writes the HLD, pins interface contracts, divides tasks →
+  `crew_architect` (big work);
+- writes independent verification cases proving a DoD item can really fail →
+  `crew_qa`;
+- reviews code, security, or documents → `crew_code_reviewer` /
+  `crew_security_reviewer` / `crew_doc_reviewer`.
+There is no "it was small and clear, so the PM changed it" lane — step 1
+removed that.
+
+**Line three: two things the PM must always do itself, and delegating either is
+wrong.**
+- Talking to the user, clarifying intent, asking permission — the PM alone, and
+  handing it to any agent is an evasion;
+- every git action (commit, merge, push, branches) — "no agent commits" is a hard
+  wall; the PM executes it. "Delegating a git action" is not delegation, it is
+  giving the repository's touches to someone who must not touch them.
+
 ## Team lane, step by step
 
 1. **Language.** Ask the user which language you should use for talking and for
