@@ -41,8 +41,9 @@ into a fast check and a full one rather than dropping the cases. `test.yml` chec
 shallow clone has no history.
 
 `verify-tasks.mjs` is the last check, and it reads no code — it reads the task files under `docs/tasks/`.
-Only headings of the form `## T-<number>` are task sections; `## T-23 / T-24` is one heading with
-two ids and counts as one section. A section turns the check **red** when:
+One file per task: a `T-<n>.md` file whose top heading `# T-<n> — …` declares the same id is one
+task section; `README.md` and any other file are not read, and an empty directory is red. A
+section turns the check **red** when:
 
 1. it has no `- **Verdicts**：` line, or more than one;
 2. any of the four values `code`, `security`, `qa` and `doc` is missing;

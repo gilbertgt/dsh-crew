@@ -66,7 +66,8 @@ function parseTasksDir() {
     const headingIndex = lines.findIndex((line) => /^#\s/.test(line));
     const heading = headingIndex === -1 ? null : FILE_HEADING.exec(lines[headingIndex]);
     if (!heading || heading[1].toLowerCase() !== id.toLowerCase()) {
-      fail(`${label} has no \`# ${id} — …\` top heading, so it is not a task section — the file's shape moved (CRD 0011)`);
+      const where = headingIndex === -1 ? "" : ` (line ${headingIndex + 1})`;
+      fail(`${label}${where} has no \`# ${id} — …\` top heading, so it is not a task section — the file's shape moved (CRD 0011)`);
       continue;
     }
 
