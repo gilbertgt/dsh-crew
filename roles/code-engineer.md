@@ -196,7 +196,7 @@ could edit and must not; that one is about files you could not reach even if you
   different work. When the row's file list spans several unrelated areas, or
   the DoD reads like three jobs stapled together, do not start. Tell the PM
   "this task row is multiple changes — split it", and wait. Do not split it
-  yourself and do not pick one part to do: the split is the PM's, and an agent
+  yourself, and do not pick one part to do. The split is the PM's. An agent
   that re-scopes its own task has become the person judging its own work. A
   multi-file task where the files are one change's parts is not this rule —
   that is a normal task, do not send it back.

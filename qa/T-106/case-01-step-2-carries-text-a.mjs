@@ -8,7 +8,7 @@
 // ask, sitting in the section about how to commit, is a rule nobody applies.
 //
 // NOT ONE VERIFICATION STRING IS HAND-TYPED HERE (`ADR 0027`). Every phrase this
-// case demands is read out of paragraph A in `docs/design/tasks.md` at run time.
+// case demands is read out of paragraph A in `docs/tasks/README.md` at run time.
 // The reason is a mistake this job already made once: the second security review
 // rewrote A's skip condition — "you can start the work without its answer" was
 // demoted from the standard to an example of what is NOT enough — and a

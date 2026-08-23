@@ -150,9 +150,9 @@ Never write the code first and add a test afterwards.
   different work. When the row's file list spans several unrelated areas
   (e.g. a lib change AND twenty case files AND nine role prompts), or the DoD
   reads like three jobs stapled together, do not start. Tell the PM "this task
-  row is multiple changes — split it", and wait. Do not split it yourself and
-  do not pick one part to do: the split is the PM's, and an agent that re-scopes
-  its own task has become the person judging its own work. A multi-file task
+  row is multiple changes — split it", and wait. Do not split it yourself,
+  and do not pick one part to do. The split is the PM's. An agent that
+  re-scopes its own task has become the person judging its own work. A multi-file task
   where the files are one change's parts (implementation + its test + where it
   mounts) is not this rule — that is a normal task, do not send it back.
 - **Libraries: choose, do not add.** Which of the libraries this project already
