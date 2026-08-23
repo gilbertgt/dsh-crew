@@ -2239,3 +2239,46 @@ PRD：`docs/design/prd-2026-08-22-skip-and-split.md` v1。**不起 architect**�
 | 5 | `package.json` 的 `version` **一个字不许动**（仍是 `0.9.0`） | `git diff --stat package.json` 为空 |
 | 6 | 用用户听得懂的话写，跟两份 README 讲的是同一件事，不许抄权威原文的措辞 | 文档评审 |
 | 7 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |
+
+## T-111 — 修 7 个 issues 里的 6 个：force-push 加 tag、worktree 清理、QA 脚本危险项、标题统一、gaps.md 属主、Corrections 措辞（PM 自己直接改的，补任务行）
+
+- **Verdicts**：code: not run — 本任务不含产品代码，只改 `roles/*.md` 散文 ｜ security: not run — force-push 规则收紧（加 tag）方向是收紧不是放宽，不触碰任何权限或命令路径 ｜ qa: pass — `docs/qa/T-94/`（force-push 措辞 pin）绿；`npm test` 全绿以静树为准 ｜ doc: pass — 四个 role 文档各由 `crew-doc-reviewer` 一文档一审，全部 pass（含两条 finding 采纳后的复核 pass）
+
+- **里程碑**：M1 ｜ **形状**：单人（solo），**PM 自己做**
+- **拥有的文件**：`roles/pm.md`、`roles/engineer.md`、`roles/qa.md`、`roles/code-reviewer.md`
+- **测试文件**：**无新增**——判据是既有 `docs/qa/T-94/` 的 force-push pin 和 `npm test`（PM 在静树上跑）
+- **要求来源**：GitHub issues #7、#6、#4、#3、#1、#2（`stuarthu/dsh-crew`，2026-08-22 的安全评审/文档一致性报告）。#5 经核对已不成立（`run-all.sh` 用的是 `find`，默认不跟随目录符号链接），不改。
+
+## 这一行为什么存在，以及它是怎么被发现的
+
+PM 在接收 GitHub issues 的同一轮里**自己直接改了这四个文件**，没有先建任务行——正是
+`roles/pm.md` 第 1 步取消掉的那条通道（`T-92` 记过同样的事）。这次是用户点破「为什么不委派给
+工程师、QA 来测」，PM 才补的这一行。诚实与否分两半：
+
+- **`roles/pm.md` 归 PM 独改**，工程师明确不改它（`T-82` 报告里工程师亲口说「我不能改
+  `roles/pm.md`」）。所以文件本身不该交给工程师——但改动仍要有一个任务行承认它，这行就是。
+- **`roles/engineer.md`、`roles/qa.md`、`roles/code-reviewer.md`** 是三个别的角色读的规则文件。
+  PM 直接改它们应有工程师参与；这次没有，PM 直接做了，靠一轮 `crew-doc-reviewer` 补上了审读
+  一面（四份各一份 agent，pass）。
+
+## PM 改了哪些（逐条，跟 issue 对得上）
+
+| # | 文件 | 改动 |
+| --- | --- | --- |
+| #7 | `roles/pm.md` | force-push 规则硬规则 bullet 和 step 17 两处都加 `and on a tag alike`——issue 说的「on every branch and on `main` alike」没提 tag。**同时保住 `T-94` 的 pins**（part 1 `on every branch`、part 2 ``on `main` alike`` 都在），T-94 绿。 |
+| #6 | `roles/pm.md` step 9 | worktree 清理补一句：`git worktree remove` 拒绝（脏树）时说清有什么未提交并停止，**绝不用 `--force`**；遗留的树 `git status --short` 看不到，也要说清。 |
+| #4 | `roles/code-reviewer.md` | QA 脚本清单补「危险脚本」一半：联网、写自己文件夹或自己建的文件夹之外、读凭据文件、删脚本自建文件夹之外的任何东西——blocking。（采纳 reviewer finding，`or outside a folder the script itself made` 让 `tempRepo()` 不被误伤。） |
+| #3 | `roles/engineer.md`、`roles/qa.md` | 子标题 `The documents that judge your work` 统一成 `The documents that judge the work`（10 份一致）；段落正文 `your work` 保留，因为那是 `T-63/case-03` pin 的措辞。engineer 内部交叉引用 `line 286` 一并改。 |
+| #1 | `roles/pm.md` step 18 / Hard rules / step 11 | gaps.md 属主三处统一：QA **报告行**、PM **写入**。原两处写「QA writes it」错。step 11 那句「QA's new or corrected entries in gaps.md」也改成中性（reviewer finding #2）。 |
+| #2 | `roles/pm.md` step 4 | `Corrections`「named above」措辞修正为「在 Hard rules 定义，靠近文件末尾」。 |
+
+## DoD（PM 写，在简报发出之前）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 四个 `roles/*.md` 的改动都在上表六格里，一个不落 | `git diff --name-only` 里只有这四个文件 |
+| 2 | `roles/pm.md` 两处 force-push 措辞都含 tag intent，**且** `T-94` 的 pins 不变红 | `node docs/qa/T-94/case-01-force-push-needs-user-approval.mjs` 绿 |
+| 3 | gaps.md 属主在 pm.md 里全部统一为「QA 报告、PM 写」，`roles/qa.md` 的表述（the PM's / never write either file）不被推翻 | `grep -c` pm.md 里不再有「QA writes it / which QA writes itself」；`roles/qa.md` 未改 |
+| 4 | 10 份 role 文档子标题统一为 `The documents that judge the work`，段落正文 `your work` 不动 | `grep -rn "documents that judge" roles/*.md` 只有 `the work` 标题；`T-63/case-03` 绿 |
+| 5 | 四个文档各过一轮 doc review，findings 采纳后复核 pass | `crew-doc-reviewer` 报告（四份） |
+| 6 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |

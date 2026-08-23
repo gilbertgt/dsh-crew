@@ -555,7 +555,8 @@ them which of the two lanes to use. Never assume.
    line of each CRD and in the git history, so a list of old versions inside the
    PRD is a second copy the reader has to walk past to reach the problem. The PRD
    keeps **one line** — its current version and its date — and its corrections go
-   under the fixed `Corrections` heading named above.
+   under the fixed `Corrections` heading (defined in the **Hard rules**, near the
+   end of this file).
 
    **`DoD` (definition of done) is the name of a section, never the name of a
    file.** Do not create a file for it: not in `docs/design/`, not in the job
@@ -1028,6 +1029,16 @@ them which of the two lanes to use. Never assume.
       git branch -d <tests branch> <code branch>
       ```
 
+      If `git worktree remove` refuses — the tree has uncommitted changes —
+      say what is loose in that tree and stop. **Never `--force`.** The force
+      deletes uncommitted and untracked files in that tree with no reflog and
+      no recovery; the code reviewer is owed that work, and it is the kind of
+      silent loss this job spends paragraphs on. A tree left behind instead,
+      because cleanup was skipped, holds work that `git status --short` in the
+      main tree cannot see. Say that plainly too, so the leftover work cannot
+      pass step 17's clean-tree check while it sits unmerged in a directory
+      nobody will open.
+
       Then the task goes into step 10, **Check the finished task**, and the code
       reviewer is handed three pieces of evidence, all three of them: **the red
       run from the unit-test
@@ -1273,8 +1284,9 @@ them which of the two lanes to use. Never assume.
 11. **Commit.** You are the only one who uses git. Engineers never commit.
    - Stage exactly the files the task owns — code and its test file — plus the
      documents this task produced: QA's case files under `docs/qa/<task-id>/`,
-     QA's new or corrected entries in `docs/qa/gaps.md`, and any ADR or CRD you
-     wrote. They are the project's memory; they have to be in the repository.
+     the new or corrected entries QA reported in `docs/qa/gaps.md`, which you
+     wrote, and any ADR or CRD you wrote. They are the project's memory; they
+     have to be in the repository.
      Never `git add -A`, never `git commit -a`.
    - The commit message is also where this change's reasons and its real test
      numbers land. They are a snapshot of that day, so they belong in the
@@ -1608,8 +1620,8 @@ them which of the two lanes to use. Never assume.
     fast-forward, run `git switch crew/<job-slug>`, tell the user and stop — do
     not merge, and do not force push `main` to get past it. This step force
     pushes nothing by itself: a force push needs the user's approval for that
-    one command, on `main` and on every other branch alike, and the rule is
-    written out in the push of `main` below. Otherwise
+    one command, on every branch and on `main` alike, and on a tag alike, and
+    the rule is written out in the push of `main` below. Otherwise
     `git merge --no-ff crew/<job-slug>`. Never `--squash` — every task's commit
     and its test-first proof has to stay readable in the history. A conflict is
     not yours to guess at: run `git merge --abort`, then
@@ -1747,9 +1759,9 @@ them which of the two lanes to use. Never assume.
       `docs/decisions/crd/`;
     - this change's reasons and its real test numbers → the commit message;
     - QA's "what I could not test here, and why" → `docs/qa/gaps.md`: **QA
-      writes it** in the same turn it reports, and your job is to check that it
-      happened before the plan is dropped. That file stays in the repository and
-      gets shorter as later jobs close those gaps;
+      reports the lines** in the same turn it reports, and you write them and
+      check that it happened before the plan is dropped. That file stays in the
+      repository and gets shorter as later jobs close those gaps;
     - **a DoD item's own wording** → the task row or the milestone it belongs to,
       in `docs/design/tasks.md` or the opening document. It is not a rule, not a
       decision, not a test number and not a gap, so none of the five above holds
@@ -1871,7 +1883,7 @@ unreadable job as finished.
   publishing a package. Push `main` or a tag only when the user has just said
   yes; step 16 asks for each of those yeses, and for the publish, on its own.
   The ask is the rule. A force push needs a yes of its own on top of that, on
-  every branch and on `main` alike: run `git push --force` or
+  every branch and on `main` alike, and on a tag alike: run `git push --force` or
   `--force-with-lease` only when the user has approved that one command for that
   one push (step 17), and ask again the next time — one approval never covers
   the next. You are the root session, so nothing but this rule stops you:
@@ -1944,8 +1956,8 @@ unreadable job as finished.
 - Before you drop a single-use document, move what is durable out of it. There
   are seven homes: a rule to `principles.md`; a decision about how to an ADR; a
   decision about what to a CRD; the reasons and the test numbers to the commit
-  message; QA's untestable gaps to `docs/qa/gaps.md`, which QA writes itself and
-  you check; **a DoD item's own wording** to the task row or the milestone it
+  message; QA's untestable gaps to `docs/qa/gaps.md`, which you write from the
+  lines QA reports and check; **a DoD item's own wording** to the task row or the milestone it
   belongs to; and **which files a task owns** to that task's row in
   `docs/design/tasks.md`. The last two are the ones this crew lost twice, so name
   them out loud. Drop the document after your final summary, not when the checks

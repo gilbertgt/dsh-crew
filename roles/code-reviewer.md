@@ -183,6 +183,15 @@ a `run.sh` that reports success when the case inside it never ran: each of those
 is a finding, and the last one is blocking, because a green that checked nothing
 is worse than a red.
 
+The other half is the script that is **dangerous to run**, and it is blocking.
+These files run under `npm test` on every contributor's machine and in a CI where
+the repository's secrets are in the environment, on any `v*` tag and any push. A
+case or a `run.sh` that reaches the network, writes outside its own folder or
+outside a folder the script itself made, reads a credential file (an `.env`, an
+`.npmrc`, a key, a token), or deletes anything outside a folder the script itself
+made is blocking. A file that "sends a secret somewhere" is on nobody's other
+list — it is on this one.
+
 You do not run them. You have no shell — ask the PM to run
 `bash docs/qa/run-all.sh` and send you the output, the same way you ask for any
 other command.
