@@ -4,7 +4,7 @@
 > reading it may be in **any repository**. Three things follow, and they are worth saying first.
 >
 > 1. **A generic `docs/...` path in this file means your own repository.** `docs/design/tasks.md`,
->    `docs/qa/gaps.md`, `docs/decisions/adr/` and the rest: this crew really does write into those,
+>    `qa/gaps.md`, `docs/decisions/adr/` and the rest: this crew really does write into those,
 >    in **any** repository. They are **destinations**, not pointers.
 > 2. **A numbered file is in this package's own repository, and it is written as a link**
 >    (for example `crd/0012-paired-engineers`). Those are **provenance**: why a rule exists and
@@ -388,8 +388,8 @@ has not installed yet. An allow list does not have to.
 
 **Rule.** An engineer's unit test is a file in the project's own test suite, named
 in its task row and committed with the code. QA's cases are files too, in the
-project's test framework, under `docs/qa/<task-id>/`, with a `run.sh` per
-task and one `docs/qa/run-all.sh` that finds and runs them all. Every round runs all
+project's test framework, under `qa/<task-id>/`, with a `run.sh` per
+task and one `qa/run-all.sh` that finds and runs them all. Every round runs all
 of them — including cases written for tasks that finished long ago — and an old case
 that now fails is a blocking regression.
 
@@ -400,14 +400,14 @@ it, and reports. The PM says in the briefing which of the two a QA agent is, bec
 the two produce different things and forbid different things.
 
 **Two of those files are not QA's, and the reason is a silent failure.** QA writes
-only inside `docs/qa/<task-id>/` — its case files and the `run.sh` beside them.
-`docs/qa/run-all.sh` and `docs/qa/gaps.md` belong to the PM: QA reports the lines to
+only inside `qa/<task-id>/` — its case files and the `run.sh` beside them.
+`qa/run-all.sh` and `qa/gaps.md` belong to the PM: QA reports the lines to
 add and the PM writes them. With QA agents running side by side, two of them would
 both write those two shared files and the second write would win — and nothing would
 say so. `run-all.sh` would still run, still print a total, and still report green,
 with one task's cases no longer in it. That is test coverage lost with no error
 anywhere, which is the worst shape a failure can take in this repository. So
-`run-all.sh` is written to find every `docs/qa/*/run.sh` **by pattern**, never as a
+`run-all.sh` is written to find every `qa/*/run.sh` **by pattern**, never as a
 list of names, and then a new task needs no edit and there is nothing to race over.
 
 **QA's test plan is not one of those files.** The plan is single-use: it exists to
@@ -415,7 +415,7 @@ turn the task's DoD items into cases, and once the cases are written the cases c
 the same information in a runnable form. So the plan is written to
 `<job folder>/<task-id>-plan.md`, outside the repository, and it goes when the job
 folder goes (principle 19). One part of it is durable and must not go with it:
-**"what I could not test here, and why"**. That moves to `docs/qa/gaps.md`, a
+**"what I could not test here, and why"**. That moves to `qa/gaps.md`, a
 standing list about this product's testability, grouped by the thing that cannot
 be checked and never by task id. QA writes it there itself, in the same turn it
 reports, because QA is the only role that knows why a thing could not be tested —
@@ -429,11 +429,11 @@ next one better guarded. This is the plain reading of the Scrum idea that qualit
 is built in: the Definition of Done has to survive the sprint that produced it.
 
 **How the split is drawn.** Everything QA puts in the repository goes inside
-`docs/qa/` — its cases, its `run.sh` files, and its entries in `gaps.md` — and
+`qa/` — its cases, its `run.sh` files, and its entries in `gaps.md` — and
 never into the product's own test folder. That keeps the existing file-ownership rule intact —
 one task owns its files — and keeps a reviewer's question ("who wrote this test?")
 answerable by the path alone. The cost is real and known: a runner that only
-looks inside configured folders does not see `docs/qa/` on its own, so QA reports
+looks inside configured folders does not see `qa/` on its own, so QA reports
 that to the PM and the PM adds the one line that wires the folder in. "Not
 runnable" is not an ending the PM may settle for. If that one line truly cannot
 be written, it is a blocking finding the user has to hear, not a note. QA never
@@ -441,7 +441,7 @@ edits project config, and never moves its files to dodge the problem.
 
 **And that line goes in the project's default test command.** A suite that runs
 only when somebody remembers a second command rots, and that is a matter of time,
-not of will. In this repository the line is `bash docs/qa/run-all.sh` at the end
+not of will. In this repository the line is `bash qa/run-all.sh` at the end
 of `npm test`, and `npm test` runs in CI on every push
 (`.github/workflows/test.yml`); publishing stays on a `v*` tag and runs the same
 checks again before it publishes, so a release never trusts an earlier push's
@@ -459,7 +459,7 @@ runner can check", not "everything".
 **Lives in** `roles/qa.md`, `roles/engineer.md` ("Your test is a file that
 stays"), `roles/architect.md` (the test-file column in a task row),
 `roles/pm.md` (step 4 **Write the opening document**, step 10c **QA**, step 11
-**Commit**, step 12 **Milestone review**, step 18 **Finish**), `docs/qa/gaps.md` (which states its own
+**Commit**, step 12 **Milestone review**, step 18 **Finish**), `qa/gaps.md` (which states its own
 rules at the top), `package.json` (`scripts.test`),
 `.github/workflows/test.yml`.
 
@@ -511,7 +511,7 @@ only in a document that is about to be thrown away either — the reason is the
 same one, that it has to be readable by somebody who is not here yet. A decision about **how** goes in an
 ADR in `docs/decisions/adr/`, a decision about **what**, the scope or a contract
 goes in a CRD in `docs/decisions/crd/`, a rule the crew must keep comes here, and
-QA's untestable gaps go to `docs/qa/gaps.md`. That is why an ADR **quotes** the
+QA's untestable gaps go to `qa/gaps.md`. That is why an ADR **quotes** the
 engineer's `Q-` file word for word and may never say "options: see Q-03": the
 pointer would outlive the file it points at, and the ADR's most valuable section
 would be gone.
@@ -807,7 +807,7 @@ engineer is also asked to prove its work by running the project's own suite, and
 that suite reads *everyone's* files. So three tasks with no file in common can
 still collide through their own verification. It happened twice in this job.
 `roles/pm.md` and `tools/verify-mount.mjs` were being rewritten by one task
-while another task's QA cases read them, and `docs/qa/run-all.sh` gave
+while another task's QA cases read them, and `qa/run-all.sh` gave
 three different answers in three minutes. The danger is not that a bad change
 gets in; nothing landed that should not have. The danger is a **false red**,
 which can send an engineer to fix something that was never broken, and a **false
@@ -838,7 +838,7 @@ outlive the job?**
   scope or a contract; the opening document, the task table
   `docs/design/tasks.md`, the design and the boundary contracts, all in
   `docs/design/`; QA's runnable cases and `gaps.md`, its standing list of what no
-  case can check, in `docs/qa/`; a
+  case can check, in `qa/`; a
   researcher's answers in `docs/research/`; the release and upgrade plans, plus a
   shipping gap list for a milestone that does not ship, in `docs/release/`; a rule
   the crew must keep, here in `principles.md`. **Every DoD
@@ -859,7 +859,7 @@ outlive the job?**
   destinations, not five: a rule goes to `principles.md`, a decision about how to
   an ADR, a decision about what to a CRD, this change's reasons and its real test
   numbers to the commit message, QA's "what I could not test here, and why" to
-  `docs/qa/gaps.md`, **a DoD item's own wording** to `docs/design/tasks.md`, and
+  `qa/gaps.md`, **a DoD item's own wording** to `docs/design/tasks.md`, and
   **which files a task owns** to `docs/design/tasks.md`. The last two were added
   after each of them nearly leaked a second time; principle 20 has the count and
   the reason.
@@ -917,7 +917,7 @@ step 11 **Commit**, step 18 **Finish**, and the hard rules),
 `roles/qa.md` (the plan's home, and its step 6 **Feed the standing testability
 list**),
 `roles/engineer.md`,
-`roles/architect.md`, `roles/doc-reviewer.md`, `docs/qa/gaps.md`,
+`roles/architect.md`, `roles/doc-reviewer.md`, `qa/gaps.md`,
 [`0006-split-by-lifetime`](https://github.com/stuarthu/dsh-crew/blob/main/docs/decisions/crd/0006-split-by-lifetime.md) (the change request that settled
 it) and [`0010-dod-is-a-section`](https://github.com/stuarthu/dsh-crew/blob/main/docs/decisions/crd/0010-dod-is-a-section.md) (the one that took the DoD
 off the single-use list).
@@ -938,7 +938,7 @@ document, and both keep one task table,
 task row carries one (small work and big work alike), and a DoD section says two things
 at least:
 what "done" means for that one thing, and **how somebody else checks it** — which
-QA case under `docs/qa/<task-id>/`, and which exact command. A check is an item
+QA case under `qa/<task-id>/`, and which exact command. A check is an item
 inside one of those sections, named that way ("item 2 of T-05's DoD"). There is no
 globally numbered list of checks anywhere.
 
@@ -966,7 +966,7 @@ repeating a row that all three share.
 | team | Step 9 or 10, **a question the files cannot answer** | engineer, QA or architect | `inbox/Q-<number>.md`: the cause, every way found, the files each one changes, its cost, and the way it recommends | `<job folder>/inbox/` | **No** — which is why the ADR below **quotes** it word for word and may never point at it |
 | team | Step 10a, **Code review** — once per milestone, at the end, in parallel with 10b and 10d, on the changed part only | `crew_code_reviewer` | findings with file and line, each blocking or optional | report to the PM; the fixes land in the code; the verdict becomes the `code` value of that task's **Verdicts** line, written at step 11, **Commit** | The report, no. The code, yes. The verdict, yes — it survives as one value on the Verdicts line in `docs/design/tasks.md`. That line is the PM's report of what the reviewer said, not the reviewer's own signature: reviewers cannot write files (principle 12) |
 | team | Step 10b, **Security review** — same round, same milestone, when the change earns one | `crew_security_reviewer`, when the change earns one | findings, or the PM's stated reason it was skipped | report to the PM; the verdict becomes the `security` value of that task's **Verdicts** line, and a skip carries its reason there, on its own value; the skip reason also goes into step 12 **Milestone review** or step 18 **Finish** | The report, no. The verdict and its skip reason, yes — on the Verdicts line in `docs/design/tasks.md`, and in the summary. Same limit as 10a: the PM writes the line |
-| team | Step 10c, **QA** — **once per milestone**, after all the coding and before the three reviews, in two steps | `crew_qa`, twice over: one agent writes the case list from the DoD sections without reading the code, then one agent per case | the case list; then one case file each, and the `run.sh` beside them; then the gap lines it reports to the PM | list in `<job folder>/<task-id>-plan.md`; cases in `docs/qa/<task-id>/`, with any helper they share in `docs/qa/lib/`; **`docs/qa/run-all.sh` and `docs/qa/gaps.md` are the PM's — QA reports those lines and never writes either file** | List, no — the cases say the same thing in a form that runs. Cases, yes. Gaps, yes, written by the PM |
+| team | Step 10c, **QA** — **once per milestone**, after all the coding and before the three reviews, in two steps | `crew_qa`, twice over: one agent writes the case list from the DoD sections without reading the code, then one agent per case | the case list; then one case file each, and the `run.sh` beside them; then the gap lines it reports to the PM | list in `<job folder>/<task-id>-plan.md`; cases in `qa/<task-id>/`, with any helper they share in `qa/lib/`; **`qa/run-all.sh` and `qa/gaps.md` are the PM's — QA reports those lines and never writes either file** | List, no — the cases say the same thing in a form that runs. Cases, yes. Gaps, yes, written by the PM |
 | team | Step 10, **two ways to fix — the PM decides** | PM; the user when they can see the difference | an ADR: the cause, **every** option with its cost and why it lost, the choice, who decided, and the reason | `docs/decisions/adr/NNNN-<short-name>.md` | Yes |
 | team | Any step, **a change to scope, a DoD item, the milestone list or a contract** | PM, whoever asked | a CRD — and the DoD items it adds are written into the task row or the milestone it changes, with a note in the CRD of where they went and how many | `docs/decisions/crd/NNNN-<short-name>.md`, plus `docs/design/tasks.md` or the opening document | Yes |
 | team | Step 11, **Commit** | PM, the only one who uses git | the commit: the task's files, QA's cases, its `gaps.md` entries, any ADR or CRD — and the message, which carries this change's reasons and its real test numbers. **Plus that task's Verdicts line**: one bullet at the top of the task's section carrying all four values (`code`, `security`, `qa`, `doc`), a reason of its own on every `not run` and every `skipped`, and a task id on every `changes needed` | git history for the commit and its message; `docs/design/tasks.md` for the Verdicts line. In this repository `node tools/verify-tasks.mjs` reads that line as the last stage of `npm test`, so every push checks it and a release checks it again before publishing; the check itself writes no file — its counts go to stdout, like every other test run in this table | Yes, both. The commit message is the only timestamped copy of the four values; the Verdicts line is the copy a check can read |
@@ -976,7 +976,7 @@ repeating a row that all three share.
 | team | Step 15, **Last doc review** — one round | `crew_doc_reviewer` | findings on every document this job produced or changed, the README included | report to the PM; fixes land in the documents | The report, no. The documents, yes |
 | team | Step 16, **Push and CI** | PM, with the user's yes every single time | the pushed commits, and `merge.publishCheck` — the CI files that were read and whether this push would publish | the remote; `state.json` | The commits, yes. `publishCheck`, no, and it is re-read after a restart |
 | team | Step 17, **Merge and clean up** | PM, three separate yeses | the merge commit on `main`, never squashed, so every task's commit and its test-first proof stay readable; then the deleted branch | git history | Yes |
-| team | Step 18, **Finish**, and the migration inside it | PM | every DoD section re-read and confirmed item by item, the real numbers from both test commands, the closing summary — and then the durable half moved out of everything about to be dropped, to **seven** destinations | a rule to `principles.md`; a decision about how to `docs/decisions/adr/`; a decision about what, the scope or a contract to `docs/decisions/crd/`; the reasons and the test numbers to the commit message; what no case can check to `docs/qa/gaps.md`; **a DoD item's own wording to `docs/design/tasks.md`**; **which files a task owns to `docs/design/tasks.md`** | Everything it moves, yes. The job folder goes, and a test run's output was never a file at all |
+| team | Step 18, **Finish**, and the migration inside it | PM | every DoD section re-read and confirmed item by item, the real numbers from both test commands, the closing summary — and then the durable half moved out of everything about to be dropped, to **seven** destinations | a rule to `principles.md`; a decision about how to `docs/decisions/adr/`; a decision about what, the scope or a contract to `docs/decisions/crd/`; the reasons and the test numbers to the commit message; what no case can check to `qa/gaps.md`; **a DoD item's own wording to `docs/design/tasks.md`**; **which files a task owns to `docs/design/tasks.md`** | Everything it moves, yes. The job folder goes, and a test run's output was never a file at all |
 
 **The matching rule, and it is meant to be checked.** Every step that produces a
 document appears in that table, and every crew document in the repository has a
@@ -1012,7 +1012,7 @@ entry when a user would notice the change, and a `CLAUDE.md` edit when the
 repository's own rules or layout moved. The other two were closed by giving each
 output a named file: `docs/research/<short-name>.md` and
 `docs/release/<milestone>-gaps.md`. An earlier run had already closed a fifth,
-QA's shared helper `docs/qa/lib/qa.mjs`, which step 10c's row now names. Run
+QA's shared helper `qa/lib/qa.mjs`, which step 10c's row now names. Run
 again after those fixes, both directions came back clean.
 
 **Run a third time, after the Verdicts gate landed, it found one more — the sixth
@@ -1022,7 +1022,7 @@ so the rule was due again. It was run on 2026-08-21 over the repository as that
 run found it, with every count made by hand rather than copied from an older
 paragraph:
 `docs/design/tasks.md` holding **43** task sections, `docs/decisions/crd/`
-holding **11** change requests, `docs/decisions/adr/` holding **7**, `docs/qa/`
+holding **11** change requests, `docs/decisions/adr/` holding **7**, `qa/`
 holding **5** task folders with **67** cases between them plus `run-all.sh`,
 `gaps.md` and the shared `lib/qa.mjs`, `principles.md`, both READMEs,
 `CHANGELOG.md`, `CLAUDE.md`, and two new files under `tools/`.
@@ -1041,7 +1041,7 @@ holding **5** task folders with **67** cases between them plus `run-all.sh`,
   Clean. The two new files under `tools/` — `verify-tasks.mjs` and the shared
   `lib/boot-log.mjs` — are step 9's output, and step 9's home reads "the
   project's own source and test folders", which is general enough to hold them.
-  That is the difference from `docs/qa/lib/qa.mjs`: step 10c's home *enumerates*
+  That is the difference from `qa/lib/qa.mjs`: step 10c's home *enumerates*
   paths, so a file outside the list fell through, and a row that names a folder
   needs widening where a row that names a kind of folder does not. The gate's own
   output is not a document either: it prints its counts to stdout and writes
@@ -1073,7 +1073,7 @@ the first job that needed them, while `docs/design/api/`, `docs/release/` and
 **Why (ours): 75 acceptance checks were lost in an hour.** The closing migration
 step named five destinations — a rule to `principles.md`, a decision about how to
 an ADR, a decision about what to a CRD, this change's reasons and test numbers to
-the commit message, a testability gap to `docs/qa/gaps.md`. **A DoD item's own
+the commit message, a testability gap to `qa/gaps.md`. **A DoD item's own
 wording is none of those five.** It is not a rule, not a how-decision, not a
 scope decision, not a test number, not a gap. So when this crew's own job folder
 was dropped, all 75 of its acceptance checks went with it — they fell between all
@@ -1092,7 +1092,7 @@ every push.
 and **20 lost outright**. 46 of those 48 came from one place nobody had planned as
 an archive: the header comment each QA case writes about which check it covers —
 all 42 cases that existed on the day of the recovery, covering 46 distinct numbers
-between them. (That 42 is a count of one day, not a count of `docs/qa/` — the
+between them. (That 42 is a count of one day, not a count of `qa/` — the
 folder has grown with every job since, and any current number written into this
 paragraph would be stale before the paragraph was next read.) The lesson is not
 "we were lucky". It is that the only parts that survived were the parts that had
@@ -1288,13 +1288,13 @@ confusion: `crew_test_engineer` is a programmer, not a tester.
 | What it writes | **unit tests** | product code | **QA cases**, acceptance and black box |
 | Granularity | **one behaviour per unit test** | — | **one DoD item per case**, checked the way the user would see it |
 | When | **before** the code exists | — | **after** the code is finished |
-| Home | **the project's own test suite**; a file this task owns, committed with the code | product code files | **`docs/qa/<task-id>/`, nowhere else** |
+| Home | **the project's own test suite**; a file this task owns, committed with the code | product code files | **`qa/<task-id>/`, nowhere else** |
 | Can it see the code | No — its own worktree, where the code does not exist yet | — | Writes its plan first, then reads the code |
 | Scope | **this task only** | this task only | this task, **plus every earlier task's cases run again** |
 
 **Four differences, and not one of them is optional**: granularity (one unit
 behaviour against one acceptance item), timing (before the code against after
-it), home (the project's own test suite against `docs/qa/`), and scope (this task
+it), home (the project's own test suite against `qa/`), and scope (this task
 against every task's cases run again as a regression). This same table also has
 to stand in both READMEs, because a reader meets these three names there before
 they ever meet this file.
@@ -1644,7 +1644,7 @@ here.
 | Word | What it means | Who writes it | Where it lives |
 | --- | --- | --- | --- |
 | **unit test** | One behaviour per test, written before the code that satisfies it exists | `crew_engineer` in the solo shape, `crew_test_engineer` in the paired shape | The project's own test suite; a file the task owns, committed with the code |
-| **case** (a QA case) | Acceptance, black box: one DoD item checked the way the user would see it, after the code is finished | `crew_qa` | **Only** `docs/qa/<task-id>/`, with a `run.sh` per task |
+| **case** (a QA case) | Acceptance, black box: one DoD item checked the way the user would see it, after the code is finished | `crew_qa` | **Only** `qa/<task-id>/`, with a `run.sh` per task |
 | **the project's test command** | In this repository `npm test`: it runs both of the above and every other check together | — | `package.json`, `scripts.test` |
 | **contract test** | One on each side of a module boundary, proving that side matches the boundary contract (principle 3) | `crew_engineer`, or the engineers of a paired task | The project's own test suite (this repository has no module boundary today, so it has none) |
 
@@ -2034,7 +2034,7 @@ One thing the Scrum Guide gives that holds here unchanged: an item that does not
 | A named Definition of Ready, with INVEST | Our task rules already require independence (no shared files), small size, and a named test. A separate checklist would mostly repeat them. Worth revisiting if task rows start arriving unfinished. |
 | arc42's quality requirements, crosscutting concepts and glossary sections | Real value for a large system, but `hld.md` is written fresh for every job, including small ones. The cost is empty sections; the benefit needs a project big enough to have crosscutting concerns. Worth revisiting. |
 | Consumer-driven contracts, where the calling side owns the contract | Assumes two teams that negotiate. We have one architect writing both sides of the contract, so the architect owns every contract file and the caller/callee split is only about who builds what. |
-| QA writing its cases straight into the project's test folder | One test command for everything, and CI would run the QA cases too. Rejected: QA would then own files inside the product, which breaks the rule that one task owns its files, and makes an engineer's and a reviewer's job harder to tell apart. `docs/qa/` plus `run-all.sh` buys the same protection without moving that line. |
+| QA writing its cases straight into the project's test folder | One test command for everything, and CI would run the QA cases too. Rejected: QA would then own files inside the product, which breaks the rule that one task owns its files, and makes an engineer's and a reviewer's job harder to tell apart. `qa/` plus `run-all.sh` buys the same protection without moving that line. |
 | QA cases as plain shell scripts, one exit code each | Portable and needs no framework. Rejected: a shell can only test what a shell can reach, so a library's return value or a browser app has to be squeezed through a command, and the assertions end up weaker than the ones the project already has. The project's own framework is used instead, with the runner-cannot-see-the-folder problem handled by asking the PM. |
 | A CRD for every request, question and review finding | A complete audit trail, and nothing lost. Rejected: most of those are answered from the files in one turn, and the PM would spend the job writing records instead of deciding. Scope and contract changes are the ones that cost real work, so those are the ones that get a file. |
 | The PM deciding scope changes on its own, and telling the user later | Faster, and the CRD folder would still hold the history. Rejected: it defeats the milestone stop (principle 5). The whole reason milestones exist is that the user judges direction while changing it is cheap. |

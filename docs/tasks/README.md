@@ -12,7 +12,7 @@
 ## The canonical interview-rule paragraphs (English)
 
 `skip-and-split` 作业把三段原文（A／B／C）钉在这里当契约：`roles/pm.md`、
-`principles.md` 等文件逐字抄这一份。`docs/qa/T-106/` 和 `docs/qa/T-107/` 的用例
+`principles.md` 等文件逐字抄这一份。`qa/T-106/` 和 `qa/T-107/` 的用例
 在运行时从本节的 `### <letter> (English)` 标题下读出英文原文再去找抄件。本节
 2026-08-23 从 `docs/design/tasks.md` 的附录迁来（git 历史可找回原文）。改这三段
 原文是改契约，按 `principles.md` 第 14 条走 CRD，并让抄件在同一个 commit 里跟上。

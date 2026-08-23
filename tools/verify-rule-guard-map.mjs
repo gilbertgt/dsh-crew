@@ -1,4 +1,4 @@
-// Verifies docs/qa/rule-guard-map.md does not lie (PRD Q2, T-119). It does NOT
+// Verifies qa/rule-guard-map.md does not lie (PRD Q2, T-119). It does NOT
 // judge whether coverage is enough — that needs a human threshold. It checks
 // the four things a machine can prove about the map:
 //   1. every roles/<name>.md file has one `## roles/<name>.md` section, and
@@ -30,7 +30,7 @@ const fail = (message) => { failures += 1; console.error(`FAIL  ${message}`); };
 const ok = (message) => console.log(`ok    ${message}`);
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const mapFile = process.argv[2] ?? "docs/qa/rule-guard-map.md";
+const mapFile = process.argv[2] ?? "qa/rule-guard-map.md";
 const mapPath = resolve(packageRoot, mapFile);
 
 // A `## ` or `### ` heading whose first token is a path opens a section. The

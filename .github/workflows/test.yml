@@ -27,8 +27,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # Full history, on purpose. Some QA cases under docs/qa/ read this
-          # job's own commits (docs/qa/T-01/case-26-repo-diff-scope.mjs looks
+          # Full history, on purpose. Some QA cases under qa/ read this
+          # job's own commits (qa/T-01/case-26-repo-diff-scope.mjs looks
           # up commits by the task marker in their subject line). The default
           # fetch-depth: 1 is a shallow clone with no history, so those checks
           # would fail — and their remaining assertions would pass over an

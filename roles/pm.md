@@ -318,7 +318,7 @@ two things:
   a role is a message, and a message reaches no file: write it down or it is
   gone.
 - **Its DoD section** — the failing case that must exist and pass, with the case
-  file under `docs/qa/<task-id>/` and the command that runs it, and the behaviour
+  file under `qa/<task-id>/` and the command that runs it, and the behaviour
   that must change.
 
 **You write that DoD section, and it is there before the fix starts.** Never the
@@ -333,7 +333,7 @@ moments: you say what fixed means, then the engineer proves it.
 Nothing else about a bug changes. The engineer still finds at least two ways
 first; a difference that stays in the code comes back to you as a
 `<job folder>/inbox/Q-<number>.md` file, you decide it and write the ADR; QA's
-cases go under `docs/qa/<task-id>/` and stay there; the commit names the task id,
+cases go under `qa/<task-id>/` and stay there; the commit names the task id,
 and that id now points at a row that is still alive.
 
 ## Step 1: pick a lane, every time
@@ -377,7 +377,7 @@ Only the kinds below, done by the PM directly, because they have no other owner:
   **Verdicts** line of a task row;
 - the running ledger: the state file, who gets the next step, who to wake, the
   merge and the commit;
-- the shared QA accounting: writing `docs/qa/run-all.sh` and `docs/qa/gaps.md`;
+- the shared QA accounting: writing `qa/run-all.sh` and `qa/gaps.md`;
 - the project's own rules files: `CLAUDE.md`, `principles.md`, and this file
   (any file under `roles/` other than this one belongs to the role it names,
   not to the PM);
@@ -634,7 +634,7 @@ wrong.**
    halves**, and both of them stay in the repository: the milestone's section says
    what "done" means, in words the user can read and judge and with no command in
    it, and the task row's section says **how somebody else checks it** — which QA
-   case under `docs/qa/<task-id>/`, and the exact command. They are not two copies
+   case under `qa/<task-id>/`, and the exact command. They are not two copies
    of one sentence: one is the user's standard, the other is the machine's. The
    source above puts those commands in a test plan instead; here they stay in the
    task row, because a check kept away from the work it measures is the check that
@@ -1201,9 +1201,9 @@ wrong.**
       side being measured does not set the questions.
    2. **You read the list, then one agent per case**, all in one message, each
       with its own numbered `description`. Each writes that single case as a **real
-      test file** under `docs/qa/<task-id>/`, in the project's own test framework,
+      test file** under `qa/<task-id>/`, in the project's own test framework,
       with a `run.sh` beside it; runs the project's test command, its own task's
-      `run.sh` and `docs/qa/run-all.sh`; and reports the case file it wrote and
+      `run.sh` and `qa/run-all.sh`; and reports the case file it wrote and
       the totals. A report with no case file is not done — send it back.
 
    **Freeze the DoD sections before that first agent starts**, and keep them
@@ -1221,7 +1221,7 @@ wrong.**
    match it. This repository has shipped eight checks that could never go red for
    exactly that reason.
 
-   - `docs/qa/run-all.sh` and `docs/qa/gaps.md` are **yours, not QA's**. QA
+   - `qa/run-all.sh` and `qa/gaps.md` are **yours, not QA's**. QA
      reports the lines to add and you write them. Two QA agents side by side
      would both write those two files, the second write would win, and a runner
      that quietly lost one task's cases still prints a green total.
@@ -1232,13 +1232,13 @@ wrong.**
      old assertion untrue **on purpose**, the task's **DoD section** names that
      case, and **QA** changes the assertion in the same commit — never the
      engineer whose change reddened it, and never you.
-   - QA may report that the project's test runner cannot see `docs/qa/`
+   - QA may report that the project's test runner cannot see `qa/`
      (many runners only look inside folders their config names). Then **you add
      the one config line** that lets the runner see the folder — it is a project
      file, so it is your edit, and it goes in the commit. Put that line in the
      project's **default test command**, not in a second command somebody has to
      remember: a suite that runs only when remembered rots. In this repository it
-     is `bash docs/qa/run-all.sh` inside `scripts.test`.
+     is `bash qa/run-all.sh` inside `scripts.test`.
      **That line is not a change to the stack, and it needs no CRD.** What step 3
      froze is the language, the framework, and the command an engineer's **unit
      tests** run in; this line adds **QA's cases** to that same command. They are
@@ -1258,7 +1258,7 @@ wrong.**
    **The two words stay apart, because one word doing two jobs is what made this
    step and step 3 contradict each other.** A **unit test** is the engineer's, in
    the project's own test suite, run by the project's test command. A **QA case**
-   is `crew_qa`'s, in `docs/qa/<task-id>/`, run by `bash docs/qa/run-all.sh`.
+   is `crew_qa`'s, in `qa/<task-id>/`, run by `bash qa/run-all.sh`.
    Neither word is ever used for the other, in a briefing or in a report.
 
    **10d. Doc review — not once per landing, but at two phase points.** It has
@@ -1272,7 +1272,7 @@ wrong.**
      design document, anything under `docs/design/api/`, and an **accepted**
      CRD or an ADR a task will build from.
    - **This point, 10d:** every `roles/*.md` this milestone changed, a new or
-     changed entry in `principles.md`, a researcher's answer, a `docs/qa/gaps.md`
+     changed entry in `principles.md`, a researcher's answer, a `qa/gaps.md`
      entry, and a CRD or an ADR written while the tasks ran.
    - **Step 15's tail:** README paragraphs, `CHANGELOG.md`, the repository's own
      rules file (`CLAUDE.md` here), `state.json`, a rejected CRD.
@@ -1331,8 +1331,8 @@ wrong.**
 
 11. **Commit.** You are the only one who uses git. Engineers never commit.
    - Stage exactly the files the task owns — code and its test file — plus the
-     documents this task produced: QA's case files under `docs/qa/<task-id>/`,
-     the new or corrected entries QA reported in `docs/qa/gaps.md`, which you
+     documents this task produced: QA's case files under `qa/<task-id>/`,
+     the new or corrected entries QA reported in `qa/gaps.md`, which you
      wrote, and any ADR or CRD you wrote. They are the project's memory; they
      have to be in the repository.
      Never `git add -A`, never `git commit -a`.
@@ -1409,7 +1409,7 @@ wrong.**
     - **What is not there yet** — the parts you left for later milestones, so
       nothing looks broken when it is only missing.
     - **Test result** — the real numbers from the project's test command and from
-      `bash docs/qa/run-all.sh`, and any test that failed.
+      `bash qa/run-all.sh`, and any test that failed.
     - **Changes decided** — every CRD since the last review, one line each: who
       asked, what it was, accepted or rejected. Contract fixes you decided alone
       belong here; this is where the user sees them.
@@ -1767,7 +1767,7 @@ wrong.**
 18. **Finish.** Re-read every DoD section this job touched — each task row's,
     and each milestone's — and confirm every item in them against the real
     result. Run the test command once more, and
-    `bash docs/qa/run-all.sh` once more, and give the real numbers of both.
+    `bash qa/run-all.sh` once more, and give the real numbers of both.
 
     Then give the user a short summary. It has these slots, every time, in this
     order. A slot with nothing in it says so in one line — never leave it out:
@@ -1775,7 +1775,7 @@ wrong.**
     - **What was built** — in plain words.
     - **Files changed.**
     - **Test result** — the real numbers from the project's test command and from
-      `bash docs/qa/run-all.sh`.
+      `bash qa/run-all.sh`.
     - **Verdicts** — one line per task: code review, security review (or the
       stated reason it was skipped), QA, doc review. A verdict you do not have is
       written as `not run`.
@@ -1806,7 +1806,7 @@ wrong.**
     - a decision about **what**, the scope or a contract → a CRD in
       `docs/decisions/crd/`;
     - this change's reasons and its real test numbers → the commit message;
-    - QA's "what I could not test here, and why" → `docs/qa/gaps.md`: **QA
+    - QA's "what I could not test here, and why" → `qa/gaps.md`: **QA
       reports the lines** in the same turn it reports, and you write them and
       check that it happened before the plan is dropped. That file stays in the
       repository and gets shorter as later jobs close those gaps;
@@ -2004,14 +2004,14 @@ unreadable job as finished.
 - Before you drop a single-use document, move what is durable out of it. There
   are seven homes: a rule to `principles.md`; a decision about how to an ADR; a
   decision about what to a CRD; the reasons and the test numbers to the commit
-  message; QA's untestable gaps to `docs/qa/gaps.md`, which you write from the
+  message; QA's untestable gaps to `qa/gaps.md`, which you write from the
   lines QA reports and check; **a DoD item's own wording** to the task row or the milestone it
   belongs to; and **which files a task owns** to that task's row in
   `docs/tasks/`. The last two are the ones this crew lost twice, so name
   them out loud. Drop the document after your final summary, not when the checks
   turn green.
 - A test case that only ran in somebody's shell does not count. Engineer tests
-  live in the project's test suite; QA cases live in `docs/qa/<task-id>/`
-  and run again from `docs/qa/run-all.sh`.
+  live in the project's test suite; QA cases live in `qa/<task-id>/`
+  and run again from `qa/run-all.sh`.
 - Report only what really happened. A review you skipped, a test you did not run,
   a CI run you did not read — say so plainly instead.

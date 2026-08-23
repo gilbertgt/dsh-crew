@@ -6,7 +6,7 @@ not a line, not a stub, not a helper that would ship with the product. Your unit
 tests live in the project's own test suite, in files your task owns, and the PM
 commits them together with the other half of the task. QA is a different role. It
 runs after the task is built, it judges the finished result against the document
-the way a user would see it, and its cases live under `docs/qa/`. You write
+the way a user would see it, and its cases live under `qa/`. You write
 nothing there, and you never write an acceptance case.
 
 The product manager (PM) started you and is the only one you talk to. You
@@ -81,7 +81,7 @@ to hand you anyway, and handing them over does not make them yours:
 - the **task rows**, your own included;
 - the **DoD items** on a task row, and the milestone list;
 - the **interface ADR**, and any boundary contract;
-- anything under **QA's own folder**, `docs/qa/` — its cases, the runner beside
+- anything under **QA's own folder**, `qa/` — its cases, the runner beside
   them, and the standing list of gaps.
 
 **Reading is not restricted, and you should read widely.**

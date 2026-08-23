@@ -35,15 +35,15 @@ const copiesOf = (haystack, needle) => haystack.split(needle).length - 1;
 // repository has shipped checks that looked for a sentence a `grep` could never
 // find, because the file broke it over two lines.
 //
-// AND DELIBERATELY NOT IMPORTED from `docs/qa/lib/qa.mjs`, which holds the same
+// AND DELIBERATELY NOT IMPORTED from `qa/lib/qa.mjs`, which holds the same
 // one-line function. This looks like duplication worth removing and it is not:
 // `tempRepo()` in that file copies package.json, cordis.patch.yml, host, roles,
 // preset, tools, .github and the task table (`docs/tasks/`) into a throwaway
-// folder, and it does NOT copy `docs/qa/`. Two dozen QA cases run THIS script
-// inside such a copy — most of `docs/qa/T-42/`, some of `docs/qa/T-51/` — so an
-// import of `docs/qa/lib/qa.mjs` from here kills every one of them before the
+// folder, and it does NOT copy `qa/`. Two dozen QA cases run THIS script
+// inside such a copy — most of `qa/T-42/`, some of `qa/T-51/` — so an
+// import of `qa/lib/qa.mjs` from here kills every one of them before the
 // first check runs, with `ERR_MODULE_NOT_FOUND: Cannot find module
-// .../docs/qa/lib/qa.mjs`.
+// .../qa/lib/qa.mjs`.
 // Measured, not guessed: the import was added inside a copy and that is what
 // came out. Keep the two copies, and change both in one commit.
 const flat = (text) => text.replace(/\s+/g, " ");
@@ -99,10 +99,10 @@ const throwsAwayExitCode = (segment) =>
   new RegExp(`${segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[ \\t]*(?:\\||&(?!&)|;[ \\t]*\\S)`).test(scriptsTest);
 for (const gate of [
   {
-    segment: "bash docs/qa/run-all.sh",
-    missing: "package.json scripts.test does not run `bash docs/qa/run-all.sh`, so QA's cases would never run again (CRD 0009)",
-    thrown: "package.json scripts.test lets `bash docs/qa/run-all.sh` fail without failing npm test, so QA's cases can never turn `npm test` red again (CRD 0009)",
-    ok: "npm test runs QA's cases (bash docs/qa/run-all.sh)",
+    segment: "bash qa/run-all.sh",
+    missing: "package.json scripts.test does not run `bash qa/run-all.sh`, so QA's cases would never run again (CRD 0009)",
+    thrown: "package.json scripts.test lets `bash qa/run-all.sh` fail without failing npm test, so QA's cases can never turn `npm test` red again (CRD 0009)",
+    ok: "npm test runs QA's cases (bash qa/run-all.sh)",
   },
   {
     segment: "node tools/verify-tasks.mjs",
@@ -302,8 +302,8 @@ const jobCountOf = (jobsRegion) => {
 };
 
 // -------------------------------- full history, for every workflow that tests
-// `npm test` ends in `bash docs/qa/run-all.sh`, and some of those cases read
-// this repository's own commits (docs/qa/T-01/case-26-repo-diff-scope.mjs looks
+// `npm test` ends in `bash qa/run-all.sh`, and some of those cases read
+// this repository's own commits (qa/T-01/case-26-repo-diff-scope.mjs looks
 // up commits by the task marker in their subject line). A default checkout is a
 // depth-1 shallow clone with no history, so such a case goes red — and any
 // assertion of it that survived would pass over an empty set, which is worse
@@ -613,7 +613,7 @@ if (publishers.length === 0) {
 // one character of the shell inside them: whether the notes really come out of
 // CHANGELOG.md, whether an empty section is caught, whether `0.1.0` matches
 // `0.10.0`. Nothing here runs that shell, and the job that wrote it chose not to
-// test it (interview answer 6; `docs/qa/gaps.md` carries that hole). A pin that
+// test it (interview answer 6; `qa/gaps.md` carries that hole). A pin that
 // claimed more than it read would be worse than no pin, and a pin that reds a
 // correct file teaches people to stop reading it — T-46's lesson, up in the
 // continue-on-error comment. So both steps are matched by the exact `name:`
@@ -775,7 +775,7 @@ if (publishers.length === 0) {
   for (const workflow of publishers) checkReleaseNotesSteps(`.github/workflows/${workflow.name}`, workflow.text);
   // The wording below deliberately does NOT reuse the phrase "workflow files
   // under .github/workflows/ carry a live `npm publish`". That sentence is the
-  // needle four shipped QA cases match on — docs/qa/T-42/case-06, -07, -08 and
+  // needle four shipped QA cases match on — qa/T-42/case-06, -07, -08 and
   // -16 each break the tag filter or the test gate and then assert that NO `ok`
   // line still claims the folder is fine. This pin is a different question and
   // stays green through those mutations, so an `ok` line that happened to
@@ -783,7 +783,7 @@ if (publishers.length === 0) {
   // draft of this line did exactly that. Keep this sentence distinguishable from
   // that one (T-100).
   if (failures === failuresBefore) {
-    ok(`the GitHub release steps are in place in ${publishers.length} publishing workflow of ${workflowNames.length} file(s) under .github/workflows/ (${publishers.map((workflow) => workflow.name).join(", ")}): each reads its notes before the publish (a step named "${NOTES_STEP_NAME}", id ${NOTES_STEP_ID}, no \`if:\`) and creates the release after it, gated on steps.guard.outputs.publish == 'true' — no check anywhere runs the shell inside those two steps — docs/qa/T-101/case-07 reads its text, nothing executes it (T-100, docs/qa/gaps.md)`);
+    ok(`the GitHub release steps are in place in ${publishers.length} publishing workflow of ${workflowNames.length} file(s) under .github/workflows/ (${publishers.map((workflow) => workflow.name).join(", ")}): each reads its notes before the publish (a step named "${NOTES_STEP_NAME}", id ${NOTES_STEP_ID}, no \`if:\`) and creates the release after it, gated on steps.guard.outputs.publish == 'true' — no check anywhere runs the shell inside those two steps — qa/T-101/case-07 reads its text, nothing executes it (T-100, qa/gaps.md)`);
   }
 }
 
@@ -797,7 +797,7 @@ if (publishers.length === 0) {
 // re-pushing the tag: the second run sees the version already on npm, sets
 // `publish=false`, and skips the release step with it (section three of
 // `docs/design/prd-2026-08-22-gh-release.md`, and the manual `gh release create`
-// written down there and in docs/qa/gaps.md is then the only way back). So the
+// written down there and in qa/gaps.md is then the only way back). So the
 // cost of the missing word lands exactly on the hole this job already knows
 // about, which is why it is worth a pin of its own (T-102).
 //
@@ -972,7 +972,7 @@ if (publishers.length === 0) {
   // line prints and the vouch does not, and the first wording sent the reader
   // looking for a line that is not there (T-105).
   if (writeAllPublishers.length > 0) {
-    ok(`${writeAllPublishers.join(", ")}: the grant read is the \`write-all\` shorthand, which gives every scope write access — the release works, and this pin did NOT read the two scopes one by one there, so where this pin does vouch below, that green covers those two scopes and says nothing about anything being narrow. Whether a job that runs \`npm publish\` and \`npm install -g\` should hold every scope is a question no check here asks (T-102, T-103, docs/qa/gaps.md item 55)`);
+    ok(`${writeAllPublishers.join(", ")}: the grant read is the \`write-all\` shorthand, which gives every scope write access — the release works, and this pin did NOT read the two scopes one by one there, so where this pin does vouch below, that green covers those two scopes and says nothing about anything being narrow. Whether a job that runs \`npm publish\` and \`npm install -g\` should hold every scope is a question no check here asks (T-102, T-103, qa/gaps.md item 55)`);
   }
   // Only the files in `publishers` are read, and that matters: test.yml is
   // granted `contents: read` on purpose and is completely correct that way. A
@@ -981,7 +981,7 @@ if (publishers.length === 0) {
   //
   // The wording below deliberately does NOT reuse the sentence "workflow files
   // under .github/workflows/ carry a live `npm publish`". That is the needle
-  // four shipped QA cases match on — docs/qa/T-42/case-06, -07, -08 and -16 each
+  // four shipped QA cases match on — qa/T-42/case-06, -07, -08 and -16 each
   // break the tag filter or the test gate and then assert that NO `ok` line
   // still claims the folder is fine. This pin asks a different question and
   // stays green through those mutations, so an `ok` line carrying their needle
@@ -1067,7 +1067,7 @@ for (const fileName of [PM_PERSONA_FILE, ...ROLES.map(role => role.personaFile)]
 // No role prompt may point at `principles.md` BY NUMBER, and this is the half of
 // that ban where the NUMBER COMES FIRST — `principle 22 in \`principles.md\``.
 // The other half, where the file name comes first (`principles.md` 21), is held
-// by a case under docs/qa/ for task T-67.
+// by a case under qa/ for task T-67.
 //
 // WHY A SECOND PIN FOR THE SAME RULE. The number-first shape walked past FOUR
 // pins written to ban exactly this: three DoD cells and both matchers of that
@@ -1109,7 +1109,7 @@ for (const fileName of [PM_PERSONA_FILE, ...ROLES.map(role => role.personaFile)]
 // `[^.\n]{0,24}?`, which EXCLUDES a newline, and FOLDED wraps inside that gap,
 // so with the regex below as it stands a line-by-line scan of FOLDED matches
 // nothing whatever the file loop does — the condition restates a consequence of
-// the code beside it, which docs/qa/gaps.md names as an assertion that shares a
+// the code beside it, which qa/gaps.md names as an assertion that shares a
 // source with its implementation. What it DOES guard is FOLDED itself: a sample
 // edited so the number and the name land on one line still gives 1 pointer, and
 // only this half notices that the sample has stopped exercising folding. Both
@@ -1175,13 +1175,13 @@ for (const fileName of ["engineer.md", "test-engineer.md", "code-engineer.md", "
 // writing the old rule again, which is exactly what they are here to catch.
 {
   const text = readRoleText("qa.md", undefined);
-  if (text.includes("docs/qa/<task-id>-plan.md")) fail("roles/qa.md sends QA's test plan to `docs/qa/<task-id>-plan.md`, inside the repository — that is the defect CRD 0006 fixed: the plan is single-use, so it lives in the job folder beside `state.json` and is dropped with it. Point it at `<job folder>/<task-id>-plan.md` instead");
+  if (text.includes("qa/<task-id>-plan.md")) fail("roles/qa.md sends QA's test plan to `qa/<task-id>-plan.md`, inside the repository — that is the defect CRD 0006 fixed: the plan is single-use, so it lives in the job folder beside `state.json` and is dropped with it. Point it at `<job folder>/<task-id>-plan.md` instead");
   else if (!text.includes("<job folder>/<task-id>-plan.md")) fail("roles/qa.md does not name `<job folder>/<task-id>-plan.md` — QA's plan is single-use and lives beside `state.json` in the job folder, and with that path gone QA is told nowhere to write it. Put it back");
   else if (text.includes("commits your plan")) fail("roles/qa.md still says the PM `commits your plan` — the plan never enters the repository (CRD 0006); the PM commits QA's case files and nothing else. Remove that from roles/qa.md");
-  else if (!text.includes("docs/qa/gaps.md")) fail("roles/qa.md does not name `docs/qa/gaps.md` — that is the one part of the plan that outlives the plan, and QA is the only role that knows why a thing could not be tested. Put the path back");
-  else if (!text.includes("docs/qa/<task-id>/")) fail("roles/qa.md is missing `docs/qa/<task-id>/` — QA's cases stay in the repository whatever happens to the plan, one folder per task, so tidying the plan out must not take the cases with it. Put the path back");
-  else if (!text.includes("docs/qa/run-all.sh")) fail("roles/qa.md is missing `docs/qa/run-all.sh` — the runner that finds every task's cases stays in the repository too; without it a case file is written and never run again. Put the path back");
-  else ok("roles/qa.md keeps the plan in the job folder and the cases, the runner and the gap list in docs/qa/");
+  else if (!text.includes("qa/gaps.md")) fail("roles/qa.md does not name `qa/gaps.md` — that is the one part of the plan that outlives the plan, and QA is the only role that knows why a thing could not be tested. Put the path back");
+  else if (!text.includes("qa/<task-id>/")) fail("roles/qa.md is missing `qa/<task-id>/` — QA's cases stay in the repository whatever happens to the plan, one folder per task, so tidying the plan out must not take the cases with it. Put the path back");
+  else if (!text.includes("qa/run-all.sh")) fail("roles/qa.md is missing `qa/run-all.sh` — the runner that finds every task's cases stays in the repository too; without it a case file is written and never run again. Put the path back");
+  else ok("roles/qa.md keeps the plan in the job folder and the cases, the runner and the gap list in qa/");
 }
 
 // CRD 0010, in the four role files that act on it. `DoD` is the name of a
@@ -1317,7 +1317,7 @@ else ok(`code reviewer is read-only by allow list: ${reviewer.allow.join(", ")}`
 // change anything about QA's behaviour, and constraining QA here would be
 // exactly that. So the hole CLAUDE.md design rule 4 records shrank from "one of
 // three" to "QA alone" and did not close; it is written down in
-// `docs/qa/gaps.md` rather than left for somebody to find.
+// `qa/gaps.md` rather than left for somebody to find.
 const NEEDS_SHELL = ["engineer", "test_engineer", "code_engineer"];
 const shellBefore = failures;
 for (const key of NEEDS_SHELL) {
@@ -1454,7 +1454,7 @@ function applyCapturingLogs(config, options) {
     // `includes` this used to be was green — by luck, not by design. A PRESENT
     // pin judged raw fails the day somebody reflows step 9 with the rule still
     // there: a false red on a correct file, and whoever meets one is most likely
-    // to widen the assertion (docs/qa/gaps.md item 31).
+    // to widen the assertion (qa/gaps.md item 31).
     else if (!flat(section.text).includes("Parallel by default")) fail("PM section is missing the string `Parallel by default` — step 9's parallel rule (one crew_engineer per CODE CHANGE, which is one per task when the task holds one change, all the calls in one message) has been dropped from roles/pm.md, or its heading was reworded. Put the rule back, or update this string in tools/verify-mount.mjs in the same commit");
     // Step 10's parallel rule is the same hole one step later, and it was left
     // open when step 9's was closed: delete the paragraph that starts the
@@ -1499,15 +1499,15 @@ function applyCapturingLogs(config, options) {
     // the job folder: `docs/decisions/adr/` holds a decision about HOW (now
     // whatever the size of the job, so the PM writes it when there is no
     // architect), `principles.md` holds a rule the crew must keep, and
-    // `docs/qa/gaps.md` holds QA's "what I could not test here". This check only
+    // `qa/gaps.md` holds QA's "what I could not test here". This check only
     // proves the three paths are SOMEWHERE in the prompt. It is not a guard on
     // the closing migration step, and never was: the **Hard rules** section
-    // repeats `principles.md` and `docs/qa/gaps.md`, and step 11 now names
-    // `docs/qa/gaps.md` as well because the PM has to stage it — so the
+    // repeats `principles.md` and `qa/gaps.md`, and step 11 now names
+    // `qa/gaps.md` as well because the PM has to stage it — so the
     // migration step could be deleted with all three paths still present. The
     // count below is that step's own pin.
     else if (!section.text.includes("docs/decisions/adr/") || !section.text.includes("principles.md")
-      || !section.text.includes("docs/qa/gaps.md")) fail("PM section is missing one of the three decision homes `docs/decisions/adr/`, `principles.md` and `docs/qa/gaps.md` — CRD 0006 puts every decision about HOW in an ADR whatever the size of the job, and makes the PM move a rule to principles.md and QA's untestable gaps to docs/qa/gaps.md before a single-use document is dropped. Put the missing path back in roles/pm.md");
+      || !section.text.includes("qa/gaps.md")) fail("PM section is missing one of the three decision homes `docs/decisions/adr/`, `principles.md` and `qa/gaps.md` — CRD 0006 puts every decision about HOW in an ADR whatever the size of the job, and makes the PM move a rule to principles.md and QA's untestable gaps to qa/gaps.md before a single-use document is dropped. Put the missing path back in roles/pm.md");
     // Step 18's closing migration step — move what is durable out of a
     // single-use document before it is dropped — carried no pin of its own, and
     // the presence check above cannot be one: delete that whole paragraph and
@@ -1516,7 +1516,7 @@ function applyCapturingLogs(config, options) {
     // Proved by mutation, not assumed.
     //
     // The count closes it, on the same reasoning as the two-copies pin on
-    // `git push origin --delete`: `docs/qa/gaps.md` appears FOUR times in
+    // `git push origin --delete`: `qa/gaps.md` appears FOUR times in
     // roles/pm.md and each copy does a different job —
     //   1. step 10's review-batching list, where a gap-list entry is named as a
     //      document that waits for the last review round instead of blocking a
@@ -1542,7 +1542,7 @@ function applyCapturingLogs(config, options) {
     // step stays green — deliberately unlike the `Parallel by default` and `the
     // tree was moving` pins (ADR 0004, ADR 0007), which had no path or command
     // to hold on to. This one does, so it does not pay their brittleness.
-    else if (copiesOf(section.text, "docs/qa/gaps.md") < 3) fail(`PM section holds only ${copiesOf(section.text, "docs/qa/gaps.md")} copy/copies of \`docs/qa/gaps.md\`, and it needs 3 at least — one of them has been dropped from roles/pm.md, which carries FOUR today and gives each copy a different job. The four are: step 10's review-batching list, where a gap-list entry is named as a document that waits for the last review round instead of blocking a landing; step 11, which STAGES the file so the standing gap list is committed with the task that produced it; step 18's closing migration step, which FILLS it before a single-use document is dropped (the most likely loss: it is one of only two places all seven homes of a dropped document are listed — the **Hard rules** summary is the other — and deleting it leaves every other check green); and the **Hard rules** summary, which restates the rule outside the numbered steps. Put the missing copy back`);
+    else if (copiesOf(section.text, "qa/gaps.md") < 3) fail(`PM section holds only ${copiesOf(section.text, "qa/gaps.md")} copy/copies of \`qa/gaps.md\`, and it needs 3 at least — one of them has been dropped from roles/pm.md, which carries FOUR today and gives each copy a different job. The four are: step 10's review-batching list, where a gap-list entry is named as a document that waits for the last review round instead of blocking a landing; step 11, which STAGES the file so the standing gap list is committed with the task that produced it; step 18's closing migration step, which FILLS it before a single-use document is dropped (the most likely loss: it is one of only two places all seven homes of a dropped document are listed — the **Hard rules** summary is the other — and deleting it leaves every other check green); and the **Hard rules** summary, which restates the rule outside the numbered steps. Put the missing copy back`);
     // The two strings CRD 0006 replaced, pinned as ABSENT. A how-decision on a
     // small job used to go into a **Decisions** section of the DoD — a file in
     // the job folder, dropped when the job ends, so the decision went with it.
@@ -1615,7 +1615,7 @@ function applyCapturingLogs(config, options) {
     // persona file, so unless somebody writes one into the runtime facts — which
     // have never held one — the only file this pin can go red on is roles/pm.md.
     // The host/crew.js half of the change is held somewhere else entirely, by
-    // docs/qa/T-64/case-04-cancelled-lane-gone-everywhere.mjs: it requires the
+    // qa/T-64/case-04-cancelled-lane-gone-everywhere.mjs: it requires the
     // word not to appear in that file AT ALL, and requires both surviving lane
     // names to still be there first, so deleting the paragraph cannot pass as
     // having fixed it. Widening THIS pin into a bare-word scan to cover crew.js
@@ -1656,7 +1656,7 @@ function applyCapturingLogs(config, options) {
     //
     // ABSENT, and both strings are pinned in one check because they are one rule
     // read twice. Choosing them was the careful part: step 17's two sentences are
-    // pinned PRESENT by docs/qa/T-01/case-08, and they legitimately contain
+    // pinned PRESENT by qa/T-01/case-08, and they legitimately contain
     // `force`, `force push`, `--force`, `--force-with-lease` and `whatever the
     // guard allows` — so every one of those, and any pin on the mere mention of a
     // force push, would go red on the sentence that FORBIDS it. These two strings

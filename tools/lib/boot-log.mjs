@@ -9,14 +9,14 @@
 // records the logger half, a console.log swap that records the other half and is
 // always put back, and a counter. Two copies of that were kept side by side "so
 // they cannot drift"; they had already drifted, and a third copy in
-// docs/qa/lib/qa.mjs still describes an idiom that T-11 deleted.
+// qa/lib/qa.mjs still describes an idiom that T-11 deleted.
 //
 // What is NOT here: what each script records BESIDES the log — prompt sections,
 // dynamic contexts, mounted plugins — because those differ per script. Each
 // script builds its own `fakeContext` on top of `logCapture` and adds its own
 // recorders.
 //
-// tools/ does not import docs/qa/lib/qa.mjs and must not: that folder is QA's,
+// tools/ does not import qa/lib/qa.mjs and must not: that folder is QA's,
 // and a one-level path change inside it takes all 42 QA cases down at once.
 
 /**

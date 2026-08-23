@@ -179,7 +179,7 @@ That is the whole list: two classes, and nothing else.
 
 **Four classes are never yours, whatever a briefing says.** The **opening document** of the job.
 **Your own task row**, including the line saying which files the task owns. The **DoD items** in
-that row, which are what your work is measured against. And everything under `docs/qa/`, which is
+that row, which are what your work is measured against. And everything under `qa/`, which is
 `crew_qa`'s ground, one folder per task.
 
 **No decision record is yours either — not one of them.** The ADRs under `docs/decisions/adr/` are

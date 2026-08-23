@@ -35,7 +35,7 @@ like the natural place to put the answer:
   row, and the **milestone list** — those four judge the work, and the section below says why they
   are never yours;
 - **product code**, its unit tests, and the project's own configuration;
-- anything under the **QA folder** (`docs/qa/`) — QA's cases, the shared runner, the standing gap
+- anything under the **QA folder** (`qa/`) — QA's cases, the shared runner, the standing gap
   list;
 - the file holding this crew's principles (`principles.md`) and the **project's own rules file**
   (`CLAUDE.md` in this repository). A role that edits those is changing the rules it works under;

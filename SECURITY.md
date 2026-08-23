@@ -115,7 +115,7 @@ to the rules text cannot move the guard:
 - `docs/decisions/crd/*.md` — change request documents
 - `docs/decisions/adr/*.md` — decision records
 - `docs/design/tasks.md` — the task table, whole file
-- `docs/qa/run-all.sh` and `docs/qa/gaps.md` — the shared QA runner and the
+- `qa/run-all.sh` and `qa/gaps.md` — the shared QA runner and the
   standing gap list
 - `CLAUDE.md`, `principles.md` — the project rules and the principles
 - `roles/pm.md` — the PM's own rules file
@@ -123,7 +123,7 @@ to the rules text cannot move the guard:
 
 Everything else — product code under `host/` and `tools/`, the other roles'
 rule files, interface contracts under `docs/design/api/`, QA's cases under
-`docs/qa/T-*/`, the READMEs, `package.json` — is refused and asked to you.
+`qa/T-*/`, the READMEs, `package.json` — is refused and asked to you.
 
 ### What happens when it refuses
 

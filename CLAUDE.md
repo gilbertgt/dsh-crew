@@ -21,8 +21,8 @@ node tools/verify-rule-guard-map.mjs# the rule→guard map does not lie
 node tools/verify-jobs.mjs          # the unfinished-job notice, using throwaway job folders
 node tools/verify-mount.mjs         # package shape, preset shape, role table, real mount
 node tools/verify-preset-install.mjs # installing and upgrading the crew preset
-bash docs/qa/run-all.sh             # every crew job's QA cases, past and present
-node tools/verify-tasks.mjs         # the Verdicts line of every task section in docs/design/tasks.md
+bash qa/run-all.sh             # every crew job's QA cases, past and present
+node tools/verify-tasks.mjs         # the Verdicts line of every task file under docs/tasks/
 ```
 
 Every check runs against temporary folders and a throwaway `DSH_HOME`. None of
@@ -31,7 +31,7 @@ them may read or write the real `~/.dsh` — keep it that way when adding cases.
 Run one check on its own by calling its file directly — that is the "single test" here.
 
 `npm test` runs every check below in order: the project checks first, then
-`bash docs/qa/run-all.sh`, then `node tools/verify-tasks.mjs`. QA's cases and the Verdicts gate are
+`bash qa/run-all.sh`, then `node tools/verify-tasks.mjs`. QA's cases and the Verdicts gate are
 part of the default test command and not things you have to remember. `npm test` is what CI runs:
 `.github/workflows/test.yml` runs it on **every push**; `.github/workflows/publish.yml` runs on a
 `v*` **tag** only and runs `npm test` again before it publishes — a release never trusts an earlier
@@ -40,7 +40,7 @@ into a fast check and a full one rather than dropping the cases. `test.yml` chec
 `fetch-depth: 0` on purpose: some QA cases read this repository's own commits, and the default
 shallow clone has no history.
 
-`verify-tasks.mjs` is the last check, and it reads no code — it reads `docs/design/tasks.md`.
+`verify-tasks.mjs` is the last check, and it reads no code — it reads the task files under `docs/tasks/`.
 Only headings of the form `## T-<number>` are task sections; `## T-23 / T-24` is one heading with
 two ids and counts as one section. A section turns the check **red** when:
 
@@ -74,7 +74,7 @@ That link already exists in this working copy. Never add a real dependency on th
 Releases: put the new version's section at the top of `CHANGELOG.md` (newest first, plain
 English, what a user would notice). **On the release day, replace `— unreleased` in that heading
 with the date.** Miss that step and the release fails:
-`docs/qa/T-81/case-01-changelog-order.mjs` reds when the top section is still marked `unreleased`
+`qa/T-81/case-01-changelog-order.mjs` reds when the top section is still marked `unreleased`
 while `package.json` already holds that version, and `npm test` runs inside the tag's own workflow.
 Then bump `version` in `package.json`, commit, push `main`, wait for CI to go green, and push the
 matching `v*` tag.
@@ -99,8 +99,8 @@ positions either side of the publish, the `if` on the second and the absence of 
 and both grants.
 
 Two prices, both written down in
-`docs/qa/gaps.md` rather than implied. **No check anywhere runs the shell inside those two
-steps.** `docs/qa/T-101/case-07` reads its *text* — the version comes from `package.json`, the
+`qa/gaps.md` rather than implied. **No check anywhere runs the shell inside those two
+steps.** `qa/T-101/case-07` reads its *text* — the version comes from `package.json`, the
 heading match keeps its trailing space, the failures use `::error::` and `exit 1` — and goes red if
 you reword those parts, so do not read this as "nothing will notice". Nothing *executes* it: the
 user picked an inline `run:` over a testable `tools/` script and then picked no test harness over
@@ -196,7 +196,7 @@ because a live test showed the weaker version failing.
    to three was not allowed to change anything about QA's behaviour, and pinning QA here would have
    been exactly that. So it went from "one of three unguarded" to "QA alone": a change that takes
    `bash` out of QA's deny list still fails no check. Read `host/roles.js` before you touch QA's
-   deny list, and `docs/qa/gaps.md` keeps the open hole written down. The other price of an explicit
+   deny list, and `qa/gaps.md` keeps the open hole written down. The other price of an explicit
    list is a **fourth** shell role that nobody adds to it — that is why **Adding or changing a role**
    below has a step for it.
 5. **Role markdown may not contain `{{`.** dsh interpolates `{{name}}` in prompt text and an unknown
@@ -214,7 +214,7 @@ because a live test showed the weaker version failing.
    publishing vocabulary — the words `npm publish` — while the guard also knows
    `pnpm`/`yarn`/`bun publish`, `semantic-release`, `release-please`, `gh release create` and the
    `JS-DevTools/npm-publish` action. So a release moved to any of those is a publisher the guard
-   sees and this pin does not: that is `docs/qa/gaps.md` item 11, open and waiting on a decision,
+   sees and this pin does not: that is `qa/gaps.md` item 11, open and waiting on a decision,
    not a bug to fix here.
 
 ## Adding or changing a role
@@ -234,7 +234,7 @@ because a live test showed the weaker version failing.
    reaches that role — the list that requires the persona to name `docs/decisions/adr/`, which is
    every role that can meet a decision about **how**
    (`docs/decisions/crd/0006-split-by-lifetime.md`), and the list that requires it to name
-   `docs/design/tasks.md` and `DoD section` and to name no `dod.md`, which is every role that reads a
+   `docs/tasks/` and `DoD section` and to name no `dod.md`, which is every role that reads a
    task row (`docs/decisions/crd/0010-dod-is-a-section.md`).
 6. Mention the role in `roles/pm.md` — the PM only uses what its own rules describe.
 7. **Copy the shared wording into the new prompt, word for word.** Every role prompt carries a
@@ -343,14 +343,15 @@ is**, never who made it:
 
 | Folder | What it holds |
 | --- | --- |
-| `docs/design/` | `prd-<date>-<job-slug>.md` — the opening document, **one per job**, holding a **DoD section** per milestone on big work; `tasks.md` — the one task table of the whole repository, holding a **DoD section** per task row; `hld-<date>-<job-slug>.md`, one per job; and one module boundary contract per pair of modules that talk (`docs/design/api/<caller>-<callee>.md`) |
+| `docs/design/` | `prd-<date>-<job-slug>.md` — the opening document, **one per job**, holding a **DoD section** per milestone on big work; `hld-<date>-<job-slug>.md`, one per job; and one module boundary contract per pair of modules that talk (`docs/design/api/<caller>-<callee>.md`) |
+| `docs/tasks/` | the task table — one `T-<n>.md` per task row, holding a **DoD section** per row, plus `README.md` for the non-task content |
 | `docs/decisions/` | `adr/NNNN-<short-name>.md` (how it was done, whatever the size of the job) and `crd/NNNN-<short-name>.md` (one change request per scope-or-contract change) |
-| `docs/qa/` | QA's **runnable** cases — `<task-id>/case-*`, a `run.sh` per task and one `docs/qa/run-all.sh` that finds them all — plus `gaps.md`, the standing list of what no case can check |
-| `docs/release/` | a release and an upgrade plan for each milestone the user ships: `<milestone>-release.md` and `<milestone>-upgrade.md`; plus `<milestone>-gaps.md`, the **shipping gap list**, for a milestone that does not ship (not to be confused with `docs/qa/gaps.md`) |
+| `qa/` | QA's **runnable** cases — `<task-id>/case-*`, a `run.sh` per task and one `qa/run-all.sh` that finds them all — plus `gaps.md`, the standing list of what no case can check |
+| `docs/release/` | a release and an upgrade plan for each milestone the user ships: `<milestone>-release.md` and `<milestone>-upgrade.md`; plus `<milestone>-gaps.md`, the **shipping gap list**, for a milestone that does not ship (not to be confused with `qa/gaps.md`) |
 | `docs/research/` | one answer per question the PM sent to a researcher: `<short-name>.md` |
 
-Today this repository has `docs/decisions/`, `docs/qa/`, `docs/research/`, the one
-task table at `docs/design/tasks.md`, and one PRD and one HLD per job under `docs/design/`. The PRD
+Today this repository has `docs/decisions/`, `qa/`, `docs/research/`, the one
+task table under `docs/tasks/`, and one PRD and one HLD per job under `docs/design/`. The PRD
 comes before the task rows and the HLD is written by the architect, which is the order the flow
 asks for. Both carry the date and the job slug in their file names —
 `prd-<date>-<job-slug>.md`, `hld-<date>-<job-slug>.md` — because a fixed name means the next job's
@@ -383,7 +384,7 @@ reasons:
 
 - **`DoD` is a section, never a file, and the checks live next to the work they govern.** Small work
   and big work alike open with a PRD of their own under `docs/design/` and keep one task table at
-  `docs/design/tasks.md`. Every milestone
+  `docs/tasks/`. Every milestone
   (big work) and every task row (small work and big work alike) carries a DoD section saying what "done" means and
   **how somebody else checks it** — the QA case and the exact command. There is no globally numbered
   list of acceptance checks anywhere: a check is "item 2 of T-05's DoD". A bug in the `team` lane
@@ -394,8 +395,8 @@ reasons:
   destinations, not five: a rule goes to
   `principles.md`, a decision about **how** to an ADR, a decision about **what** or a contract to
   a CRD, this change's reasons and its real test numbers to the commit message, QA's "what I
-  could not test here, and why" to `docs/qa/gaps.md`, **a DoD item's own wording** to
-  `docs/design/tasks.md`, and **which files a task owns** to `docs/design/tasks.md`. The last two
+  could not test here, and why" to `qa/gaps.md`, **a DoD item's own wording** to
+  `docs/tasks/`, and **which files a task owns** to `docs/tasks/`. The last two
   were added because each of them nearly leaked a second time in the job that was cleaning up after
   the first leak: check 67's wording lived only in a `Q-` file marked for deletion, and the file list
   survived only because a QA case happened to hardcode it. "Not needed any more" has to be earned;
@@ -406,13 +407,17 @@ reasons:
   question: did someone ask for this? Someone asked → a CRD. Nobody asked and the crew hit the
   choice while working → an ADR. Small work has no architect, so the PM writes it. Nothing else
   decides where it lands — not the size of the job, not who was in the room.
-- **Everything QA puts in the repository goes under `docs/qa/`** — its cases, their `run.sh`
+- **Everything QA puts in the repository goes under `qa/`** — its cases, their `run.sh`
   files and its entries in `gaps.md` — in the project's own test framework, never into the
-  product's test folder and never into project config. Its plan is the one thing it writes outside
+  product's test folder and never into project config. **QA cases are scripts, not documents,
+  so they do not live under `docs/`**: a `case-*.mjs` file is runnable code with an exit
+  code, and putting runnable code in the documentation tree hides it from the people who
+  would run it. `qa/` is a first-class directory at the repository root, sibling to
+  `docs/`, `host/`, `tools/` and `roles/`. Its plan is the one thing it writes outside
   the repository, in the job folder. If a runner cannot see that folder, QA asks
   the PM and the PM edits the config — that keeps "one task owns its files" true. The PM **adds
   that line**; "the cases are not runnable" is a blocking finding for the user, not an ending the PM
-  may settle for. Here the line is `bash docs/qa/run-all.sh` inside `scripts.test`.
+  may settle for. Here the line is `bash qa/run-all.sh` inside `scripts.test`.
 - **The PM settles the language and stack in step 3, the user confirms it, and it
   then changes only through a CRD.** An existing repository's stack is detected, not
   chosen. A real choice goes through a researcher that lists options and may not
@@ -469,7 +474,7 @@ distilled from `docs/research/document-types.md`. That last one is a reference
 list, not a rule, which is why it has no number (`ADR 0021`). Role prompts are written short and bossy on purpose, so the reasoning
 has to live somewhere else. When you change a rule in `roles/*.md`, update the
 principle that carries it; when you reject an idea, add it to the table so the
-next person does not re-run the same search. **The file ships with the npm package** (`package.json`'s `files` names it), so a PM in any repository can read the reasons behind the rules it is following. Two things follow. Its opening block tells the reader which `docs/...` paths mean **their own** repository (the generic destinations: `docs/design/tasks.md`, `docs/qa/gaps.md`, `docs/decisions/adr/`, and the rest) and which mean this package's own (the numbered CRDs and ADRs, now written as links to `blob/main`). And **renaming a numbered CRD or ADR breaks those links, and no check will notice** — so they are named by number and not renamed.
+next person does not re-run the same search. **The file ships with the npm package** (`package.json`'s `files` names it), so a PM in any repository can read the reasons behind the rules it is following. Two things follow. Its opening block tells the reader which `docs/...` paths mean **their own** repository (the generic destinations: `docs/tasks/`, `qa/gaps.md`, `docs/decisions/adr/`, and the rest) and which mean this package's own (the numbered CRDs and ADRs, now written as links to `blob/main`). And **renaming a numbered CRD or ADR breaks those links, and no check will notice** — so they are named by number and not renamed.
 
 `README.md` (English) and `README-zh.md` (Chinese) say the same thing and must be updated together
 whenever user-visible behaviour changes; write the English first, then match the Chinese. Keep the

@@ -127,10 +127,10 @@ Never create a `dod.md`. "Done" is a section of a document that stays.
 
 ## How QA changes move
 
-Everything QA puts in the repository goes under `docs/qa/` — its cases
+Everything QA puts in the repository goes under `qa/` — its cases
 (`<task-id>/case-*`), a `run.sh` per task, and its entries in `gaps.md` — in
 the project's own test framework, never in the product's test folder and never
-in project config. `bash docs/qa/run-all.sh` runs every task's cases, past and
+in project config. `bash qa/run-all.sh` runs every task's cases, past and
 present.
 
 One round of QA runs per milestone, after the coding and before the reviews, in
@@ -139,10 +139,10 @@ two steps:
 1. One `crew_qa` writes the case list from the DoD sections — it does **not**
    read the code, because the side being measured must not set the questions.
 2. One agent per case writes that single case as a real test file under
-   `docs/qa/<task-id>/`, with a `run.sh` beside it.
+   `qa/<task-id>/`, with a `run.sh` beside it.
 
 QA's plan is single-use, in the job folder; the cases replace it. "What I could
-not test here, and why" goes into `docs/qa/gaps.md`, a standing list that later
+not test here, and why" goes into `qa/gaps.md`, a standing list that later
 jobs shorten. A case that starts failing is a blocking regression; nobody edits
 it green.
 
@@ -150,7 +150,7 @@ it green.
 
 `npm test` is the default test command, and CI runs it on every push. It runs,
 in order: the project's own checks (the `tools/verify-*.mjs` scripts), then
-`bash docs/qa/run-all.sh` (every crew job's QA cases), then
+`bash qa/run-all.sh` (every crew job's QA cases), then
 `node tools/verify-tasks.mjs` (the Verdicts gate). Run one check on its own by
 calling its file directly.
 

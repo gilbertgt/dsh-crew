@@ -380,7 +380,7 @@ afterwards: it writes its cases from the document before it reads a line.
    - the boundary contract the task must build against, if it sits on one;
    - **a DoD section on every row.** It says at least two things: what "done"
      means for this one task, and **how somebody else checks it** — which QA case
-     under `docs/qa/<task-id>/`, and which exact command. Write every item so a
+     under `qa/<task-id>/`, and which exact command. Write every item so a
      person who did not write the code can carry it out and get a yes or a no.
 
    **`DoD` is the name of a section, never of a file, and there is no numbered

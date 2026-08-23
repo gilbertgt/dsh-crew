@@ -112,7 +112,7 @@ and language-file halves of item 10 need the README files.
    - every milestone in the opening document has one too, when that document has
      milestones;
    - each item says how **somebody else** checks it: a QA case under
-     `docs/qa/<task-id>/`, or an exact command. "It works" is not an item;
+     `qa/<task-id>/`, or an exact command. "It works" is not an item;
    - each item is something a person can carry out and get a yes or no from.
      "Fast", "clean", "user friendly" are not items;
    - no document holds a flat numbered list of checks any more, and nothing

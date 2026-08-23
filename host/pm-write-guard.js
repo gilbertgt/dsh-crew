@@ -37,15 +37,15 @@
 //   - docs/tasks/                         the task table, one file per task (PRD
 //                                        附记A coarse grant: the PM writes both
 //                                        the Verdicts line and small-work rows)
-//   - docs/qa/run-all.sh                  the shared QA runner
-//   - docs/qa/gaps.md                     the standing gap list
+//   - qa/run-all.sh                       the shared QA runner
+//   - qa/gaps.md                          the standing gap list
 //   - CLAUDE.md, principles.md            the project rules and the principles
 //   - roles/pm.md                         the PM's own rules file
 //   - <jobsDir>/*/state.json              the job state file, outside the repo
 //
 // Everything else — product code under src/ host/ tools/, the other roles'
 // rule files, the interface contracts under docs/design/api/, QA's cases under
-// docs/qa/T-*/ and their run.sh files, the READMEs, package.json — is refused
+// qa/T-*/ and their run.sh files, the READMEs, package.json — is refused
 // and asked to the user.
 //
 // Honest limits, same kind the git guard carries:
@@ -169,8 +169,8 @@ function classifyWrite(target, jobsDir) {
   // grant — the PM writes the Verdicts line on every row and small-work rows).
   if (endsWith(parent, ["docs", "tasks"])) return "pm";
   // The shared QA runner and the standing gap list.
-  if (endsWith(segments, ["docs", "qa", "run-all.sh"])) return "pm";
-  if (endsWith(segments, ["docs", "qa", "gaps.md"])) return "pm";
+  if (endsWith(segments, ["qa", "run-all.sh"])) return "pm";
+  if (endsWith(segments, ["qa", "gaps.md"])) return "pm";
   // The project rules file, the principles, the PM's own rules file.
   if (last === "CLAUDE.md") return "pm";
   if (last === "principles.md") return "pm";

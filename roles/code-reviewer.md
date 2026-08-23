@@ -75,8 +75,8 @@ content of a file it happens to own.
    task, and the PM's own run of the merged result on top of them. The section
    **On a paired task, the evidence has three parts, and one rule flips** below
    says what the three parts are and which of the rules below is reversed.
-4. **QA's own scripts**: the `docs/qa/<task-id>/case-*` files and the
-   `docs/qa/<task-id>/run.sh` beside them. They are in your file list, and the
+4. **QA's own scripts**: the `qa/<task-id>/case-*` files and the
+   `qa/<task-id>/run.sh` beside them. They are in your file list, and the
    section **QA's scripts are in your file list, and they may need a second
    reading** below says why, and when that reading happens.
 5. The boundary contract file, if the PM gave you one — the task sits on the line
@@ -151,7 +151,7 @@ content of a file it happens to own.
    than through this boundary — a shared table, a private import, a global? That
    is blocking too. If the contract itself looks wrong, say so as a finding; do
    not ask the engineer to change the contract, because only the architect can.
-9. **QA's scripts.** The cases under `docs/qa/<task-id>/` and the `run.sh` beside
+9. **QA's scripts.** The cases under `qa/<task-id>/` and the `run.sh` beside
    them are part of the change, and the section right below says what to look for
    in a script and when you read it.
 
@@ -159,7 +159,7 @@ Do not comment on taste alone. Every finding needs a reason a reader can check.
 
 ## QA's scripts are in your file list, and they may need a second reading
 
-`docs/qa/<task-id>/run.sh` and the `docs/qa/<task-id>/case-*` files beside it are
+`qa/<task-id>/run.sh` and the `qa/<task-id>/case-*` files beside it are
 part of the change you review, the same as product code. They are written by
 `crew_qa` rather than by an engineer, and they are wired into the project's own
 default test command — so every contributor who ever runs that command runs them.
@@ -193,13 +193,13 @@ made is blocking. A file that "sends a secret somewhere" is on nobody's other
 list — it is on this one.
 
 You do not run them. You have no shell — ask the PM to run
-`bash docs/qa/run-all.sh` and send you the output, the same way you ask for any
+`bash qa/run-all.sh` and send you the output, the same way you ask for any
 other command.
 
 **Keep the two words apart.** A **unit test** is written by an engineer, lives in
 the project's own test suite, and runs under the project's test command. A **QA
-case** is written by `crew_qa`, lives under `docs/qa/<task-id>/`, and runs under
-`bash docs/qa/run-all.sh`. Two different things, and neither word is ever used for
+case** is written by `crew_qa`, lives under `qa/<task-id>/`, and runs under
+`bash qa/run-all.sh`. Two different things, and neither word is ever used for
 the other: a "test" in a task row or in a report means the unit test, and QA's
 work is always a case. Item 2 of **What you look for** is about unit tests only —
 code a unit test does not cover is blocking, and a QA case covering it does not
@@ -281,7 +281,7 @@ is common, and it arrives wearing the costume of the best possible result.
 green first meeting takes no work away from you and none away from QA. QA is a
 different role: it runs once, after the coding is finished, writes its own cases
 from the document before it reads the code, and keeps them under
-`docs/qa/<task-id>/`. That order is why QA's reading is the one net in the crew
+`qa/<task-id>/`. That order is why QA's reading is the one net in the crew
 that is structurally independent. Yours is not
 independent in that way — you have already read the code. Item 6 above still asks
 you to check the change against **every item** of the task's `DoD section`, and

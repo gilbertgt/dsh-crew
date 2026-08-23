@@ -45,8 +45,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           # Full history, on purpose — the same reason as test.yml, because this
-          # workflow runs the same `npm test`. Some QA cases under docs/qa/ read
-          # this repository's own commits (docs/qa/T-01/case-26-repo-diff-scope.mjs
+          # workflow runs the same `npm test`. Some QA cases under qa/ read
+          # this repository's own commits (qa/T-01/case-26-repo-diff-scope.mjs
           # looks up commits by the task marker in their subject line). The
           # default here is a depth-1 shallow clone with no history, so those
           # checks fail — which is what happened: the v0.7.0 tag ran this
@@ -117,7 +117,7 @@ jobs:
       #
       # NOTHING TESTS THE SHELL BELOW. No unit test and no QA case executes it —
       # the user chose that knowingly (interview answers 5 and 6), and
-      # docs/qa/gaps.md carries the hole. tools/verify-mount.mjs pins where this
+      # qa/gaps.md carries the hole. tools/verify-mount.mjs pins where this
       # step sits and that it has an id and no `if:`; it reads not one character
       # of what is inside. The first real run of this code is the first v* tag
       # pushed after it landed.

@@ -130,10 +130,10 @@ export const ROLES = [
     toolName: "crew_qa",
     personaFile: "qa.md",
     // Naming the folder is what separates this role from the test engineer now
-    // that both write checks: QA's cases stay in `docs/qa/<task-id>/`, the test
+    // that both write checks: QA's cases stay in `qa/<task-id>/`, the test
     // engineer's unit tests live in the project's own test suite. Only the
     // summary changed here — none of QA's behaviour did.
-    summary: "Test the result, with cases in docs/qa/",
+    summary: "Test the result, with cases in qa/",
     // QA must actually run the software, so it keeps the shell. It writes only
     // its own test plan and defect notes; the PM's commit step catches any file
     // it touched that no task owns.
