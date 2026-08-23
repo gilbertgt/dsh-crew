@@ -98,10 +98,12 @@ section, a milestone, the reviews, and a commit.
 Where a document lives depends on how long it lives:
 
 - **Durable** documents live in the repository under `docs/`, and each folder
-  name says what the thing is: `design/` (the PRD, the task table, the design,
-  one contract file per module boundary in `design/api/`), `decisions/`
-  (`adr/` for how it was done, `crd/` for change requests), `qa/`, `release/`,
-  `research/`.
+  name says what the thing is: `design/` (the PRD, the design, one contract
+  file per module boundary in `design/api/`), `tasks/` (the task table, one
+  `T-<n>.md` file per row), `decisions/` (`adr/` for how it was done, `crd/`
+  for change requests), `release/`. `qa/` is separate: a first-class
+  directory at the repository root, sibling to `docs/`, holding QA's runnable
+  cases.
 - **Single-use** documents live outside the repository in
   `~/.dsh/crew/jobs/<job-slug>/` — job state, QA's plans, the `Q-` question
   files — and the folder is dropped when the job ends. DoD sections and file
