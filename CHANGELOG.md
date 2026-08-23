@@ -40,6 +40,38 @@ there are kept as `<name>.bak` and named in the boot log, but your settings do
   There is nothing for you to configure, and nothing changes about how you
   install or use the plugin.
 
+### Changed
+
+- **A question in the opening interview can now be left undecided.** Every
+  question the PM puts to you before a job starts has one test put to it first:
+  would your answer change what gets built, or what gets released? A question
+  that changes neither now arrives with a second option beside the recommended
+  one — **leave it undecided**. Watch where that bar sits: being able to get
+  started without hearing from you is *not* enough on its own to earn the
+  option. A question that fails the test is not offered it, and you are told in
+  one line what it would change.
+  What taking it buys you is the part that matters. The thing you set aside is
+  recorded **nowhere** in the opening document: not in the list of what the
+  interview settled, not under "not in scope", not under "still undecided". Ask
+  for it a month later and you are reopening nothing, because nothing about it
+  was ever written down. This came out of a real case — one command's worth of
+  work ran into a line the interview had settled in passing, and it took the
+  full change-request road to get past it.
+  **The change-request rule itself is not loosened.** The only thing gone is a
+  confirmed line standing in the way. If saying yes to your later ask would move
+  the milestone list, a DoD item, or the scope of the work, that is a change of
+  scope like any other: the PM still writes the change request, and still stops
+  and asks you first.
+- **The "not in scope" section is now a short list, and every line on it has a
+  real cost.** A line belongs there only when crossing it would force work that
+  is already finished to be built a second time, or do something nobody can take
+  back — a package published, a tag pushed, data deleted — or leave a safety
+  guard or a permission rule weaker than it was. Work the PM merely did not get
+  to stays off the list. It used to go on, and that was the trouble: everything
+  in that section reads like a boundary you agreed to, so a cheap request could
+  look like you were reversing yourself. The rule is short now — if a thing is on
+  that list it is a wall, and if it is not, just ask for it.
+
 ## 0.9.0 — 2026-08-22
 
 ### Changed

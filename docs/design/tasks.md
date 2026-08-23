@@ -2042,3 +2042,200 @@ release 说明永远取不到，而**唯一为这件事存在的那条 pin 说�
 
 - **不许碰 `docs/qa/`**（QA 的）、`.github/workflows/`、`docs/` 下任何文档。
 - **不许为了让测试变绿而放宽 pin。**
+
+---
+
+# 本作业：`skip-and-split`（T-106 起）
+
+PRD：`docs/design/prd-2026-08-22-skip-and-split.md` v1。**不起 architect**，任务行由 PM 写。
+
+## 三段权威原文（四个任务逐字抄，不许各自措辞）
+
+这三段是本作业的**契约**。`roles/pm.md`、`principles.md`、两份 README、`CLAUDE.md`
+说的必须是同一件事。四个任务并行开工、互相看不见，所以措辞由这里定死，不由任何一个
+工程师定。**逐字抄，不要改写、不要缩写、不要"润色"。**
+
+### 原文 A —— 面谈时哪些问题能跳
+
+> **每个问题都要判它能不能跳过。** 一个问题**能跳**，当且仅当**它的答案既不改变要造出什么、
+> 也不改变要发出什么**——「不回答也能开工」这一条本身不够。能跳的问题，除了你推荐的答案，
+> 再给一个「先不定」。**不能跳的不给这个选项**，并在问题里用一句话说明为什么跳不掉。
+
+### 原文 B —— 跳过的东西一个字都不写
+
+> **用户选了「先不定」的问题，在开局文档里一个字都不写。** 三处都不写：面谈定下来的
+> 那张表、「不在范围内」、「还没定的事」。写进任何一处，它就成了一条已确认的话，用户
+> 以后再提这件事就变成推翻范围。**用户回答过的问题要写进面谈定下来的那张表，而「不要」
+> 也是一个回答。** 只有「先不定」什么都不留下；用户真的给过的拒绝，你永远不许丢掉。
+> **「还没定的事」只装已知会在某个时点必须做的决定，不装你问过而被跳过的问题。**
+
+### 原文 C —— 「不在范围内」只装真边界
+
+> **「不在范围内」只准写有真代价的条目**：越过去要重做已经完成的活，或者有不可撤销的
+> 代价（发了包、推了 tag、删了数据），或者会削弱一条安全护栏、一条权限规则。你顺手没做、
+> 越过去只是多干一点活的东西，**不要写进去**。写进去它就成了一条边界，用户以后想要就得推翻它。
+
+## 英文原文（`roles/pm.md`、`principles.md`、`CLAUDE.md`、`README.md` 抄这一份）
+
+上面三段是中文，只有 `README-zh.md` 用得上。**其余四个文件是英文的**
+（`docs/qa/T-63/case-06-no-chinese-in-role-prompts.mjs` 判角色提示词里不许有中文）。
+所以英文原文也定死在这里，**逐字抄**：
+
+### A (English)
+
+> **Judge every question for whether it can be skipped.** A question can be skipped
+> **only when its answer changes neither what gets built nor what gets released** — being
+> able to start the work without the answer is not enough on its own. For a question that
+> can be skipped, offer a **"leave it undecided"** option beside your recommended answer.
+> **A question that cannot be skipped gets no such option**, and you say in one line why
+> it cannot.
+
+### B (English)
+
+> **A question the user left undecided is written nowhere in the opening document.** Not in
+> the table of what the interview settled, not in "not in scope", not in "still undecided".
+> Written into any of the three it becomes a confirmed line, and the user asking for that
+> thing later becomes a change of scope. **A question the user answered goes into the table
+> of what the interview settled, and a "no" is an answer.** Only "leave it undecided" leaves
+> nothing behind; you may never drop a refusal the user actually gave. **"Still undecided"
+> holds only the decisions you already know must be made at a known later point — never a
+> question you asked and they skipped.**
+
+### C (English)
+
+> **"Not in scope" may only hold an item with a real cost**: crossing it means work already
+> finished has to be built again, it cannot be undone (a package published, a tag pushed,
+> data deleted), or it would weaken a safety guard or a permission rule. Something you simply
+> did not do, where crossing it only means a little more work, **does not go in the list**.
+> Put it there and it becomes a boundary the user has to overturn to get what they want.
+
+## 谁拥有哪个文件（没有任何一个文件出现两次）
+
+| 任务 | 拥有的文件 |
+| --- | --- |
+| T-106 | `roles/pm.md` |
+| T-107 | `principles.md` |
+| T-108 | `README.md`、`README-zh.md` |
+| T-109 | `CLAUDE.md` |
+
+`docs/qa/` 归 QA，`docs/design/` 归 PM。四个任务都不许碰。
+
+---
+
+## T-106 — `roles/pm.md`：面谈能跳过，「不在范围内」只装真边界
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 任务进行中 ｜ qa: not run — 任务进行中 ｜ doc: not run — 任务进行中
+
+- **里程碑**：M1
+- **形状**：单人（solo）
+- **拥有的文件**：`roles/pm.md`
+- **测试文件**：**无**。这是提示词散文，没有单元测试判得了它——判它的是 QA 用例
+  （`docs/qa/T-106/`，第 10 步写）和文档评审。这是本任务被允许跳过测试先行的理由。
+- **依赖**：无。跟 T-107、T-108、T-109 并行
+- **DoD（PM 写，在简报发出之前）**：
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 第 2 步（面谈）里有**英文原文 A**，逐字 | `flat roles/pm.md` 含这三个**英文**串：`only when its answer changes neither what gets built nor what gets released`、`leave it undecided`、`gets no such option`。**这三个串由用例从本文件的原文 A 里读出来**（`ADR 0027`），不许手打——手打的串在原文改动时不会跟着变。**判英文，不判中文**——`roles/pm.md` 是英文文件，`docs/qa/T-63/case-06` 不许它出现中文 |
+| 2 | 写开局文档那一步里有**原文 B**，逐字，且三处（面谈表／不在范围内／还没定的事）都被点名 | **把原文 B 每行开头的 `> ` 去掉再压平**，`flat roles/pm.md` 必须含它全文一次。`roles/pm.md` 里这一段**不带** `> `，照抄带 `> ` 的版本会得 0（`flat()` 只压空白，不去 `> `）。另含 `not in scope` 和 `still undecided` 各 ≥1 次 |
+| 3 | 写开局文档那一步里有**英文原文 C**，逐字 | `flat roles/pm.md` 含这两个**英文**串：`has to be built again`、`does not go in the list` |
+| 4 | 原有的「一次一个问题」规矩**一个字没动**（它在「Never guess」、面谈步、「Hard rules」三处，是故意写三遍的） | 先贴本文件第一节那三行 `flat` shim，再跑 `flat roles/pm.md \| grep -o 'One question per turn' \| wc -l` ＝ **3**。**看到 `flat: command not found` 就是这条没跑，那个 0 不算绿。** 不要找中文串——`roles/pm.md` 是英文文件 |
+| 5 | 没有新增 `{{` | `grep -c '{{' roles/pm.md` ＝ 0 |
+| 6 | **`## Change requests` 那一节的「Not a change request」清单里加一句**：面谈时用户选了「先不定」的问题不是变更请求——它哪里都没写下来，所以以后要它，没有任何已确认的话被推翻，**不写 CRD**。**但如果答应它会动到里程碑清单、某条 DoD 或范围，第 14 条照旧适用** | `flat roles/pm.md` 含 `left undecided in the interview is not a change request`，且同一段含 `principle 14 still applies` |
+| 7 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |
+
+---
+
+## T-107 — `principles.md`：第 22 条带上理由，说清跟第 14 条的关系
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 任务进行中 ｜ qa: not run — 任务进行中 ｜ doc: not run — 任务进行中
+
+- **里程碑**：M1
+- **形状**：单人（solo）
+- **拥有的文件**：`principles.md`
+- **测试文件**：**无**。理由同 T-106
+- **依赖**：无
+- **DoD（PM 写，在简报发出之前）**：
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 第 22 条（面谈那一条）里有**原文 A** 的规则句，并写明它的**理由**：面谈把「顺手问一句」变成契约，`CRD 0027` 是实例——它的真实代价是一条命令、零返工、零新活，却走了完整流程 | **原文 A 连同每行开头的 `> ` 一起压平**，`flat principles.md` 必须含它一次——这三段在 `principles.md` 里**是**引用块，跟 `roles/pm.md` 相反。另含 `CRD 0027` |
+| 2 | 写明它**跟第 14 条（CRD）的关系**：这是**上游的防，不是把 CRD 放松**。第 14 条一个字没改 | 用例判这句话在；并 diff 第 14 条 ＝ 无改动 |
+| 3 | **原文 C** 的理由也在：「不在范围内」混了两种东西——真边界，和只是这次没排上的 | 同第 1 格的判法（**带 `> ` 压平**），`flat principles.md` 含原文 C |
+| 4 | 第 22 条原有的六种问题、漏斗、两种错法、停止规则**一个字没动** | 用例判这四段的关键句都还在 |
+| 5 | 条目编号仍然是 1 到 22，没新增编号 | `grep -c '^## [0-9]*\.' principles.md` ＝ **22** |
+| 6 | 第 22 条里那句 `What principle 22 adds is the six kinds, the funnel, the two failure modes, and the stop rule.` **改成不再遗漏新加的三条规矩**（它是穷尽式判断 `is`，多了三条之后现在是假话） | `flat principles.md` 里那句同时含 `the stop rule` 和讲这三条规矩的那一半 |
+| 7 | `CRD 0027` 那段证据**只否定「不在范围内」那一行，不否定面谈表那一行**。用户答过的「不要」进面谈表是**对的**，不是错的——安全评审报的：原来的写法把两行一起判错，会让 PM 合法地抹掉用户给过的拒绝 | `flat principles.md` 不含 `Neither line was needed`；含说明面谈表那一行是对的那句 |
+| 8 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |
+
+---
+
+## T-108 — 两份 README：把新规矩讲给用户听
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 任务进行中 ｜ qa: not run — 任务进行中 ｜ doc: not run — 任务进行中
+
+- **里程碑**：M1
+- **形状**：单人（solo）
+- **拥有的文件**：`README.md`、`README-zh.md`
+- **测试文件**：**无**。理由同 T-106
+- **依赖**：无
+- **DoD（PM 写，在简报发出之前）**：
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `README.md`（**英文，先写这份**）里，讲面谈那一段说明：**能跳的问题会给你一个「先不定」**，你选了它，那件事在开局文档里不出现 | 人读 ＋ 用例判关键句 |
+| 2 | 同一段说明「不在范围内」只列有真代价的东西——**PM 顺手没做的不会写进去，所以你以后想要，直接说就行，不用推翻什么** | 用例判关键句 |
+| 3 | `README-zh.md` 说**同一件事**，中文，短句 | `docs/qa/T-59/readmes.mjs` 那套判法 |
+| 4 | 两份的**节标题结构不变**，只在既有段落里改 | `docs/qa/T-59/case-07-headings-line-up.mjs` |
+| 5 | 版本行跟 `package.json` 一致（仍是 `0.9.0`） | 人读 |
+| 6 | 两份 README 里「以后想要就直接说，不需要任何 CRD」那句**加上限定**：它指的是「没有已确认的话被推翻」这一层；**如果答应它会动到里程碑清单、某条 DoD 或范围，仍然要写 CRD 并问你** | 两份各含限定语；`README.md` 含 `still needs` 或等义的英文限定 |
+| 7 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |
+
+---
+
+## T-109 — `CLAUDE.md`：跟着改的仓库规则
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 任务进行中 ｜ qa: not run — 任务进行中 ｜ doc: not run — 任务进行中
+
+- **里程碑**：M1
+- **形状**：单人（solo）
+- **拥有的文件**：`CLAUDE.md`
+- **测试文件**：**无**。理由同 T-106
+- **依赖**：无
+- **DoD（PM 写，在简报发出之前）**：
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 「How a job runs」那一节里，「一个 CRD 是为范围或契约改动而写」那一条**跟着补一句**：面谈能跳过的问题不写进开局文档，所以它以后不会变成范围改动。**第 14 条那条 CRD 规则本身一个字不改** | 用例判新句在、旧句也在 |
+| 2 | 「不在范围内」的新规矩（**原文 C** 的意思）在 `CLAUDE.md` 里有一句话的说明，并点名 `principles.md` 第 22 条是权威原文所在 | `flat CLAUDE.md` 同时含这两串：`"Not in scope" in an opening document holds only items with a real cost` 和 `22 holds the authoritative wording and the reason`（两串在同一条 bullet 里） |
+| 3 | 本次新加的「This file says how the repository works today. It is not a change log.」那一段**一个字没动** | 用例判那段还在 |
+| 4 | 没有引入新的变更历史（不写日期、不写「某作业改的」） | 用例：新增行里不含 `2026-` |
+| 5 | CRD 那条 bullet 上新加的那句**加上同样的限定**（见 T-108 第 6 格）：不写 CRD 只是因为没有已确认的话被推翻；动到里程碑清单、DoD 或范围时第 14 条照旧适用 | `flat CLAUDE.md` 含该限定语 |
+| 6 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |
+
+---
+
+## T-110 — `CHANGELOG.md`：用户会注意到的那条
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 任务进行中 ｜ qa: not run — 任务进行中 ｜ doc: not run — 任务进行中
+
+- **里程碑**：M1
+- **形状**：单人（solo）
+- **拥有的文件**：`CHANGELOG.md`
+- **测试文件**：**无**。理由同 T-106
+- **依赖**：T-108（两份 README 先定稿；这一条讲的是同一件事，用户看到的说法要一致）
+- **要求来源**：文档评审 M1 第 6 条（blocking）。`CLAUDE.md` 的「Documentation」一节写着，
+  第 14 步产出的是**全部**面向读者的文件——两份 README、**用户会注意到时的一条 `CHANGELOG.md`**、
+  以及 `CLAUDE.md`。本作业原来的 16 条 DoD 里一条都没提 `CHANGELOG.md`，四个任务谁都不拥有它。
+  而用户**一定**会注意到：README 自己就在告诉用户「你多了一个『先不定』选项」。
+- **DoD（PM 写，在简报发出之前）**：
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `## 0.10.0 — unreleased` 的 `### Changed`（没有就新建，排在 `### Added` 之后）里有一条，讲面谈的「先不定」：**能跳的问题会多给你一个选项，选了它那件事在开局文档里一个字不写，所以你以后想要，直接说就行** | `flat CHANGELOG.md` 含 `leave it undecided` |
+| 2 | 同一条或相邻一条讲「不在范围内」变短了：**只列有真代价的东西**——越过去要重做已完成的活、撤不回来、或者会削弱一条安全护栏 | `flat CHANGELOG.md` 含 `not in scope` 且含 `real cost` |
+| 3 | 写明**这不放松变更请求那条规矩**：动到里程碑清单、DoD 或范围时照旧要 CRD 并问用户 | 用例判该限定语在 |
+| 4 | 顶上那一节的标题**仍然是** `## 0.10.0 — unreleased`，日期不许现在填 | `head -20 CHANGELOG.md \| grep -c '^## 0.10.0 — unreleased'` ＝ 1 |
+| 5 | `package.json` 的 `version` **一个字不许动**（仍是 `0.9.0`） | `git diff --stat package.json` 为空 |
+| 6 | 用用户听得懂的话写，跟两份 README 讲的是同一件事，不许抄权威原文的措辞 | 文档评审 |
+| 7 | `npm test` 全绿 | `npm test`（PM 在静树上跑） |

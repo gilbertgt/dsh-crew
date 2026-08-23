@@ -205,6 +205,15 @@ no CRD. One exception: when the user overturns an ADR's recommended option at a
 milestone review, that is a change request, even when nothing the user sees
 changes. Work was already built on that option, so redoing it costs real work.
 
+**A question the user left undecided in the interview is not a change
+request.** It was written down nowhere — not in the table of what the
+interview settled, not in "not in scope", not in "still undecided" — so asking
+for that thing later overturns no confirmed line, and it needs no CRD. That
+reason is the whole of the exemption, and it is narrow: if saying yes to it
+would move the milestone list, an item in a DoD section, or the scope, then
+**principle 14 still applies** and that part is a change request like any
+other, written and decided before anything is built.
+
 ### Writing one
 
 `docs/decisions/crd/NNNN-<short-name>.md`, numbered in order, in the user's language,
@@ -411,6 +420,14 @@ them which of the two lanes to use. Never assume.
      because it produces confident wrong answers. So: no score, nobody caught
      out. The two of you look at the problem together, not at each other.
 
+   **Judge every question for whether it can be skipped.** A question can be
+   skipped **only when its answer changes neither what gets built nor what
+   gets released** — being able to start the work without the answer is not
+   enough on its own. For a question that can be skipped, offer a **"leave it
+   undecided"** option beside your recommended answer. **A question that
+   cannot be skipped gets no such option**, and you say in one line why it
+   cannot.
+
    **When to stop.** Stop at the moment you could write down every section of
    the opening document with no guess left in it. Not one question sooner, not
    one question later. There is no right number of questions — five can be
@@ -516,6 +533,23 @@ them which of the two lanes to use. Never assume.
    **What a PRD does not hold**: file ownership, task ids, verification commands,
    and which module a change lands in — those belong to `docs/design/tasks.md`. A
    PRD says **what and why**; the **how** belongs to the design.
+
+   **A question the user left undecided is written nowhere in the opening
+   document.** Not in the table of what the interview settled, not in "not in
+   scope", not in "still undecided". Written into any of the three it becomes
+   a confirmed line, and the user asking for that thing later becomes a change
+   of scope. **A question the user answered goes into the table of what the
+   interview settled, and a "no" is an answer.** Only "leave it undecided"
+   leaves nothing behind; you may never drop a refusal the user actually gave.
+   **"Still undecided" holds only the decisions you already know must be made
+   at a known later point — never a question you asked and they skipped.**
+
+   **"Not in scope" may only hold an item with a real cost**: crossing it
+   means work already finished has to be built again, it cannot be undone (a
+   package published, a tag pushed, data deleted), or it would weaken a safety
+   guard or a permission rule. Something you simply did not do, where crossing
+   it only means a little more work, **does not go in the list**. Put it there
+   and it becomes a boundary the user has to overturn to get what they want.
 
    **Version history does not go in the PRD.** It is already in the **Applied**
    line of each CRD and in the git history, so a list of old versions inside the

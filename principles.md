@@ -1436,12 +1436,51 @@ the answer to.
 Two rules the crew already had stay exactly as they are, and they belong to this
 one: **one question per turn**, each carrying the PM's own recommended answer, and
 **never guess** — look it up before you ask. What principle 22 adds is the six
-kinds, the funnel, the two failure modes, and the stop rule. "Stop when the
+kinds, the funnel, the two failure modes, the stop rule, and the three rules
+below on what the interview must not leave behind. "Stop when the
 answers are settled" was the old wording and it is deliberately gone: it names no
 condition anybody can check.
 
-**Why (ours).** Three pieces of evidence, all of them from this repository's own
-history, and the third one is the strongest because it is a failure.
+**What the interview must not leave behind.** An interview always asks more than
+the work needs, and the questions it did not need are the dangerous ones: asked
+in passing, answered in passing, written down as settled, and binding from then
+on. Three rules decide what reaches the opening document and what does not, and
+`roles/pm.md` carries their wording word for word.
+
+The first decides which questions may be skipped at all:
+
+> **Judge every question for whether it can be skipped.** A question can be skipped
+> **only when its answer changes neither what gets built nor what gets released** — being
+> able to start the work without the answer is not enough on its own. For a question that
+> can be skipped, offer a **"leave it undecided"** option beside your recommended answer.
+> **A question that cannot be skipped gets no such option**, and you say in one line why
+> it cannot.
+
+The second says what a skipped question leaves behind, which is nothing — and
+what an answered one leaves behind, which is a line in the table of what the
+interview settled, a "no" included:
+
+> **A question the user left undecided is written nowhere in the opening document.** Not in
+> the table of what the interview settled, not in "not in scope", not in "still undecided".
+> Written into any of the three it becomes a confirmed line, and the user asking for that
+> thing later becomes a change of scope. **A question the user answered goes into the table
+> of what the interview settled, and a "no" is an answer.** Only "leave it undecided" leaves
+> nothing behind; you may never drop a refusal the user actually gave. **"Still undecided"
+> holds only the decisions you already know must be made at a known later point — never a
+> question you asked and they skipped.**
+
+The third guards the section that leaks the most:
+
+> **"Not in scope" may only hold an item with a real cost**: crossing it means work already
+> finished has to be built again, it cannot be undone (a package published, a tag pushed,
+> data deleted), or it would weaken a safety guard or a permission rule. Something you simply
+> did not do, where crossing it only means a little more work, **does not go in the list**.
+> Put it there and it becomes a boundary the user has to overturn to get what they want.
+
+**Why (ours).** Four pieces of evidence, all of them from this repository's own
+history. The first three are about asking well, and the third of them is the
+strongest because it is a failure. The fourth is about asking more than the work
+needed, and it is where the three rules above come from.
 
 The **first** is the job that added the paired shape. That interview ran more
 than a dozen turns, one question per turn, and **the user changed their own
@@ -1482,12 +1521,95 @@ PM believing it already knew the answer instead of looking it up first — the e
 thing the leading-question rule forbids, only happening inside an instruction
 rather than inside a question.
 
+**The fourth piece of evidence, and it is the one the three rules above came
+from.** On 2026-08-22 the user asked for one thing: a GitHub release page for the
+tag `v0.9.0`, a tag that already existed and already had a complete section of its
+own in `CHANGELOG.md`. The real cost of doing it was **one command, no rework and
+no new work of any kind** — no code changed, no task run again, no package
+published. It cost a full change request all the same, `CRD 0027`
+([`0027-manually-backfill-the-0-9-0-release-page`](https://github.com/stuarthu/dsh-crew/blob/main/docs/decisions/crd/0027-manually-backfill-the-0-9-0-release-page.md)):
+written, weighed and confirmed before the command could be typed. The reason sat
+upstream, in an interview held earlier the same day. That interview had asked,
+in passing, whether the tags already out there should get release pages too, and
+the user answered "no". That "no" went into the opening document twice — once in
+the table of what the interview settled, once in "not in scope".
+
+**One of those two lines was right, and the other one is the whole problem.** The
+line in the table of what the interview settled **was correct, and a line like it
+has to stay**: the user gave a real refusal, the table is where a refusal is
+recorded, and a crew that drops it goes on to quietly do the thing the user said
+no to. The same "no" copied into "not in scope" is the line that did the damage.
+An answer sitting in the table is a decision the user can change by saying so;
+the same words under "not in scope" are a boundary, and a boundary has to be
+overturned, with a change request in between. The copy bought nothing —
+backfilling one old tag meant no finished work rebuilt, nothing that could not be
+undone, and no guard made weaker — and it cost a full CRD on the day the user
+changed their mind about a single tag.
+
+**This is a guard upstream of principle 14, not a loosening of it.** Not one word
+of principle 14 changes. Once a line is confirmed in the opening document,
+changing it still gets a CRD, still needs the user's yes, and the CRD is still
+never deleted. The fix belongs earlier, at the moment the line is written: a
+question whose answer changes neither what gets built nor what gets released can
+be left undecided, and a question left undecided never reaches the document, so
+it never becomes a line anybody has to overturn. The other repair was looked at
+and dropped — the user's first instinct was to let a change touching only `.md`
+files skip the CRD, and a backtest changed their mind: **9 of this repository's 27
+change requests touched nothing but `.md`**, and they include the paired shape,
+the two worktrees, DoD-is-a-section and the two lanes. Loosening principle 14
+would have bought the same day's convenience and thrown those records away, when
+what was actually wrong was that a line nobody needed had been written at all.
+Fewer confirmed lines, each one worth its weight, is the cheaper half of the same
+problem.
+
+**"Not in scope" was holding two different things under one name.** A real
+boundary — cross it and finished work has to be built again, or the crossing
+cannot be undone, or a safety guard or a permission rule ends up weaker — and
+something the crew simply did not get to this time. The first is worth writing
+down, because the reader needs to know the price before they ask. The second
+costs nothing but a little more work, and writing it down is exactly what makes
+it expensive: the user who wants it now has to overturn a line
+they once confirmed instead of just asking for it. One heading, two opposite
+meanings, and nothing in the list tells the reader which kind an item is — so the
+safe reading is the expensive one, which is the wrong reading every time the item
+is of the second kind. The list holds only the first kind now, and the second kind
+goes nowhere at all: not into "still undecided" either, which holds only decisions
+already known to be needed at a known later point.
+
+**The third real cost — a safety guard or a permission rule — is there because
+the first two missed one.** The "not in scope" list of the job that wrote these
+rules opens with "we do not touch `host/git-guard.js`", the middleware that
+decides which git commands a crew role is allowed to run. Measured against
+rebuilt work and against what cannot be undone, that line qualified on neither
+count, and the rule as first drafted would have thrown it out of the list. It
+stayed only on a side reason — three groups of QA cases would have had to be
+re-checked — so **the guard was kept by luck, not by the rule**. A boundary
+around a safety guard or a permission rule is precisely the kind a user should
+have to cross on purpose and in daylight, so it is now the third cost, written
+down instead of hoped for.
+
+**What the three rules cost.** A question the user left undecided leaves no
+trace: the opening document does not record that it was asked, so somebody
+reading it later cannot tell a question that was skipped from one nobody thought
+of. That price was taken knowingly, because the trace is the whole problem —
+written down anywhere, it reads as settled. It is also the **only** thing that
+disappears. An answer does not: it goes into the table of what the interview
+settled, and a "no" is an answer like any other, so a refusal the user really
+gave is never dropped by these rules. The stop rule above is what keeps the price
+small: ask only what you need in order to write every section with no guess left,
+and there is little left to skip.
+
 **Lives in** `roles/pm.md`, step 2 of the team lane. That step is the whole
 interview: the six kinds, the funnel, the two failure modes and the stop rule are
 written there, and it replaced a step called "Grill" whose ending condition was
-"stop when the answers are settled". Nothing else in the package carries this
-principle, and that is on purpose — the PM is the only role that talks to the
-user, so it is the only role that can hold an interview.
+"stop when the answers are settled". The three rules above live in that same
+step (which questions may be skipped) and in the step that writes the opening
+document (where a skipped question goes, and what "not in scope" may hold). No
+other role carries this principle, and that is on purpose — the PM is the only
+role that talks to the user, so it is the only role that can hold an interview.
+What the three rules keep out of the opening document is also written where the
+user reads it, in `README.md` and `README-zh.md`, and `CLAUDE.md` points back
+here for the reasons.
 
 **Source.** Six kinds of question, the funnel and the failure modes are not this
 crew's invention; the ten sources below are the ones the method was distilled

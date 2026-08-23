@@ -149,6 +149,26 @@ come back by themselves. After an upgrade, copy your changes into the new file.
    repository first, and for anything bigger than a quick look it starts a
    `crew_researcher`, which writes findings with a source for every answer — so
    you are only asked what the files cannot answer.
+
+   **You can leave a question undecided.** The PM judges every question by one
+   test: does the answer change what gets built, or what gets released? A question
+   that changes neither can be skipped — being able to start the work without your
+   answer is not enough on its own. Such a question carries a **"leave it
+   undecided"** option beside the recommended answer. Take it, and that thing goes
+   **nowhere in the opening document** — not in the table of what the interview
+   settled, not in "not in scope", not in "still undecided". So if you want it
+   later, you just ask for it: there is nothing to overturn. Whether that ask needs
+   a change request is then judged like any other ask. A question whose answer does
+   change what gets built or released has no such option, and the PM tells you in
+   one line why that one cannot be skipped.
+
+   **"Not in scope" only lists things with a real cost.** An item belongs there for
+   one of three reasons: crossing it means work already finished has to be built
+   again; it cannot be undone — a package published, a tag pushed, data deleted; or
+   it would weaken a safety guard or a permission rule. Something the PM simply did
+   not do, where crossing it only means a little more work, is left out. That keeps
+   the list short and honest: everything on it is a wall, and everything not on it
+   is yours to ask for.
 4. **It settles the language and stack, and you approve it.** If the repository
    already has one, that is the stack. The PM reads the manifest, the lock file,
    the test folder and the CI workflow, says what it found, and you confirm it in
@@ -624,6 +644,11 @@ Who decides which:
 Small questions do not become CRDs — a role's question that the files can answer
 is just a note in the job folder, and a review finding about code is a review
 finding. Only scope and contracts, the two things that cost real work to redo.
+A question you left undecided in the interview is not scope either: it was
+written down nowhere, so asking for that thing later overturns no confirmed line,
+and needs no CRD for that alone. But if saying yes to it would move the milestone
+list, a DoD item or the scope, that is a change of scope like any other: the PM
+still needs a CRD, and still stops and asks you.
 
 **A decision about *how* gets an ADR instead, whatever the size of the job.** One
 question tells the two apart: **did someone ask for this?** If someone did — you,

@@ -377,7 +377,8 @@ The cost is written down rather than implied: defects surface later than they us
 user accepted that trade knowingly. Per-task QA in the job before this one really did catch things
 earlier.
 
-Seven rules there are load-bearing, and `principles.md` 8, 13, 14, 15, 19 and 20 carry the reasons:
+Eight rules there are load-bearing, and `principles.md` 8, 13, 14, 15, 19, 20 and 22 carry the
+reasons:
 
 - **`DoD` is a section, never a file, and the checks live next to the work they govern.** Small work
   and big work alike open with a PRD of their own under `docs/design/` and keep one task table at
@@ -424,10 +425,20 @@ Seven rules there are load-bearing, and `principles.md` 8, 13, 14, 15, 19 and 20
   a source and a date per claim. A milestone that is not shipping gets a **shipping
   gap list** — `docs/release/<milestone>-gaps.md` — not a plan. Approving a plan is
   never approving a push.
+- **"Not in scope" in an opening document holds only items with a real cost**: crossing one means
+  work already finished has to be built again, it cannot be undone, or it would weaken a safety
+  guard or a permission rule. Something the PM simply did not do, where crossing it is only a
+  little more work, stays out — a line in that list is a boundary the user has to overturn.
+  `principles.md` 22 holds the authoritative wording and the reason.
 - **A CRD is written by the PM for scope or contract changes only**, whoever asked. Scope needs the
   user's yes; a contract fix the user cannot see is the PM's call, reported at the milestone review.
   Questions, review findings and internal design changes are deliberately *not* CRDs — widening
   that scope turns the PM into a clerk.
+  A question the user left undecided in the interview is written nowhere in the opening document,
+  so asking for that thing later overturns no confirmed line: on that ground alone it is not a
+  change of scope and needs no CRD. When saying yes to it would move the milestone list, a DoD
+  section or scope, this rule applies unchanged — the CRD is written and the user's own yes is
+  still needed. That guard sits upstream of this rule and does not loosen it (`principles.md` 22).
 
 `host/jobs.js` turns unfinished jobs into a dynamic prompt context that is re-read every turn — it
 must return `""` when there is nothing to say, and must never throw, because a prompt that fails to
