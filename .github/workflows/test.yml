@@ -45,5 +45,11 @@ jobs:
       # know this and say which one they skip — see tools/verify-mount.mjs.
       # So CI does NOT cover the role-tool half of verify-mount.mjs. That half
       # only runs on a machine that has dsh's own copy of the package linked in.
+      # Cheap check first, fail fast: every internal markdown link must point
+      # at a file that exists in the repository (Q3 of the issue-8 backlog,
+      # tools/verify-links.mjs). External links and anchors are not checked.
+      - name: Check markdown links
+        run: node tools/verify-links.mjs
+
       - name: Run checks
         run: npm test

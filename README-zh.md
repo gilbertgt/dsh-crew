@@ -625,6 +625,18 @@ npm test        # git 保护规则、插件挂载、所有 QA 用例，最后是
 变红，是用户开口问才发现的。这道门堵不住这件事，它只是让下一次这样的跳过当天就看得见，
 而不是二十个任务之后才看得见。
 
+## 快速开始
+
+安装 dsh-crew：
+
+```sh
+dsh plugin --profile tui add dsh-crew     # 或 --profile web
+```
+
+重启 dsh，把会话切到 **Crew** 预设。这次启动会把 `crew` 预设写入
+`$DSH_HOME/.agent-presets/crew`，你的会话会变成 **PM**。dsh-crew 横跨两个平面：
+PM 规则在你的 profile 里（宿主平面），角色工具在 `crew` agent 预设里（agent 平面）。
+
 ## 配置
 
 全部可选，各自放在所属的平面。

@@ -2376,3 +2376,169 @@ PM 自己改文件的车道、team flow step 9 派工程师）。缺一个「一
 
 **对本作业一个既有 case 的故意放宽（写在开始前，PM 2026-08-23）：**
 T-113 让 `docs/qa/T-110/case-03` 从「package.json 字节级不变」变红。这是**故意的、本作业自己造成的**：mount 新 guard 必须有 `exports` 加一行 + `scripts.test` 加一条命令，这两处是真实改动，必然破坏字节级 pin。放宽只针对**字节级全比**，**版本号 pin 保留**（version 仍 `0.9.0`、heading 仍 `## 0.10.0 — unreleased`、无日期——发布门 T-81/case-01 和 unreleased-heading 检查依赖版本不动）。QA 在 T-113 的 commit 里把断言改成按版本 pin 而非字节全比；工程师不改 `docs/qa/`，PM 不碰它——按回归例外规则。
+
+---
+
+# issue8-docs-qa-backlog 作业的任务行（PRD 2026-08-23-issue8-docs-qa-backlog，一个里程碑）
+
+## T-114 — README Quick start 中英对（D1+D2）
+
+- **Verdicts**：code: not run — 文档改动，不含产品代码 ｜ security: not run — 文档 ｜ qa: not run — 判据是 `grep` + doc review ｜ doc: not run — 任务进行中
+
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：`README.md`、`README-zh.md`
+- **依赖**：PRD `docs/design/prd-2026-08-23-issue8-docs-qa-backlog.md`
+- **要求来源**：issue #8 的 Docs backlog 第一项。
+
+## 要做什么
+
+`README.md` 加一个 **Quick start** 小节（英文，放在 Install 之后），`README-zh.md` 加逐字对应的
+中文版——同一 commit。内容：5 分钟上手——`dsh plugin --profile <name> add dsh-crew` 安装、
+进会话当助理、分平面（host/agent）一句话。**只从 README 现有 Install/Configuration 提炼，
+不引入新事实、不发明 API、不写仓库没有的行为。**
+
+## DoD（PM 写）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `README.md` 有 `Quick start` 节且含安装命令 | `grep -c "Quick start" README.md` ≥ 1 |
+| 2 | `README-zh.md` 有对应的中文 Quick start（逐字对应同一批事实） | `grep -c "快速开始\|Quick start" README-zh.md` ≥ 1；核心句与英文版一致 |
+| 3 | 中英一 commit、逐字对应 | `git diff --name-only` 只有这两个 README |
+| 4 | 内容如实，无编造 API/行为 | doc review |
+
+**对本作业一个既有 case 的故意放宽（写在开始前，PM 2026-08-23）：**
+T-114 让 `docs/qa/T-108/case-03` 从「README/README-zh 相对作业起始 commit 节集合不变」变红。
+这是**故意的、本作业自己造成的**：T-114 就是加 `Quick start` 节，必定破坏"没加节"的断言。放宽
+只针对**节集合/节顺序**那部分断言；**版本号 pin 保留**（README version line 仍 0.9.0、package.json
+仍 0.9.0、CHANGELOG 仍 unreleased）。QA 在 T-114 的 commit 里把断言改成按版本 pin 而非节集合；
+工程师不改 `docs/qa/`，PM 不碰它——按回归例外规则（同 T-113 对 T-110/case-03）。
+
+## T-115 — CONTRIBUTING.md（D3）
+
+- **Verdicts**：code: not run — 文档改动，不含产品代码 ｜ security: not run — 文档，不触碰任何权限或命令路径 ｜ qa: not run — 判据是 doc review ｜ doc: not run — 任务进行中
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：`CONTRIBUTING.md`（新建）
+- **要求来源**：issue #8 Docs backlog。
+
+## 要做什么
+
+一份贡献指南：改代码/文档/QA 怎么走（任务行、DoD、review 轮次、`npm test`、Verdicts）。**事实来自
+CLAUDE.md**，不发明新流程。如实说明：这是一 dsh 插件，主要资产是 Markdown 提示词。
+
+## DoD
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 存在且覆盖：改代码怎么走、改文档怎么走、跑测试命令、review 轮次 | 读文件；四个主题各一个可读小节 |
+| 2 | 内容与 CLAUDE.md 一致，不发明流程 | doc review |
+| 3 | `npm test` 不被它破坏 | `npm test` 全绿 |
+
+## T-116 — SECURITY.md（D4）
+
+- **Verdicts**：code: not run — 文档改动，不含产品代码 ｜ security: not run — 描述而非执行安全控制，文档 ｜ qa: not run — 判据是 doc review ｜ doc: not run — 任务进行中
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：`SECURITY.md`（新建）
+- **要求来源**：issue #8 Docs backlog。
+
+## 要做什么
+
+安全政策：git-guard 拦什么、pm-write-guard 拦什么、诚实局限（读命令文本、bash 后门）、怎么报告。
+**如实、不夸大**——这正是仓库反复强调的"诚实局限"精神。
+
+## DoD
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 描述两个 guard 的能力与局限（含 bash 后门、读命令文本） | 读文件；两个 guard 都提到，局限没说成无懈可击 |
+| 2 | 给报告途径 | 读文件 |
+| 3 | 内容与 host/*.js 注释一致 | doc review |
+
+## T-117 — docs/qa/README.md（D5）
+
+- **Verdicts**：code: not run — 文档改动，不含产品代码 ｜ security: not run — 文档 ｜ qa: not run — 是 QA 方法论，但写它的不是 QA case 本身 ｜ doc: not run — 任务进行中
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：`docs/qa/README.md`（新建）
+- **要求来源**：issue #8 Docs backlog。
+
+## 要做什么
+
+QA 方法论：docs/qa 布局（`T-*/case-*`、`run.sh`、`run-all.sh`、`lib/qa.mjs`、`gaps.md`），
+prompt-as-code 怎么验证。如实反映现有 40 个 case 任务的布局。
+
+## DoD
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 说明 docs/qa 目录结构和每个文件的角色 | 读文件；五个元素都提到 |
+| 2 | 与 `docs/qa/run-all.sh`、`lib/qa.mjs` 实际行为一致 | doc review |
+
+## T-118 — 规则→守卫映射 docs/qa/rule-guard-map.md（Q1）
+
+- **Verdicts**：code: not run — 文档改动，不含产品代码 ｜ security: not run — 文档 ｜ qa: not run — 由 Q2 verifier 守格式 ｜ doc: not run — 任务进行中
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：`docs/qa/rule-guard-map.md`（新建）
+- **依赖**：Q2 verifier（T-119）让它可核对；两者可并行或先后
+- **要求来源**：issue #8 QA backlog + 用户要求"每条规则要有守卫"。
+
+## 要做什么
+
+扫**全部 `roles/*.md`**（10 个角色提示文件）+ `docs/design/tasks.md`（DoD）+ `principles.md`，
+把每条用户能看到的规则列一行：`规则原文 | 归属 | 守卫状态`。守卫状态三种：
+`guarded`（有 verify/QA case 守）、`bare`（裸，靠角色自觉）、`judgment`（本质不可守卫的散文，
+标注不硬造 guard）。**把"裸规则"浮现出来。**
+
+## DoD
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 覆盖全部 10 个 `roles/*.md`，每个文件有计数条目 | `grep -c "^## " docs/qa/rule-guard-map.md` ≥ 10 个角色条目 |
+| 2 | 每行有原文/归属/守卫状态三列 | 读文件；格式一致 |
+| 3 | `bare` 与 `judgment` 从原文可 grep 到 | 抽查若干行 |
+| 4 | 与 Q2 verifier（T-119）互相一致 | `node tools/verify-rule-guard-map.mjs` 绿 |
+
+## T-119 — 映射配套 verifier tools/verify-rule-guard-map.mjs（Q2）
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 一个 tools/verify mjs,不触碰权限或命令路径 ｜ qa: not run — 判据是其自身变异测试 + npm test ｜ doc: not run — 任务进行中
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：`tools/verify-rule-guard-map.mjs`（新建）、`package.json`（`scripts.test` 加一段）
+- **依赖**：Q1 映射（T-118）
+- **要求来源**：issue #8 QA backlog。
+
+## 要做什么
+
+一个 verifier：**不判覆盖率够不够**，但**守 Q1 清单不撒谎**——每个角色文件有计数条目；
+标 `bare` 的规则能从 `roles/*.md` grep 到原文；标 `guarded` 的 guard 能解析到真实 verify/QA 文件。
+进 `scripts.test`（`npm test` 跑它）。
+
+## DoD
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `node tools/verify-rule-guard-map.mjs` 绿 | 直接跑 |
+| 2 | 能抓"清单撒谎"：一条标 `bare` 却原文不在 → 红；一条标 `guarded` 指向不存在文件 → 红 | 变异测试证明 |
+| 3 | 进 `scripts.test`（`npm test` 含它） | `grep "verify-rule-guard-map" package.json` ≥ 1 |
+| 4 | `npm test` 全绿 | `npm test` |
+| 5 | 过 code review | `crew-code-reviewer` |
+
+## T-120 — CI markdown link checker（Q3）
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 一个 tools/verify mjs + workflow 步骤,不触碰权限或命令路径 ｜ qa: not run — 判据是其自身变异测试 + npm test ｜ doc: not run — 任务进行中
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：`tools/verify-links.mjs`（新建）、`.github/workflows/test.yml`（加步骤）、`package.json`（`scripts.test` 或独立命令）
+- **要求来源**：issue #8 QA backlog。
+
+## 要做什么
+
+一个轻量 markdown 链接检查（node 内置，无新依赖）：仓库内 markdown 链接指向的文件存在。
+CI `test.yml` 加一步跑它。不引入需 `npm install` 的依赖（仓库"无依赖"哲学）。
+
+## DoD
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | `node tools/verify-links.mjs` 绿（现有文档链接都有效） | 直接跑 |
+| 2 | 坏的内部链接 → 红 | 变异测试证明 |
+| 3 | CI `test.yml` 有这步 | 读 workflow |
+| 4 | `npm test` 全绿 | `npm test` |
+| 5 | 过 code review | `crew-code-reviewer` |
+

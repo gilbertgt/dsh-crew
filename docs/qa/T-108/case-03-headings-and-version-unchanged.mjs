@@ -1,13 +1,22 @@
-// T-108 DoD items 4 and 5: the section structure of both READMEs is exactly what
-// it was before this job — the edits went inside paragraphs that already existed
-// — and the version line still matches `package.json`.
+// T-108 DoD items 4 and 5: the section structure of both READMEs is what it was
+// before this job — the edits went inside paragraphs that already existed — plus
+// the ONE section T-114 was written to add, and the version line still matches
+// `package.json`.
 //
-// What it proves: a rule that arrived as a new `## ` section would have been a
+// What it proves: a rule that arrived as a NEW `## ` section would have been a
 // second place the same thing is said, and the two pages would have drifted the
 // first time somebody edited one of them. `docs/qa/T-59/case-07` already checks
 // that the two files have the SAME shape as each other; this case checks that the
 // shape is the one they had BEFORE, which case-07 cannot see — both files gaining
-// a section together passes case-07 and fails this.
+// an UNDOCUMENTED section together passes case-07 and fails this.
+//
+// THE ONE DOCUMENTED EXCEPTION (T-114, recorded in its DoD in
+// `docs/design/tasks.md`): T-114 added `## Quick start` to README.md and
+// `## 快速开始` to README-zh.md. Those two headings are the ONLY additions this
+// case allows. Anything else added, anything removed, or a pre-existing section
+// moved out of order is still a red. The relaxation is deliberate and job-made,
+// so it changes ONLY the section-set/section-order assertions below; the version
+// half of this case is untouched.
 //
 // The version half is here because this milestone does not ship: `0.9.0` is
 // already published, so the number must not move. `docs/qa/T-59/case-09` pins the
@@ -22,6 +31,13 @@
 
 import { before, headingLines } from "./baseline.mjs";
 import { check, done, repoFile } from "../lib/qa.mjs";
+
+// T-114's additions (see its DoD in docs/design/tasks.md): the only headings this
+// case allows the READMEs to have gained since the start commit.
+const documented = {
+  "README.md": ["## Quick start"],
+  "README-zh.md": ["## 快速开始"],
+};
 
 for (const path of ["README.md", "README-zh.md"]) {
   const now = headingLines(repoFile(path));
@@ -47,16 +63,23 @@ for (const path of ["README.md", "README-zh.md"]) {
   const removed = then.filter((line) => !now.includes(line));
 
   check(
-    `${path} gained no section and lost none`,
-    added.length === 0 && removed.length === 0,
-    `added: ${added.join(" | ") || "none"}\n      removed: ${removed.join(" | ") || "none"}`
-      + "\n      this task was to edit inside the paragraphs that were already there",
+    `${path} lost no section`,
+    removed.length === 0,
+    `removed: ${removed.join(" | ") || "none"}`,
   );
 
   check(
-    `${path} kept its sections in the same order`,
-    now.join("\n") === then.join("\n"),
-    "the headings are the same set but not the same sequence — the two pages are compared position by position elsewhere",
+    `${path} gained only the documented Quick start section`,
+    added.length === documented[path].length
+      && added.every((line, index) => line === documented[path][index]),
+    `added: ${added.join(" | ") || "none"}\n      allowed: ${documented[path].join(" | ")}`
+      + "\n      T-114's Quick start is the only documented exception (see its DoD)",
+  );
+
+  check(
+    `${path} kept its pre-existing sections in the same order`,
+    now.filter((line) => !documented[path].includes(line)).join("\n") === then.join("\n"),
+    "a pre-existing section moved — the two pages are compared position by position elsewhere",
   );
 }
 

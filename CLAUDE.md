@@ -14,8 +14,10 @@ There is no build step and no bundler. The package ships plain ES modules (`"typ
 ## Commands
 
 ```sh
-npm test                            # six commands: the four project checks, QA's cases, the Verdicts gate
+npm test                            # every check below, in order
 node tools/verify-guard.mjs         # git-guard rules, replayed against fake commands
+node tools/verify-pm-write-guard.mjs# the PM write guard, against fake write/edit paths
+node tools/verify-rule-guard-map.mjs# the rule→guard map does not lie
 node tools/verify-jobs.mjs          # the unfinished-job notice, using throwaway job folders
 node tools/verify-mount.mjs         # package shape, preset shape, role table, real mount
 node tools/verify-preset-install.mjs # installing and upgrading the crew preset
@@ -28,7 +30,7 @@ them may read or write the real `~/.dsh` — keep it that way when adding cases.
 
 Run one check on its own by calling its file directly — that is the "single test" here.
 
-`npm test` runs six commands in order: the four project checks above, then
+`npm test` runs every check below in order: the project checks first, then
 `bash docs/qa/run-all.sh`, then `node tools/verify-tasks.mjs`. QA's cases and the Verdicts gate are
 part of the default test command and not things you have to remember. `npm test` is what CI runs:
 `.github/workflows/test.yml` runs it on **every push**; `.github/workflows/publish.yml` runs on a
@@ -38,7 +40,7 @@ into a fast check and a full one rather than dropping the cases. `test.yml` chec
 `fetch-depth: 0` on purpose: some QA cases read this repository's own commits, and the default
 shallow clone has no history.
 
-`verify-tasks.mjs` is the last of the six, and it reads no code — it reads `docs/design/tasks.md`.
+`verify-tasks.mjs` is the last check, and it reads no code — it reads `docs/design/tasks.md`.
 Only headings of the form `## T-<number>` are task sections; `## T-23 / T-24` is one heading with
 two ids and counts as one section. A section turns the check **red** when:
 

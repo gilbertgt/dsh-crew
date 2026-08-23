@@ -814,6 +814,20 @@ tasks and doc review on most of the job, nothing went red, and nobody knew
 until the user asked. The gate does not stop that; it makes the next such skip
 visible the same day instead of twenty tasks later.
 
+## Quick start
+
+Install dsh-crew:
+
+```sh
+dsh plugin --profile tui add dsh-crew     # or --profile web
+```
+
+Restart dsh, then start a session on the **Crew** preset. That start writes
+the `crew` preset into `$DSH_HOME/.agent-presets/crew`, and your session
+becomes the **PM**. dsh-crew lives in two planes: the PM rules in your
+profile (the host plane), the role tools in the `crew` agent preset (the
+agent plane).
+
 ## Configuration
 
 Everything is optional. Settings live in the plane they belong to.
