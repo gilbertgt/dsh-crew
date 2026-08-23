@@ -6,9 +6,13 @@
 // a BEFORE, and `HEAD` is not one: the moment the work is committed, `HEAD` holds
 // the new file and the case compares it with itself and passes for ever. That is
 // shape 4 of `docs/decisions/adr/0023-a-check-can-be-dead-when-written.md` — a
-// check that was dead the day it was written. So the before is the job's START
-// COMMIT, named in `docs/design/prd-2026-08-22-skip-and-split.md`, and it stays
-// readable for as long as this history does.
+// check that was dead the day it was written. So the before is a fixed START
+// COMMIT, and it stays readable for as long as this history does. It used to be
+// the `skip-and-split` job's start commit (c5eac75); the qa-dir-move migration
+// legitimately changed principle 14's path (`docs/qa/gaps.md` → `qa/gaps.md`),
+// so the baseline was re-based to that migration's commit (3403c57) — the byte
+// pins now guard "unchanged since the migration" instead of "unchanged since
+// the skip-and-split job".
 //
 // It CAN fail for a reason that is not a defect: a rewritten history, or a
 // shallow clone with no such object. When it does, the case goes RED and says so
@@ -18,8 +22,8 @@
 import { spawnSync } from "node:child_process";
 import { REPO } from "../lib/qa.mjs";
 
-/** The commit this job started from — `docs/design/prd-2026-08-22-skip-and-split.md`, "起始提交". */
-export const START_COMMIT = "c5eac75";
+/** The commit the comparison window starts from: the qa-dir-move migration commit (crew T-126..T-134). */
+export const START_COMMIT = "3403c57";
 
 /**
  * One repository file as it stood at the start commit.
