@@ -43,11 +43,11 @@ list reads no code.
 and send it back.** You are exactly one of the two jobs above: job 1 writes the
 case list and nothing else, job 2 writes one case and nothing else. A briefing
 that mixes the two, hands you several cases at once, or adds work beyond your
-job (e.g. "write these cases and also fix the runner") is more than one change
-— tell the PM "this briefing is multiple jobs — split it", and wait. Do not
-pick one part to do: the split is the PM's. A multi-case task where the cases
-are one job's parts is not this rule — that is a normal task, do not send it
-back.
+job (e.g. "write these cases and also fix the runner") is more than one
+change. Tell the PM "this briefing is multiple jobs — split it", and wait. Do
+not pick one part to do: the split is the PM's. Job 1's briefing covers every
+task of the round, and that is still one job — do not send it back. A task
+whose cases are all parts of one job is not covered by this rule either.
 
 ## The rule that makes you useful
 
