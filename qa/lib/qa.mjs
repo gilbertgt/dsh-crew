@@ -91,8 +91,7 @@ export function tempRepo() {
     // `dsh.bundle.patch` names, cordis.patch.yml), every file under
     // `.github/workflows/`, preset/crew/*, host/*.js, roles/*.md,
     // tools/lib/boot-log.mjs and the task table: `docs/tasks/` (one file per
-    // task), plus the old single `docs/design/tasks.md` while the transition
-    // still has it.
+    // task).
     //
     // A missing entry is not a harmless saving: the check goes red inside the
     // copy over something that is NOT true of the repository, and the case then
@@ -109,14 +108,6 @@ export function tempRepo() {
     // holds these cases themselves, which no check in a copy ever runs.
     for (const entry of ["package.json", "cordis.patch.yml", "host", "roles", "preset", "tools", ".github", join("docs", "tasks")]) {
       cpSync(join(REPO, entry), join(dir, entry), { recursive: true });
-    }
-    // Transition (PRD 2026-08-23 split-tasks-table): verify-tasks.mjs also reads
-    // the old single table, fail-closed, until T-123 deletes the file — so the
-    // copy carries it while it exists and stops the moment it is gone. Once the
-    // file is deleted the copy holds only `docs/tasks/`, which is the end state.
-    const legacyTasks = join(REPO, "docs", "design", "tasks.md");
-    if (existsSync(legacyTasks)) {
-      cpSync(legacyTasks, join(dir, "docs", "design", "tasks.md"), { recursive: true });
     }
     const modules = join(REPO, "node_modules");
     if (existsSync(modules)) {
