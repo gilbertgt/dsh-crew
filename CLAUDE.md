@@ -348,9 +348,8 @@ is**, never who made it:
 | `docs/decisions/` | `adr/NNNN-<short-name>.md` (how it was done, whatever the size of the job) and `crd/NNNN-<short-name>.md` (one change request per scope-or-contract change) |
 | `qa/` | QA's **runnable** cases — `<task-id>/case-*`, a `run.sh` per task and one `qa/run-all.sh` that finds them all — plus `gaps.md`, the standing list of what no case can check |
 | `docs/release/` | a release and an upgrade plan for each milestone the user ships: `<milestone>-release.md` and `<milestone>-upgrade.md`; plus `<milestone>-gaps.md`, the **shipping gap list**, for a milestone that does not ship (not to be confused with `qa/gaps.md`) |
-| `docs/research/` | one answer per question the PM sent to a researcher: `<short-name>.md` |
 
-Today this repository has `docs/decisions/`, `qa/`, `docs/research/`, the one
+Today this repository has `docs/decisions/`, `qa/`, the one
 task table under `docs/tasks/`, and one PRD and one HLD per job under `docs/design/`. The PRD
 comes before the task rows and the HLD is written by the architect, which is the order the flow
 asks for. Both carry the date and the job slug in their file names —

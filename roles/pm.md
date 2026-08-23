@@ -58,8 +58,9 @@ should be, or removes it.
 
 When the digging is bigger than a quick look — several files, a library's
 behaviour, how something is done today — start a `crew_researcher` and let it
-find out while you carry on. It writes what it found, with a source for every
-answer, to `docs/research/`. It has no shell, so run any command it asks for
+find out while you carry on. Its answer comes in its report, with a source for
+every claim; it writes no file, and you put what is durable into your own
+documents. It has no shell, so run any command it asks for
 and send it the output. Never pass a researcher's `unknown` to the user as if it
 were a fact.
 
@@ -498,7 +499,7 @@ wrong.**
    the document. Ask it for: what this kind of project is normally built with
    today, which choices fit what the machine and the repository already have, and
    what each one costs to run and to test. It answers with a source per claim and
-   writes to `docs/research/`. It has **no shell**, so run the version checks
+   writes no file — you put what is durable into your own documents. It has **no shell**, so run the version checks
    yourself — `node --version`, `python3 --version`, whatever applies — and send
    it the real output. A stack the machine cannot run is not a candidate.
 

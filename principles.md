@@ -839,7 +839,7 @@ outlive the job?**
   `docs/design/tasks.md`, the design and the boundary contracts, all in
   `docs/design/`; QA's runnable cases and `gaps.md`, its standing list of what no
   case can check, in `qa/`; a
-  researcher's answers in `docs/research/`; the release and upgrade plans, plus a
+  researcher's answers in its report (the PM writes what is durable into its own documents); the release and upgrade plans, plus a
   shipping gap list for a milestone that does not ship, in `docs/release/`; a rule
   the crew must keep, here in `principles.md`. **Every DoD
   section rides in one of those two `docs/design/` files** — that is principle 20,
@@ -952,8 +952,8 @@ repeating a row that all three share.
 | --- | --- | --- | --- | --- | --- |
 | all | Step 1 of the lane rules, **Pick a lane** | PM | one line naming the lane (`[lane: team]`) | the reply to the user | No — and nothing needs it. Only the `team` lane runs the steps below |
 | team | Step 1, **Language** | PM asks, user answers | the language every crew document is written in | the documents themselves; `state.json` names it | The documents, yes. `state.json`, no |
-| team | Step 2, **the interview** (principle 22) | PM asks, user answers; a `crew_researcher` when the digging is bigger than a quick look | answers, one question per turn, each carrying the PM's own recommendation, and it stops when every section of the opening document can be written with no guess left; plus the researcher's answer, with a source per claim | the answers become the content of step 4, **Write the opening document**; the researcher's answer is `docs/research/<short-name>.md` | The answers, no — step 4 is where they land. The researcher's answer, yes |
-| team | Step 3, **Language and stack** | PM decides, user confirms; a `crew_researcher` when the choice is real | the **Language and stack** section: language and version, package manager, framework, database, test framework with its exact command. Plus the researcher's answer, with a source per claim | the section in the opening document; the answer in `docs/research/<short-name>.md` | Yes, both |
+| team | Step 2, **the interview** (principle 22) | PM asks, user answers; a `crew_researcher` when the digging is bigger than a quick look | answers, one question per turn, each carrying the PM's own recommendation, and it stops when every section of the opening document can be written with no guess left; plus the researcher's answer, with a source per claim | the answers become the content of step 4, **Write the opening document**; the researcher's answer is in its report, and the PM writes what is durable into its own documents | The answers, no — step 4 is where they land. The researcher's answer, yes |
+| team | Step 3, **Language and stack** | PM decides, user confirms; a `crew_researcher` when the choice is real | the **Language and stack** section: language and version, package manager, framework, database, test framework with its exact command. Plus the researcher's answer, with a source per claim | the section in the opening document; the researcher's answer is in its report, and the PM writes what is durable into its own documents | Yes, both |
 | team | Step 4, **Write the opening document** | PM | the opening document — `docs/design/prd-<date>-<job-slug>.md`, one per job. Small work: goal, out of scope, Language and stack. Big work: the same file with the problem, the users, success, risks, open questions and the **milestones, each with a DoD section** | `docs/design/` | Yes |
 | small, bug | Step 4, **Write the task table** | PM, because small work has no architect | `docs/design/tasks.md`: one row per task with an id, one sentence of work, the exact files it owns, the test file it must write, and its **DoD section** | `docs/design/tasks.md` | Yes |
 | bug | **A bug becomes a task row** — before any engineer starts | PM, never the engineer that will do the fix | one row: **what was reported** (who reported it, the command, the input, what happened, what was expected) and its **DoD section** (the failing case that must exist and pass, and the behaviour that must change) | `docs/design/tasks.md` | Yes |
@@ -971,7 +971,7 @@ repeating a row that all three share.
 | team | Any step, **a change to scope, a DoD item, the milestone list or a contract** | PM, whoever asked | a CRD — and the DoD items it adds are written into the task row or the milestone it changes, with a note in the CRD of where they went and how many | `docs/decisions/crd/NNNN-<short-name>.md`, plus `docs/design/tasks.md` or the opening document | Yes |
 | team | Step 11, **Commit** | PM, the only one who uses git | the commit: the task's files, QA's cases, its `gaps.md` entries, any ADR or CRD — and the message, which carries this change's reasons and its real test numbers. **Plus that task's Verdicts line**: one bullet at the top of the task's section carrying all four values (`code`, `security`, `qa`, `doc`), a reason of its own on every `not run` and every `skipped`, and a task id on every `changes needed` | git history for the commit and its message; `docs/design/tasks.md` for the Verdicts line. In this repository `node tools/verify-tasks.mjs` reads that line as the last stage of `npm test`, so every push checks it and a release checks it again before publishing; the check itself writes no file — its counts go to stdout, like every other test run in this table | Yes, both. The commit message is the only timestamped copy of the four values; the Verdicts line is the copy a check can read |
 | big | Step 12, **Milestone review** | PM reports, user answers | what works now, how to try it, what is missing, the real test numbers, every CRD and every ADR of that milestone, one line each | the reply to the user; whatever the user decides becomes a CRD | The report, no. Its decisions, yes |
-| big | Step 13, **Release and upgrade plans**, for a milestone that really ships | PM plus a `crew_researcher`, with a source and a date per claim | `<milestone>-release.md` and `<milestone>-upgrade.md`; or, when nothing ships, a **shipping gap list** naming what is still missing | `docs/release/` — the two plans when the milestone ships; `docs/release/<milestone>-gaps.md` when it does not; the researcher's answer in `docs/research/<short-name>.md` | Yes — the two plans or the shipping gap list, and the researcher's answer, all stay. The shipping gap list is a file, not a paragraph in a message: the next milestone shortens that same file instead of copying it forward by hand |
+| big | Step 13, **Release and upgrade plans**, for a milestone that really ships | PM plus a `crew_researcher`, with a source and a date per claim | `<milestone>-release.md` and `<milestone>-upgrade.md`; or, when nothing ships, a **shipping gap list** naming what is still missing | `docs/release/` — the two plans when the milestone ships; `docs/release/<milestone>-gaps.md` when it does not; the researcher's answer is in its report, and the PM writes what is durable into its own documents | Yes — the two plans or the shipping gap list, and the researcher's answer, all stay. The shipping gap list is a file, not a paragraph in a message: the next milestone shortens that same file instead of copying it forward by hand |
 | team | Step 14, **README and the other reader-facing files** | PM | `README.md` in English, plus `README-<lang>.md` when the job's language is not English; a `CHANGELOG.md` entry when a user would notice the change; a `CLAUDE.md` edit when the repository's own rules or layout moved | the repository root | Yes |
 | team | Step 15, **Last doc review** — one round | `crew_doc_reviewer` | findings on every document this job produced or changed, the README included | report to the PM; fixes land in the documents | The report, no. The documents, yes |
 | team | Step 16, **Push and CI** | PM, with the user's yes every single time | the pushed commits, and `merge.publishCheck` — the CI files that were read and whether this push would publish | the remote; `state.json` | The commits, yes. `publishCheck`, no, and it is re-read after a restart |
@@ -1000,7 +1000,7 @@ misalignments nobody had recorded:
   file to be kept up to date while the table had no row that produced it.
 - **The researcher's answer had no home in the table.** Step 2 said "nothing of
   its own", and step 13's "where" named only `docs/release/`, while
-  `roles/researcher.md` has always written `docs/research/<short-name>.md`.
+  `roles/researcher.md` used to write `docs/research/<short-name>.md`; since the folder was removed, its answer lives in its report.
 - **The shipping gap list had no home in the repository.** The table said it
   "travels in the review and is carried forward by hand". That contradicts this
   principle's own rule — a record that survives is a record in the repository —
@@ -1010,7 +1010,7 @@ The first two were closed by widening step 14 from "README" to the reader-facing
 files, so one row now produces `README.md`, the language copies, a `CHANGELOG.md`
 entry when a user would notice the change, and a `CLAUDE.md` edit when the
 repository's own rules or layout moved. The other two were closed by giving each
-output a named file: `docs/research/<short-name>.md` and
+output a named file; its answer is its report, and
 `docs/release/<milestone>-gaps.md`. An earlier run had already closed a fifth,
 QA's shared helper `qa/lib/qa.mjs`, which step 10c's row now names. Run
 again after those fixes, both directions came back clean.
@@ -1068,7 +1068,7 @@ skip is not.
 Some of the paths that table names are here and some are not, and the split
 moves as jobs run: the opening document and the design arrived with
 the first job that needed them, while `docs/design/api/`, `docs/release/` and
-`docs/research/` are steps no job here has run, and that is not a misalignment.
+researcher answers as report-only are steps no job here has run, and that is not a misalignment.
 
 **Why (ours): 75 acceptance checks were lost in an hour.** The closing migration
 step named five destinations — a rule to `principles.md`, a decision about how to
@@ -1831,8 +1831,7 @@ cannot.
 A reference list, not a rule, so it carries no principle number — the same call [`ADR 0014`](https://github.com/stuarthu/dsh-crew/blob/main/docs/decisions/adr/0014-glossary-placement.md) made for
 the glossary above. Each entry says what outside sources ask for, what they say it does **not**
 hold, and where this repository deliberately differs. Every source was read on **2026-08-21**; the
-full quotations, the confidence on each one and the sources that could not be reached are in
-[`document-types`](https://github.com/stuarthu/dsh-crew/blob/main/docs/research/document-types.md).
+full quotations and the sources that could not be reached were recorded in the research file for that job (since removed from the repository); the per-source citations are in the table below.
 
 ### PRD, the opening document
 
@@ -1923,8 +1922,7 @@ change-control process is the project-management side; ITIL 4's change enablemen
 (https://www.axelos.com/certifications/itil-service-management, read 2026-08-21) is the
 IT-service-management side. Both ask for a **description**, a **reason**, an **impact or risk**
 assessment, and an **approval**. Only ITIL requires a **back-out plan** — how to undo it — and only
-PMBOK classifies a change as corrective, preventive or defect repair. The quotations and what could
-not be reached are in [`document-types`](https://github.com/stuarthu/dsh-crew/blob/main/docs/research/document-types.md), section four; ISO 10007, the
+PMBOK classifies a change as corrective, preventive or defect repair. The quotations and what could not be reached were in the research file's section four (since removed from the repository); ISO 10007, the
 configuration-management standard that would have been a third source, refused the fetch and is
 recorded there as unreachable rather than paraphrased.
 

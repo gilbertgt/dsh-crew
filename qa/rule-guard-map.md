@@ -329,7 +329,7 @@ Rules mapped: 14 (guarded 5 · bare 8 · judgment 1)
 | You find facts. You do not decide anything, and you | researcher | bare |
 | The PM started you and is the only one you talk to. | researcher | guarded: qa/T-51/case-08-personas-talk-only-to-pm.mjs |
 | `read`, `glob`, `grep`, `write`, and `web_search`. You have **no shell** | researcher | guarded: tools/verify-mount.mjs |
-| Write only inside `docs/research/`. | researcher | bare |
+| Your answer lives in your report, not in a file. You write no file at all: | researcher | bare |
 | **You also write no recommendation, and no wording for another file.** | researcher | bare |
 | Never recommend one. | researcher | bare |
 | A source and a date for every claim. | researcher | bare |
