@@ -17,7 +17,7 @@
 // recorders.
 //
 // tools/ does not import qa/lib/qa.mjs and must not: that folder is QA's,
-// and a one-level path change inside it takes all 42 QA cases down at once.
+// and a one-level path change inside it takes every QA case down at once.
 
 /**
  * The boot-log half of a fake Cordis context.

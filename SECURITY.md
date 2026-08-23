@@ -108,13 +108,13 @@ impossible instead of merely forbidden.
 
 A path on the PM's whitelist passes straight through, no approval asked. The
 whitelist is hard-coded in the guard, and pinned by
-`tools/verify-pm-write-guard.mjs`; it is not read from `tasks.md`, so a change
+`tools/verify-pm-write-guard.mjs`; it is not read from the task table (`docs/tasks/`), so a change
 to the rules text cannot move the guard:
 
 - `docs/design/prd-*.md` — the opening document of a job
 - `docs/decisions/crd/*.md` — change request documents
 - `docs/decisions/adr/*.md` — decision records
-- `docs/design/tasks.md` — the task table, whole file
+- `docs/tasks/` — the task table directory, any direct child
 - `qa/run-all.sh` and `qa/gaps.md` — the shared QA runner and the
   standing gap list
 - `CLAUDE.md`, `principles.md` — the project rules and the principles

@@ -68,10 +68,10 @@ export const ROLES = [
     toolName: "crew_researcher",
     personaFile: "researcher.md",
     summary: "Find the facts a decision needs",
-    // Reads anything, writes its findings, searches the web — and has no shell,
+    // Reads anything, searches the web — and has no shell and no file-writing tool,
     // so it cannot run or change the project while it is looking around. The PM
     // runs any command it asks for.
-    allow: [...READ_ONLY, "write", "web_search"],
+    allow: [...READ_ONLY, "web_search"],
   },
   {
     key: "architect",

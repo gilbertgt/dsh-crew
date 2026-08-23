@@ -1268,7 +1268,9 @@ for (const role of ROLES) {
       if (role.allow.includes(forbidden)) fail(`${role.toolName}: allow list names "${forbidden}", which defeats the point of the allow list`);
     }
     // A reviewer judges something; it must not be able to change it. Other
-    // allow-list roles (the researcher writes findings) may keep `write`.
+    // allow-list roles may keep a writer when their job needs one (no role
+    // here does: the researcher is read-only since its answers became
+    // report-only).
     if (role.key.includes("review")) {
       for (const writer of ["write", "edit", "str_replace_editor"]) {
         if (role.allow.includes(writer)) fail(`${role.toolName}: a reviewer may not have "${writer}"`);

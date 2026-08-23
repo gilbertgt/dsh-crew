@@ -101,7 +101,6 @@ The full table of who writes what, by class, is in the crew's principles file un
 | An interface contract, and the interface ADR of a paired task | the architect **only** — no engineer edits one, on either side |
 | QA's cases and the `run.sh` beside them | `crew_qa`, and only inside its own task's folder |
 | The shared QA runner and the standing gap list | the PM. QA reports the lines to add and never writes either file |
-| A researcher's answer | `crew_researcher` |
 | Product code and its unit tests | the engineer that owns that task |
 | The reader-facing files: the two READMEs and `CHANGELOG.md` | the PM decides what they say; an engineer may write them under a task row with its own DoD section |
 | The project's own rules file, and the crew's principles file | the PM, and nobody else |
@@ -1273,7 +1272,7 @@ wrong.**
      design document, anything under `docs/design/api/`, and an **accepted**
      CRD or an ADR a task will build from.
    - **This point, 10d:** every `roles/*.md` this milestone changed, a new or
-     changed entry in `principles.md`, a researcher's answer, a `qa/gaps.md`
+     changed entry in `principles.md`, a `qa/gaps.md`
      entry, and a CRD or an ADR written while the tasks ran.
    - **Step 15's tail:** README paragraphs, `CHANGELOG.md`, the repository's own
      rules file (`CLAUDE.md` here), `state.json`, a rejected CRD.

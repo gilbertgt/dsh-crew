@@ -34,7 +34,7 @@ const tasksDir = join(packageRoot, TASKS_DIR);
 // A task file's own top heading: `# T-<number> — …`. The id is the load-bearing
 // part — the file name and the heading must agree; the dash after the id is not
 // required.
-const FILE_HEADING = /^#\s+(T-\d+)\b/;
+const FILE_HEADING = /^#\s+(T-[A-Za-z0-9-]+)/;
 // The line, not a table column: `- **Verdicts**：code: … ｜ security: … ｜ …`.
 const VERDICTS = /^\s*-\s*\*\*Verdicts\*\*[：:]\s*(.*)$/;
 
@@ -48,7 +48,7 @@ function parseTasksDir() {
     fail(`${TASKS_DIR}/ is missing, so nothing records whether a task's four reviews ran (CRD 0011)`);
     return sections;
   }
-  const files = readdirSync(tasksDir).filter((name) => /^T-\d+\.md$/.test(name)).sort();
+  const files = readdirSync(tasksDir).filter((name) => /^T-[A-Za-z0-9-]+\.md$/.test(name)).sort();
   // A green with nothing found is the worst outcome: it reads exactly like a
   // green with everything found. If the directory's shape moved, say so instead.
   if (files.length === 0) {

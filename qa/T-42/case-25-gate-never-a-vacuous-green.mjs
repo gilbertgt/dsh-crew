@@ -16,7 +16,7 @@ const MISSING = "docs/tasks/ is missing";
 
 /** Every task file of a copy's `docs/tasks/` directory, sorted. */
 const taskFiles = (dir) =>
-  readdirSync(join(dir, TASKS_MD)).filter((name) => /^T-\d+\.md$/.test(name)).sort();
+  readdirSync(join(dir, TASKS_MD)).filter((name) => /^T-[A-Za-z0-9-]+\.md$/.test(name)).sort();
 
 const dir = tempRepo();
 try {

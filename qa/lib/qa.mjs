@@ -273,7 +273,7 @@ export const TASKS_MD = join("docs", "tasks");
  */
 export function editFirstVerdicts(dir, change) {
   const taskFiles = readdirSync(join(dir, TASKS_MD))
-    .filter((name) => /^T-\d+\.md$/.test(name))
+    .filter((name) => /^T-[A-Za-z0-9-]+\.md$/.test(name))
     .sort();
   for (const file of taskFiles) {
     const id = file.replace(/\.md$/, "");

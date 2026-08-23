@@ -1,7 +1,7 @@
 # Contributing to dsh-crew
 
 This guide says how a change moves through this repository: from a task row in
-`docs/design/tasks.md` with its DoD section, through an engineer's test-first
+`docs/tasks/` with its DoD section, through an engineer's test-first
 code or a document, to QA, the reviews, the Verdicts line and `npm test`.
 
 The source of these facts is `CLAUDE.md`. Read `CLAUDE.md` first — it is the
@@ -36,7 +36,7 @@ is changed alone. A milestone is one full cycle plus one commit: at least one
 task, one round of QA, and one round of each review.
 
 Each job opens with a PRD of its own: `docs/design/prd-<date>-<job-slug>.md`.
-The one task table of the whole repository is `docs/design/tasks.md`. Every
+The one task table of the whole repository is `docs/tasks/`. Every
 task section holds:
 
 - an id (`T-01`);
@@ -105,7 +105,7 @@ Where a document lives depends on how long it lives:
 - **Single-use** documents live outside the repository in
   `~/.dsh/crew/jobs/<job-slug>/` — job state, QA's plans, the `Q-` question
   files — and the folder is dropped when the job ends. DoD sections and file
-  ownership are never single-use; they live in `docs/design/tasks.md`.
+  ownership are never single-use; they live in `docs/tasks/`.
 
 A decision about **how** something is done goes into an ADR under
 `docs/decisions/adr/`, whatever the size of the job. A change to scope or to a
@@ -189,12 +189,12 @@ round — the reader-facing files.
 
 ## The Verdicts line
 
-Every task section in `docs/design/tasks.md` starts with a **Verdicts** line,
+Every task section in `docs/tasks/` starts with a **Verdicts** line,
 written by the PM, with four values in this order: `code`, `security`, `qa`,
 `doc`.
 
 `node tools/verify-tasks.mjs` — the last thing `npm test` runs — reads
-`docs/design/tasks.md` and turns red when:
+`docs/tasks/` and turns red when:
 
 - a task section has no `- **Verdicts**：` line, or more than one;
 - any of the four values is missing;

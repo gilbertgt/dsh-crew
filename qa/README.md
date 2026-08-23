@@ -37,7 +37,7 @@ qa/
     └── baseline.mjs   (in some folders) a shared helper for that task, never run
 ```
 
-As of this writing there are 40 task folders, 285 `case-*.mjs` files, and 62
+As of this writing there are 38 task folders, 271 `case-*.mjs` files, and 62
 entries in `gaps.md`. The numbers move as jobs add cases; the shape does not.
 
 ## The three layers of runner
@@ -141,7 +141,7 @@ exit-code-only assertion would read that crash as "the pin caught it". So
 **Sandboxing** — `tempDir(prefix)` (a throwaway folder in the OS tmp),
 `tempRepo()` (a copy of the parts of the repository the check scripts read —
 `package.json`, `cordis.patch.yml`, `host/`, `roles/`, `preset/`, `tools/`,
-`.github/`, `docs/design/tasks.md`; `node_modules` is symlinked, never copied),
+`.github/`, `docs/tasks/`; `node_modules` is symlinked, never copied),
 `runCheck(dir, script)` (run one of the project's check scripts inside such a
 copy with `DSH_HOME` and `HOME` pointed at a throwaway folder), `cleanUp(dir)`
 (remove the folder whatever happened).

@@ -469,7 +469,7 @@ rejected. Three unnumbered sections at the end carry things a number would not
 fit: the wording every role prompt copies word for word, one table of **which
 class of document each role may write**, and **what each kind of document holds**
 — eight kinds, each with the outside source it came from and the date it was read,
-distilled from `docs/research/document-types.md`. That last one is a reference
+distilled from the research file of the job that read them (since removed from the repository). That last one is a reference
 list, not a rule, which is why it has no number (`ADR 0021`). Role prompts are written short and bossy on purpose, so the reasoning
 has to live somewhere else. When you change a rule in `roles/*.md`, update the
 principle that carries it; when you reject an idea, add it to the table so the
