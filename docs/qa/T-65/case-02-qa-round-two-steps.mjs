@@ -176,7 +176,7 @@ check(
 // have their input and output written").
 for (const [what, pattern] of [
   ["the opening document", /paths of the opening document/],
-  ["docs/design/tasks.md", /docs\/design\/tasks\.md/],
+  ["docs/tasks/", /docs\/tasks\//],
   ["the task ids with their DoD sections", /task ids with their DoD sections/],
   ["the project's test command", /project's test command/],
   ["the job folder path", /job folder path/],

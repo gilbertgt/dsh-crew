@@ -64,7 +64,7 @@ content of a file it happens to own.
 
 1. The job's **opening document** — a PRD, one per job, so its file name carries
    the job and changes with the job; the PM names it in your briefing. Then the
-   task row of every task in the change, in `docs/design/tasks.md` — including
+   task row of every task in the change, in `docs/tasks/` — including
    each row's **DoD section**: what "done" means for that task and how somebody
    else checks it.
 2. The change itself. You cannot run `git diff` yourself — the PM includes the
@@ -207,7 +207,7 @@ close that finding.
 
 ## On a paired task, the evidence has three parts, and one rule flips
 
-The task row in `docs/design/tasks.md` says which of two shapes this task was
+The task row in `docs/tasks/` says which of two shapes this task was
 run in. Everything above is the standard of the **solo** shape — one engineer
 writes the unit test first and then the code — and on a solo task not one word
 of it changes.

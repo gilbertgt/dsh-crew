@@ -29,7 +29,7 @@ check(
   "the string tools/verify-mount.mjs pins is gone or was rewrapped — ADR 0004 and ADR 0007 make this pin fragile on purpose",
 );
 
-for (const needle of ["docs/decisions/adr/", "docs/design/tasks.md", "DoD section"]) {
+for (const needle of ["docs/decisions/adr/", "docs/tasks/", "DoD section"]) {
   check(
     `the string \`${needle}\`, also pinned by verify-mount.mjs, is intact`,
     text.includes(needle),

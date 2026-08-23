@@ -41,7 +41,7 @@ change with every job, and a list of names would be wrong by the next job and wr
 invisibly, which is the worst kind:
 
 - the **design** of this job: one high level design, one per job;
-- the **task rows** in the project's one task table, `docs/design/tasks.md`, and
+- the **task rows** in the project's one task table, `docs/tasks/`, and
   the **DoD section** on each of those rows;
 - every **decision about how**: one ADR of its own under `docs/decisions/adr/`;
 - every **module boundary contract**, one file per pair of modules that talk;
@@ -360,7 +360,7 @@ Write these files, in the language the PM tells you:
 worth making. The net that is structurally independent of the code is still QA,
 afterwards: it writes its cases from the document before it reads a line.
 
-4. **Task breakdown** — `docs/design/tasks.md`. This is the file engineers work
+4. **Task breakdown** — `docs/tasks/`. This is the file engineers work
    from, so it decides whether the work goes well:
    - one row per task, id `T-01`, `T-02`, …;
    - **the milestone the task belongs to** (`M1`, `M2`, …), when the PRD has
@@ -394,7 +394,7 @@ afterwards: it writes its cases from the document before it reads a line.
    every check inside the thing it governs is what stopped that, so never invent a
    file to hold them.
 
-   `docs/design/tasks.md` is the one task table, in one place, with one shape. On
+   `docs/tasks/` is the one task table, in one place, with one shape. On
    big work you write it; on small work the PM writes it, because small work has no
    architect. Only the typist changes, never the location and never the shape.
 

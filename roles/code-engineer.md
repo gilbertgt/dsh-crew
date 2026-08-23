@@ -34,7 +34,7 @@ nothing in it pretends the isolation lasts longer than it does.
 
 ## First, read
 
-1. Your task row in `docs/design/tasks.md`: the task id, the files your half of
+1. Your task row in `docs/tasks/`: the task id, the files your half of
    the task owns, and its **DoD section** — what "done" means for this task and
    how somebody else checks it. That section, not your own idea of the job and
    not the PM's message to you, is what your code has to satisfy. It was written
@@ -190,6 +190,16 @@ could edit and must not; that one is about files you could not reach even if you
   file lists of a paired task never overlap, so a file that looks like it needs
   changing but is not on your list is a question for the PM, not a decision for
   you.
+- **One code change per task. If your task row looks like several unrelated
+  changes, stop and send it back.** A task is one change: the files it owns are
+  that change's parts (the code, its test, the mount), not a grab-bag of
+  different work. When the row's file list spans several unrelated areas, or
+  the DoD reads like three jobs stapled together, do not start. Tell the PM
+  "this task row is multiple changes — split it", and wait. Do not split it
+  yourself and do not pick one part to do: the split is the PM's, and an agent
+  that re-scopes its own task has become the person judging its own work. A
+  multi-file task where the files are one change's parts is not this rule —
+  that is a normal task, do not send it back.
 - **Libraries: choose, do not add.** Which of the libraries this project already
   depends on you use is your call, and you prefer what the code around you
   already uses. But never add a dependency this project does not have yet:

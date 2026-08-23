@@ -18,8 +18,8 @@ import { check, done, flat, pairedFlow } from "./paired.mjs";
 const flow = flat(pairedFlow());
 
 check(
-  "the flow says a better wording lands in the task row in docs/design/tasks.md",
-  flow.includes("lands in that task row in `docs/design/tasks.md`"),
+  "the flow says a better wording lands in the task row in docs/tasks/",
+  flow.includes("lands in that task row in `docs/tasks/`"),
   "the destination of an improved DoD wording is missing",
 );
 

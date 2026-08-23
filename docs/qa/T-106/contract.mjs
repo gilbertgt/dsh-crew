@@ -18,51 +18,48 @@
 // would never match. `quoteless()` below strips the marker first, so the
 // comparison is about the WORDS and not about how the paragraph was framed.
 
-import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { flat, REPO, repoFile } from "../lib/qa.mjs";
+import { flat, repoFile } from "../lib/qa.mjs";
 
 export { check, done, flat, repoFile } from "../lib/qa.mjs";
 
 /** Drop the `> ` blockquote marker from every line, then flatten. */
 export const quoteless = (text) => flat(text.replace(/^[ \t]*>[ \t]?/gm, "")).trim();
 
-/** Every task file of this repository. A glob, so M2 renaming `tasks.md` cannot kill these cases. */
-export function taskFiles() {
-  const dir = join(REPO, "docs", "design");
-  return readdirSync(dir)
-    .filter((name) => /^tasks.*\.md$/.test(name))
-    .sort()
-    .map((name) => ({ path: join("docs", "design", name), text: repoFile(join("docs", "design", name)) }));
-}
+/**
+ * The canonical paragraphs live in the non-task file of the task-table
+ * directory, in the section "The canonical interview-rule paragraphs (English)"
+ * of `docs/tasks/README.md` (moved there 2026-08-23 from the deleted
+ * `docs/design/tasks.md` appendix).
+ */
+const CONTRACT_FILE = join("docs", "tasks", "README.md");
 
 /**
- * One of the three authoritative paragraphs, read out of whichever task file
- * carries `### <letter> (English)`.
+ * One of the three authoritative paragraphs, read out of `docs/tasks/README.md`
+ * under `### <letter> (English)`.
  *
- * @throws when no task file has that heading, or more than one does. Both are
- * loud on purpose: a case that silently compared the file against an empty
- * string would pass for ever.
+ * @throws when the heading is not there, holds no blockquote lines, or the
+ * paragraph is implausibly short. All are loud on purpose: a case that silently
+ * compared the file against an empty string would pass for ever.
  */
 export function contract(letter) {
   const heading = `### ${letter} (English)`;
-  const carriers = taskFiles().filter((file) => file.text.includes(heading));
-  if (carriers.length !== 1) {
+  const source = CONTRACT_FILE;
+  const text = repoFile(source);
+  const start = text.indexOf(heading);
+  if (start === -1) {
     throw new Error(
-      `${carriers.length} task file(s) carry "${heading}" (${carriers.map((file) => file.path).join(", ") || "none"})`
-      + " — the authoritative text of the skip-and-split job has moved, and every case reading it is now testing nothing",
+      `"${heading}" is not in ${source} — the authoritative text of the skip-and-split job has moved, and every case reading it is now testing nothing`,
     );
   }
-  const text = carriers[0].text;
-  const start = text.indexOf(heading) + heading.length;
-  const rest = text.slice(start);
+  const rest = text.slice(start + heading.length);
   const end = rest.search(/\n#{1,3} /);
   const body = end === -1 ? rest : rest.slice(0, end);
   const quoted = body.split("\n").filter((line) => line.trimStart().startsWith(">"));
-  if (quoted.length === 0) throw new Error(`"${heading}" in ${carriers[0].path} holds no blockquote lines`);
+  if (quoted.length === 0) throw new Error(`"${heading}" in ${source} holds no blockquote lines`);
   const paragraph = quoteless(quoted.join("\n"));
   if (paragraph.length < 200) throw new Error(`"${heading}" is only ${paragraph.length} characters — too short to be the paragraph`);
-  return { text: paragraph, source: carriers[0].path };
+  return { text: paragraph, source };
 }
 
 /**

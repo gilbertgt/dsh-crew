@@ -77,8 +77,8 @@ check(
 );
 
 check(
-  "it still points at docs/design/tasks.md",
-  flatText.includes("docs/design/tasks.md"),
+  "it still points at docs/tasks/",
+  flatText.includes("docs/tasks/"),
   "a string verify-mount.mjs also pins is gone",
 );
 

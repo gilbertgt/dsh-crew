@@ -16,7 +16,8 @@
 //   - a path on the PM's whitelist passes straight through, no approval asked.
 //     The whitelist is hard-coded here (and pinned by
 //     tools/verify-pm-write-guard.mjs), exactly as the PRD decided: it is NOT
-//     read from tasks.md, so a change to the rules text cannot move the guard.
+//     read from the task table (`docs/tasks/`), so a change to the rules text
+//     cannot move the guard.
 //   - any other path is refused, and the refusal goes through dsh's OWN
 //     user-approval channel: `ctx.approval.request(...)` shows the user the
 //     approval prompt in the GUI. The user approves THIS one write (the write
@@ -33,9 +34,9 @@
 //   - docs/design/prd-*.md                the opening document of a job
 //   - docs/decisions/crd/*.md             change request documents
 //   - docs/decisions/adr/*.md             decision records
-//   - docs/design/tasks.md                the task table, whole file (PRD 附记A
-//                                         coarse grant: the PM writes both the
-//                                         Verdicts line and small-work rows)
+//   - docs/tasks/                         the task table, one file per task (PRD
+//                                        附记A coarse grant: the PM writes both
+//                                        the Verdicts line and small-work rows)
 //   - docs/qa/run-all.sh                  the shared QA runner
 //   - docs/qa/gaps.md                     the standing gap list
 //   - CLAUDE.md, principles.md            the project rules and the principles
@@ -149,7 +150,8 @@ function isJobStateFile(segments, jobsDir) {
 /**
  * Classify one write target: "pm" when the PM may write it without asking,
  * "protected" otherwise. The whitelist is hard-coded, per the PRD — it is not
- * read from tasks.md, so a change to the rules text cannot move the guard. The
+ * read from the task table (`docs/tasks/`), so a change to the rules text
+ * cannot move the guard. The
  * target is REALPATHD first (see realpathOf), so a symlink or `..` in the
  * path cannot smuggle a protected file past the whitelist.
  */
@@ -163,8 +165,9 @@ function classifyWrite(target, jobsDir) {
   // Change requests and decision records.
   if (endsWith(parent, ["docs", "decisions", "crd"]) && last.endsWith(".md")) return "pm";
   if (endsWith(parent, ["docs", "decisions", "adr"]) && last.endsWith(".md")) return "pm";
-  // The task table, whole file (PRD 附记A coarse grant).
-  if (endsWith(segments, ["docs", "design", "tasks.md"])) return "pm";
+  // The task table: one file per task under docs/tasks/ (PRD 附记A coarse
+  // grant — the PM writes the Verdicts line on every row and small-work rows).
+  if (endsWith(parent, ["docs", "tasks"])) return "pm";
   // The shared QA runner and the standing gap list.
   if (endsWith(segments, ["docs", "qa", "run-all.sh"])) return "pm";
   if (endsWith(segments, ["docs", "qa", "gaps.md"])) return "pm";

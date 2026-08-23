@@ -35,7 +35,7 @@ row of every table is the header `| rule | owner | status |` and a parser must
 skip it (its third cell is the literal word `status`). The `Rules mapped: …`
 lines are informational; a parser should count the rows itself. Each `## ` line
 names exactly one source file under `roles/`; the two `### ` sections name
-`docs/design/tasks.md` and `principles.md`.
+`docs/tasks/` and `principles.md`.
 
 ## roles/architect.md
 
@@ -388,23 +388,22 @@ Rules mapped: 20 (guarded 12 · bare 7 · judgment 1)
 | **A document that judges your work is not yours to edit.** | all roles | guarded: docs/qa/T-63/case-03-rule-b-word-for-word.mjs |
 | **Reading is not restricted, and you should read widely.** | all roles | guarded: docs/qa/T-63/case-04-reading-is-not-restricted.mjs |
 
-### docs/design/tasks.md (DoD)
+### docs/tasks/ (DoD)
 
-Rules mapped: 7 (guarded 2 · bare 5 · judgment 0)
+Rules mapped: 6 (guarded 2 · bare 4 · judgment 0)
 
 The task table itself is written in Chinese with English terms, so each rule
 cell below is the verbatim English anchor that carries the rule inside
-`docs/design/tasks.md`; the owner column says what the rule is.
+`docs/tasks/`; the owner column says what the rule is.
 
 | rule | owner | status |
 | --- | --- | --- |
 | - **Verdicts**： | PM — every task section carries the Verdicts line with the four values `code`, `security`, `qa`, `doc` | guarded: tools/verify-tasks.mjs |
 | not run | PM — a not-run or skipped value carries its own reason | guarded: tools/verify-tasks.mjs |
-| DoD section | architect / PM — every task row carries one, saying what "done" means and how somebody else checks it | bare |
-| docs/qa/<task-id>/ | architect / PM — the DoD item's check is a QA case there, or an exact command | bare |
+| ## DoD | architect / PM — every task row carries one, saying what "done" means and how somebody else checks it | bare |
+| docs/qa/T-*/case-*.mjs | architect / PM — the DoD item's check is a QA case there, or an exact command | bare |
 | solo | architect / PM — the shape of a task row is `solo` or `pair` | bare |
-| T-01 | architect — the walking skeleton | bare |
-| docs/design/tasks.md | architect / PM — the one task table, on small work and big work alike | bare |
+| docs/tasks/ | architect / PM — the one task table, on small work and big work alike | bare |
 
 ### principles.md
 

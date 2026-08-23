@@ -94,8 +94,9 @@ try {
 
   const whitelistCases = [
     ["write", "roles/pm.md", "the PM's own rules file"],
-    ["write", "docs/design/tasks.md", "the task table, whole file (PRD 附记A coarse grant)"],
-    ["edit", "docs/design/tasks.md", "editing the task table"],
+    ["write", "docs/tasks/T-125.md", "a task row, one file per task (PRD 附记A coarse grant)"],
+    ["edit", "docs/tasks/T-125.md", "editing a task row"],
+    ["write", "docs/tasks/README.md", "the task table directory's README (same directory grant)"],
     ["write", "docs/design/prd-2026-08-23-pm-write-guard.md", "the opening document"],
     ["write", "docs/decisions/crd/0001-something.md", "a change request document"],
     ["write", "docs/decisions/adr/0001-something.md", "a decision record"],
@@ -136,7 +137,7 @@ try {
     ["write", "tools/verify-pm-write-guard.mjs", "a tool script"],
     ["edit", "tools/verify-mount.mjs", "editing a tool script"],
     ["write", "docs/design/api/web-auth.md", "an interface contract"],
-    ["write", "docs/design/tasks-notes.md", "a file next to the task table, not the table itself"],
+    ["write", "docs/tasks-notes.md", "a file next to the task table directory, not under it"],
     ["write", "docs/qa/T-01/case-01-login.mjs", "a QA case"],
     ["write", "docs/qa/T-01/run.sh", "a QA task's own runner (not the shared run-all.sh)"],
     ["write", "README.md", "a reader-facing file (not on the PM whitelist)"],

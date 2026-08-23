@@ -1,11 +1,17 @@
-// Checks the Verdicts gate in docs/design/tasks.md: every task section carries
-// one Verdicts line, and every `not run` or `skipped` value carries its own
-// reason. Run it with:  node tools/verify-tasks.mjs
+// Checks the Verdicts gate over every task file under docs/tasks/: one task per
+// file, and each file's top heading `# T-<number> — …` is one task section that
+// carries exactly one Verdicts line, where every `not run` or `skipped` value
+// carries its own reason. README.md and any other file are not read.
+// Run it with:  node tools/verify-tasks.mjs
 //
 // CRD 0011. The PM skipped code review on about twenty tasks of this job and
 // doc review on most of it, and nothing went red — it came out only because the
 // user asked. The rule the user chose (option B) guards honesty and visibility,
 // not "the review must happen": a skip is allowed, a silent skip is not.
+//
+// The directory is fail-closed: a missing or empty docs/tasks/ goes red, never
+// a quiet green. A green with nothing read reads exactly like a green with
+// everything read, so if the directory's shape moved, say so instead (CRD 0011).
 //
 // What this proves, and what it cannot: the Verdicts line is written by the PM,
 // and reviewers cannot write files by design (principles.md 12). So this check
@@ -13,7 +19,7 @@
 // prove a review happened — a PM that types `code: pass` passes. No automated
 // check can close that hole.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,60 +28,72 @@ const fail = (message) => { failures += 1; console.error(`FAIL  ${message}`); };
 const ok = (message) => console.log(`ok    ${message}`);
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const TASKS = "docs/design/tasks.md";
-const tasksFile = join(packageRoot, TASKS);
+const TASKS_DIR = "docs/tasks";
+const tasksDir = join(packageRoot, TASKS_DIR);
 
-// Only headings of the form `## T-<number>` are task sections. `## T-23 / T-24`
-// — one heading, two task ids — is one section and needs one Verdicts line.
-// Every other heading is ignored, so the appendix sections need no special-case
-// skip rule: they simply are not task sections.
-const HEADING = /^##\s+(T-\d+(?:\s*\/\s*T-\d+)*)\b/;
+// A task file's own top heading: `# T-<number> — …`. The id is the load-bearing
+// part — the file name and the heading must agree; the dash after the id is not
+// required.
+const FILE_HEADING = /^#\s+(T-\d+)\b/;
 // The line, not a table column: `- **Verdicts**：code: … ｜ security: … ｜ …`.
 const VERDICTS = /^\s*-\s*\*\*Verdicts\*\*[：:]\s*(.*)$/;
 
-if (!existsSync(tasksFile)) {
-  fail(`${TASKS} is missing, so nothing records whether a task's four reviews ran (CRD 0011)`);
-  console.log(`\n${failures} Verdicts check(s) failed`);
-  process.exit(1);
+// One file per task. A file named `T-<n>.md` whose first level-1 heading
+// declares the same id is one task section. `README.md` and any other file are
+// not read: the `T-*.md` name filter and the heading-id check together are what
+// keep them out.
+function parseTasksDir() {
+  const sections = [];
+  if (!existsSync(tasksDir)) {
+    fail(`${TASKS_DIR}/ is missing, so nothing records whether a task's four reviews ran (CRD 0011)`);
+    return sections;
+  }
+  const files = readdirSync(tasksDir).filter((name) => /^T-\d+\.md$/.test(name)).sort();
+  // A green with nothing found is the worst outcome: it reads exactly like a
+  // green with everything found. If the directory's shape moved, say so instead.
+  if (files.length === 0) {
+    fail(`${TASKS_DIR}/ contains no \`T-<number>.md\` task file, so this check would pass without reading a single Verdicts line from that source — the directory's shape moved (CRD 0011)`);
+    return sections;
+  }
+  for (const file of files) {
+    const id = file.replace(/\.md$/, "");
+    const label = `${TASKS_DIR}/${file}`;
+    const lines = readFileSync(join(tasksDir, file), "utf8").split("\n");
+
+    // A file named T-121.md whose top heading says T-122 — or nothing — means
+    // the file is not a task section the way this gate can read it. Skipping it
+    // silently would be a one-file vacuous green.
+    const headingIndex = lines.findIndex((line) => /^#\s/.test(line));
+    const heading = headingIndex === -1 ? null : FILE_HEADING.exec(lines[headingIndex]);
+    if (!heading || heading[1].toLowerCase() !== id.toLowerCase()) {
+      fail(`${label} has no \`# ${id} — …\` top heading, so it is not a task section — the file's shape moved (CRD 0011)`);
+      continue;
+    }
+
+    const section = { source: label, id, line: headingIndex + 1, verdicts: [] };
+    let fenced = false;
+    for (const [index, line] of lines.entries()) {
+      // A fenced markdown example of the Verdicts line would otherwise be read
+      // as this file's real record.
+      if (line.startsWith("```")) {
+        fenced = !fenced;
+        continue;
+      }
+      if (fenced) continue;
+      const verdicts = VERDICTS.exec(line);
+      if (verdicts) section.verdicts.push({ line: index + 1, content: verdicts[1] });
+    }
+    sections.push(section);
+  }
+  return sections;
 }
 
-const lines = readFileSync(tasksFile, "utf8").split("\n");
-const sections = [];
-let current = null;
-let fenced = false;
-for (const [index, line] of lines.entries()) {
-  // Inside a fenced code block everything is illustration: this file shows
-  // commands, and a markdown example of the Verdicts line would otherwise be
-  // read as a real task's record.
-  if (line.startsWith("```")) {
-    fenced = !fenced;
-    continue;
-  }
-  if (fenced) continue;
+const sections = parseTasksDir();
 
-  // A `# ` or `## ` heading closes the section before it. The appendix parts
-  // late in the file are level-1 headings, so a line under one of them belongs
-  // to no task — not to the last task section above it.
-  if (/^#{1,2}\s/.test(line)) {
-    const heading = HEADING.exec(line);
-    current = heading ? { id: heading[1], line: index + 1, verdicts: [] } : null;
-    if (current) sections.push(current);
-    continue;
-  }
-  // A Verdicts line outside any task section — the appendix that explains the
-  // shape, for one — belongs to no task and is not read.
-  if (current) {
-    const verdicts = VERDICTS.exec(line);
-    if (verdicts) current.verdicts.push({ line: index + 1, content: verdicts[1] });
-  }
-}
-
-// A green with nothing found is the worst outcome: it reads exactly like a green
-// with everything found. If the file's shape moved, say so instead.
-if (sections.length === 0) {
-  fail(`${TASKS} has no \`## T-<number>\` section, so this check would pass without reading a single Verdicts line — the file's shape moved (CRD 0011)`);
-} else {
-  ok(`${TASKS}: ${sections.length} task sections read`);
+// Fail-closed per source: a directory with no sections read is a red, with the
+// specific failure already counted above in parseTasksDir.
+if (sections.length > 0) {
+  ok(`${TASKS_DIR}/: ${sections.length} task sections read`);
 }
 
 // Fail condition 1 of CRD 0011: exactly one Verdicts line per task section. None, and
@@ -83,9 +101,9 @@ if (sections.length === 0) {
 // which one counts.
 for (const section of sections) {
   if (section.verdicts.length === 0) {
-    fail(`${TASKS} section "${section.id}" (line ${section.line}) has no \`- **Verdicts**：\` line, so nothing records whether its four reviews ran (CRD 0011)`);
+    fail(`${section.source} section "${section.id}" (line ${section.line}) has no \`- **Verdicts**：\` line, so nothing records whether its four reviews ran (CRD 0011)`);
   } else if (section.verdicts.length > 1) {
-    fail(`${TASKS} section "${section.id}" (line ${section.line}) has ${section.verdicts.length} Verdicts lines, so no reader can tell which one counts. Keep exactly one (CRD 0011)`);
+    fail(`${section.source} section "${section.id}" (line ${section.line}) has ${section.verdicts.length} Verdicts lines, so no reader can tell which one counts. Keep exactly one (CRD 0011)`);
   }
 }
 
@@ -115,7 +133,7 @@ for (const section of sections) {
   const values = valuesOf(content);
   const missing = KEYS.filter((key) => !values.has(key));
   if (missing.length > 0) {
-    fail(`${TASKS} section "${section.id}" (line ${line}) Verdicts line has no \`${missing.join("`, `")}\` value, so it says nothing about that review. All four are required: ${KEYS.join(", ")} (CRD 0011)`);
+    fail(`${section.source} section "${section.id}" (line ${line}) Verdicts line has no \`${missing.join("`, `")}\` value, so it says nothing about that review. All four are required: ${KEYS.join(", ")} (CRD 0011)`);
   }
 
   for (const [key, value] of values) {
@@ -123,7 +141,7 @@ for (const section of sections) {
     // is only half a record until it says which task fixes it. Without a task
     // id the finding has no owner.
     if (/^changes needed\b/i.test(value) && !/T-\d+/.test(value)) {
-      fail(`${TASKS} section "${section.id}" (line ${line}) \`${key}: changes needed\` names no task id, so the fix has no owner. Say which T-<number> carries it (CRD 0011)`);
+      fail(`${section.source} section "${section.id}" (line ${line}) \`${key}: changes needed\` names no task id, so the fix has no owner. Say which T-<number> carries it (CRD 0011)`);
     }
 
     const skip = /^(not run|skipped)\b([\s\S]*)$/i.exec(value);
@@ -139,9 +157,9 @@ for (const section of sections) {
     // `qa: not run` it never mentioned.
     const word = skip[1].toLowerCase();
     if (/^\s*[—–-]+\s*$/.test(skip[2])) {
-      fail(`${TASKS} section "${section.id}" (line ${line}) \`${key}: ${word}\` has a dash with nothing after it. Write the reason: a skip is allowed, a silent skip is not (CRD 0011)`);
+      fail(`${section.source} section "${section.id}" (line ${line}) \`${key}: ${word}\` has a dash with nothing after it. Write the reason: a skip is allowed, a silent skip is not (CRD 0011)`);
     } else if (!/^\s*[—–-]+\s*\S/.test(skip[2])) {
-      fail(`${TASKS} section "${section.id}" (line ${line}) \`${key}: ${word}\` carries no reason of its own. Write \`${word} — <why>\`: a skip is allowed, a silent skip is not (CRD 0011)`);
+      fail(`${section.source} section "${section.id}" (line ${line}) \`${key}: ${word}\` carries no reason of its own. Write \`${word} — <why>\`: a skip is allowed, a silent skip is not (CRD 0011)`);
     }
   }
 }

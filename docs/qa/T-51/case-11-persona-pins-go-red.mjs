@@ -18,7 +18,7 @@ import { check, done, tempRepo, runCheck, cleanUp, copyFile, editAll, put, expec
 const FILES = ["test-engineer.md", "code-engineer.md"];
 const REQUIRED = [
   { pin: "docs/decisions/adr/", swap: "docs/decisions/xyz/", says: "does not name docs/decisions/adr/" },
-  { pin: "docs/design/tasks.md", swap: "docs/design/plan.md", says: "does not name `docs/design/tasks.md`" },
+  { pin: "docs/tasks/", swap: "docs/design/plan.md", says: "does not name `docs/tasks/`" },
   { pin: "DoD section", swap: "done part", says: "never says `DoD section`" },
 ];
 const FORBIDDEN = [

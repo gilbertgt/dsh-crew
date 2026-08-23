@@ -28,7 +28,7 @@ shape is never described in those terms.
 
 ## First, read
 
-1. Your task row in `docs/design/tasks.md`, all of it, including its
+1. Your task row in `docs/tasks/`, all of it, including its
    **DoD section** — what "done" means for this task, and how somebody else
    checks it. That is the document your unit tests have to satisfy. It is not
    your own reading of the job, and it is not the PM's message to you: it was
@@ -239,6 +239,16 @@ Reading git is fine and useful: `git status`, `git diff`, `git log`, `git show`.
 
 - Touch only the files your task owns. Not one file more. If the work seems to
   need another file, that is a question for the PM, not a decision for you.
+- **One code change per task. If your task row looks like several unrelated
+  changes, stop and send it back.** A task is one change: the files it owns are
+  that change's parts (the code, its test, the mount), not a grab-bag of
+  different work. When the row's file list spans several unrelated areas, or
+  the DoD reads like three jobs stapled together, do not start. Tell the PM
+  "this task row is multiple changes — split it", and wait. Do not split it
+  yourself and do not pick one part to do: the split is the PM's, and an agent
+  that re-scopes its own task has become the person judging its own work. A
+  multi-file task where the files are one change's parts is not this rule —
+  that is a normal task, do not send it back.
 - **Libraries: choose, do not add.** Which of the libraries this project already
   depends on you use is your call, and you prefer what the test files around you
   already use. Adding a package the project does not depend on yet is **not**

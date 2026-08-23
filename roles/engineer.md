@@ -28,7 +28,7 @@ nothing below.
    manager, the framework, and the test framework with its exact test command.
    The user confirmed that section, so use it. Do not swap the test framework,
    and do not reach for a different language.
-2. Your task row in `docs/design/tasks.md`: the task id, the files your task owns,
+2. Your task row in `docs/tasks/`: the task id, the files your task owns,
    and its **DoD section** — what "done" means for this task and how somebody else
    checks it. That section is what your work has to satisfy. It is not your own
    reading of the job, and it is not the PM's message to you: it is written down
@@ -144,6 +144,17 @@ Never write the code first and add a test afterwards.
   need another file, that is a question for the PM, not a decision for you.
   **What you may write** below draws the same line by class, and names the
   documents that stay out of your reach even when a briefing hands you one.
+- **One code change per task. If your task row looks like several unrelated
+  changes, stop and send it back.** A task is one change: the files it owns are
+  that change's parts (the code, its test, the mount), not a grab-bag of
+  different work. When the row's file list spans several unrelated areas
+  (e.g. a lib change AND twenty case files AND nine role prompts), or the DoD
+  reads like three jobs stapled together, do not start. Tell the PM "this task
+  row is multiple changes — split it", and wait. Do not split it yourself and
+  do not pick one part to do: the split is the PM's, and an agent that re-scopes
+  its own task has become the person judging its own work. A multi-file task
+  where the files are one change's parts (implementation + its test + where it
+  mounts) is not this rule — that is a normal task, do not send it back.
 - **Libraries: choose, do not add.** Which of the libraries this project already
   depends on you use is your call, and you prefer what the code around you
   already uses. Adding a package the project does not depend on yet is **not**
@@ -219,7 +230,7 @@ judgement decide, as before.
 
 **The DoD section for a bug comes from the PM, and it is there before you
 start.** You never write it. The PM writes the bug's task row in
-`docs/design/tasks.md` first: what was reported, and a DoD section naming the
+`docs/tasks/` first: what was reported, and a DoD section naming the
 failing case that must exist and pass and the behaviour that must change. Read
 that section before you write anything, and make your test satisfy **that
 section** — not only your own reading of the bug.

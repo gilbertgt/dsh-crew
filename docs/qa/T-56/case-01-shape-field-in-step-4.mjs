@@ -25,8 +25,8 @@ check(
 );
 
 check(
-  "it says where the field goes: one bullet in that task's own section of tasks.md",
-  flatFour.includes("One bullet in that task's own section of `docs/design/tasks.md`"),
+  "it says where the field goes: one bullet in that task's own section of docs/tasks/",
+  flatFour.includes("One bullet in that task's own section of `docs/tasks/`"),
   "the field's home is not named",
 );
 

@@ -7,43 +7,51 @@
 // mistake `fetch-depth: 1` would have caused in the push CI (T-22): checks that
 // pass over nothing.
 
-import { check, done, tempRepo, runCheck, cleanUp, drop, editAll, put, expectRed, expectGreen, saidOk, TASKS_MD } from "../lib/qa.mjs";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import { check, done, tempRepo, runCheck, cleanUp, drop, editAll, expectRed, expectGreen, TASKS_MD } from "../lib/qa.mjs";
 
-const NO_SECTIONS = "has no `## T-<number>` section, so this check would pass without reading a single Verdicts line";
-const MISSING = "docs/design/tasks.md is missing";
+const NO_SECTIONS = "contains no `T-<number>.md` task file";
+const MISSING = "docs/tasks/ is missing";
+
+/** Every task file of a copy's `docs/tasks/` directory, sorted. */
+const taskFiles = (dir) =>
+  readdirSync(join(dir, TASKS_MD)).filter((name) => /^T-\d+\.md$/.test(name)).sort();
 
 const dir = tempRepo();
 try {
   const base = runCheck(dir, "tools/verify-tasks.mjs");
   expectGreen(base, "the untouched copy is green");
-  check("and it says how many task sections it read", /ok\s+docs\/design\/tasks\.md: \d+ task sections read/.test(base.out), base.out);
+  check("and it says how many task sections it read", /ok\s+docs\/tasks\/: \d+ task sections read/.test(base.out), base.out);
 } finally {
   cleanUp(dir);
 }
 
-// Red: every task heading renamed, so the parser finds no section. Every Verdicts
-// line is still in the file and still correct — nothing else changed — which is
-// exactly the shape a silent green would come from.
+// Red: every task file's top heading renamed, so the parser finds no section.
+// Every Verdicts line is still in the files and still correct — nothing else
+// changed — which is exactly the shape a silent green would come from.
 const renamed = tempRepo();
 try {
-  const copies = editAll(renamed, TASKS_MD, "\n## T-", "\n## Task ");
+  const files = taskFiles(renamed);
+  for (const file of files) editAll(renamed, `${TASKS_MD}/${file}`, "# T-", "# Task ");
   const run = runCheck(renamed, "tools/verify-tasks.mjs");
-  expectRed(run, NO_SECTIONS, `all ${copies} task headings renamed is red, not a vacuous green`);
+  expectRed(run, "the file's shape moved", `all ${files.length} task headings renamed is red, not a vacuous green`);
   check("and the message says the file's shape moved", run.out.includes("the file's shape moved"), run.out);
 } finally {
   cleanUp(renamed);
 }
 
-// Red: the file empty. Nothing to read, and the check must say so.
+// Red: the directory empty of task files. Nothing to read, and the check must
+// say so.
 const empty = tempRepo();
 try {
-  put(empty, TASKS_MD, "");
+  for (const file of taskFiles(empty)) drop(empty, `${TASKS_MD}/${file}`);
   expectRed(runCheck(empty, "tools/verify-tasks.mjs"), NO_SECTIONS, "an empty task table is red");
 } finally {
   cleanUp(empty);
 }
 
-// Red: the file gone. It must fail with its own message, not throw.
+// Red: the directory gone. It must fail with its own message, not throw.
 const gone = tempRepo();
 try {
   drop(gone, TASKS_MD);

@@ -102,7 +102,7 @@ for (const value of ["code:", "security:", "qa:", "doc:"]) {
   check(
     `and step 10 still names the \`${value}\` value`,
     step10.includes(`\`${value}\``),
-    "verify-tasks.mjs still demands all four in docs/design/tasks.md (docs/qa/T-42/case-20), so a PM whose prompt has lost this one meets a red gate with no instructions",
+    "verify-tasks.mjs still demands all four in docs/tasks/ (docs/qa/T-42/case-20), so a PM whose prompt has lost this one meets a red gate with no instructions",
   );
 }
 

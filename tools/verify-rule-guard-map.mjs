@@ -4,9 +4,10 @@
 //   1. every roles/<name>.md file has one `## roles/<name>.md` section, and
 //      every such section names a real roles file — one per file, no more;
 //   2. every row marked `bare` or `judgment` has a rule text that is an exact
-//      substring of one line of the source file its section names, so the row
-//      is not invented (the map's own format note promises this for those two
-//      statuses; `guarded` rows may paraphrase, so they get no such check);
+//      substring of one line of the source its section names — a file, or any
+//      `.md` file under a named directory — so the row is not invented (the
+//      map's own format note promises this for those two statuses; `guarded`
+//      rows may paraphrase, so they get no such check);
 //   3. every row marked `guarded: <path>` resolves to a real file in the repo;
 //   4. every section's `Rules mapped: N (guarded X · bare Y · judgment Z)`
 //      line matches the rows actually parsed in that section.
@@ -20,7 +21,7 @@
 // The optional argument points at a copy of the map — the mutation proof runs
 // the check against a corrupted copy without ever touching the real file.
 
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -32,11 +33,12 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const mapFile = process.argv[2] ?? "docs/qa/rule-guard-map.md";
 const mapPath = resolve(packageRoot, mapFile);
 
-// A `## ` or `### ` heading whose first token is a path opens a section; the
-// optional parenthetical (`### docs/design/tasks.md (DoD)`) is ignored. Any
-// other heading is not a section — the same "ignore what is not the shape"
-// rule verify-tasks.mjs uses for `## T-<number>`.
-const SECTION = /^(#{2,3})\s+(\S+\.md)(?:\s+\(.*\))?\s*$/;
+// A `## ` or `### ` heading whose first token is a path opens a section. The
+// path is a `.md` file (roles/*.md, principles.md) or a directory
+// (`docs/tasks/`); the optional parenthetical (`### docs/tasks/ (DoD)`) is
+// ignored. Any other heading is not a section — the same "ignore what is not
+// the shape" rule verify-tasks.mjs uses for `## T-<number>`.
+const SECTION = /^(#{2,3})\s+(\S+\.md|\S+\/)(?:\s+\(.*\))?\s*$/;
 // The informational count line the map prints above every table.
 const RULES_MAPPED = /^Rules mapped:\s*(\d+)\s*\(guarded\s+(\d+)\s*·\s*bare\s+(\d+)\s*·\s*judgment\s+(\d+)\)\s*$/;
 // The exact status vocabulary: `guarded: <path>`, `bare`, `judgment`.
@@ -133,7 +135,13 @@ for (const section of sections) {
     fail(`${mapFile} section "${section.source}" (line ${section.headingLine}) names a source file that does not exist: ${section.source}`);
     continue;
   }
-  const sourceLines = readFileSync(source.resolved, "utf8").split(/\r?\n/);
+  // The source of a section is a file, or a directory (the task table is
+  // `docs/tasks/`): for a directory, every `.md` file under it is source, so a
+  // bare/judgment anchor is provable from any of their lines.
+  const sourceLines = statSync(source.resolved).isDirectory()
+    ? readdirSync(source.resolved).filter((name) => name.endsWith(".md"))
+      .flatMap((name) => readFileSync(join(source.resolved, name), "utf8").split(/\r?\n/))
+    : readFileSync(source.resolved, "utf8").split(/\r?\n/);
   let guarded = 0;
   let bare = 0;
   let judgment = 0;

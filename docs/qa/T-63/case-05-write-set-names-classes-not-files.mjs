@@ -132,7 +132,7 @@ const CRITERION = [
   ["The design (an HLD, one per job)", false, "the acronym as a class name"],
   ["its name is `docs/design/prd-<date>-<job-slug>.md`", false, "the SHAPE, which does not rot"],
   ["the same shape (`docs/design/hld-<date>-<job-slug>.md`)", false, "the HLD shape"],
-  ["the task table at `docs/design/tasks.md`", false, "a durable name, and not a PRD or HLD"],
+  ["the task table at `docs/tasks/`", false, "a durable name, and not a PRD or HLD"],
   ["the standing gap list `docs/qa/gaps.md`", false, "a durable name"],
   ["a PRD-shaped document is not a design", false, "English hyphenation, not a file name"],
 ];

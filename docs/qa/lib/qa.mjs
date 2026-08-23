@@ -6,7 +6,7 @@
 // helper that needs a home folder points DSH_HOME at a temporary folder, so no
 // case ever reads or writes the real ~/.dsh.
 
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -90,7 +90,9 @@ export function tempRepo() {
     // run in a copy, and between them they read: package.json (plus the file its
     // `dsh.bundle.patch` names, cordis.patch.yml), every file under
     // `.github/workflows/`, preset/crew/*, host/*.js, roles/*.md,
-    // tools/lib/boot-log.mjs and `docs/design/tasks.md`.
+    // tools/lib/boot-log.mjs and the task table: `docs/tasks/` (one file per
+    // task), plus the old single `docs/design/tasks.md` while the transition
+    // still has it.
     //
     // A missing entry is not a harmless saving: the check goes red inside the
     // copy over something that is NOT true of the repository, and the case then
@@ -99,14 +101,22 @@ export function tempRepo() {
     // name needed here, and `git status` never lists it as untracked, so nothing
     // pointed at it until a new pin started reading it.
     //
-    // `docs/design/tasks.md` is the second such entry: T-40's Verdicts gate
-    // (tools/verify-tasks.mjs) reads it, and without the file that gate fails
-    // with "tasks.md is missing" in every copy — which is a red about the copy,
-    // not about the repository. Only that one file is copied, not all of `docs/`:
-    // nothing a check reads lives elsewhere under it, and `docs/qa/` holds these
-    // cases themselves, which no check in a copy ever runs.
-    for (const entry of ["package.json", "cordis.patch.yml", "host", "roles", "preset", "tools", ".github", join("docs", "design", "tasks.md")]) {
+    // `docs/tasks/` is the second such entry: T-40's Verdicts gate
+    // (tools/verify-tasks.mjs) reads it, and without the directory that gate
+    // fails with "docs/tasks/ is missing" in every copy — which is a red about
+    // the copy, not about the repository. Only the task table is copied, not all
+    // of `docs/`: nothing a check reads lives elsewhere under it, and `docs/qa/`
+    // holds these cases themselves, which no check in a copy ever runs.
+    for (const entry of ["package.json", "cordis.patch.yml", "host", "roles", "preset", "tools", ".github", join("docs", "tasks")]) {
       cpSync(join(REPO, entry), join(dir, entry), { recursive: true });
+    }
+    // Transition (PRD 2026-08-23 split-tasks-table): verify-tasks.mjs also reads
+    // the old single table, fail-closed, until T-123 deletes the file — so the
+    // copy carries it while it exists and stops the moment it is gone. Once the
+    // file is deleted the copy holds only `docs/tasks/`, which is the end state.
+    const legacyTasks = join(REPO, "docs", "design", "tasks.md");
+    if (existsSync(legacyTasks)) {
+      cpSync(legacyTasks, join(dir, "docs", "design", "tasks.md"), { recursive: true });
     }
     const modules = join(REPO, "node_modules");
     if (existsSync(modules)) {
@@ -241,46 +251,46 @@ export function editJson(dir, relative, change) {
 
 // ------------------------------------------- the task table inside a copy
 
-/** The one task table, as a path inside a copy. */
-export const TASKS_MD = join("docs", "design", "tasks.md");
+/** The task table directory, as a path inside a copy. */
+export const TASKS_MD = join("docs", "tasks");
 
 /**
- * Find the first `## T-<number>` section of a copy's task table that carries a
- * Verdicts line, and replace that line through `change`. Return `null` from
- * `change` to delete the line instead.
+ * Find the first Verdicts line of a copy's task table — the shape is one task
+ * per file under `docs/tasks/` — and replace it through `change`. Return `null`
+ * from `change` to delete the line instead.
  *
- * The locator is deliberately dumb — it walks headings, skips fenced blocks and
- * stops at the first Verdicts line — because it only picks a line to break. What
- * the line MEANS is never decided here: every assertion is on what
- * tools/verify-tasks.mjs printed afterwards. A helper that judged the line
- * itself would be a second copy of the parser under test, and the cases would
- * pass or fail on the copy rather than on the real gate.
+ * The locator is deliberately dumb — it walks the task files in order, skips
+ * fenced blocks and stops at the first Verdicts line — because it only picks a
+ * line to break. What the line MEANS is never decided here: every assertion is
+ * on what tools/verify-tasks.mjs printed afterwards. A helper that judged the
+ * line itself would be a second copy of the parser under test, and the cases
+ * would pass or fail on the copy rather than on the real gate.
  *
- * It throws when it finds nothing, so a case dies loudly on a moved file instead
- * of quietly testing an unmutated copy.
+ * It throws when it finds nothing, so a case dies loudly on a moved shape
+ * instead of quietly testing an unmutated copy.
  *
  * @returns the section id and the 0-based line index that was changed
  */
 export function editFirstVerdicts(dir, change) {
-  const lines = copyFile(dir, TASKS_MD).split("\n");
-  let id;
-  let fenced = false;
-  for (const [index, line] of lines.entries()) {
-    if (line.startsWith("```")) { fenced = !fenced; continue; }
-    if (fenced) continue;
-    if (/^#{1,2}\s/.test(line)) {
-      const heading = /^##\s+(T-\d+(?:\s*\/\s*T-\d+)*)\b/.exec(line);
-      id = heading ? heading[1] : undefined;
-      continue;
+  const taskFiles = readdirSync(join(dir, TASKS_MD))
+    .filter((name) => /^T-\d+\.md$/.test(name))
+    .sort();
+  for (const file of taskFiles) {
+    const id = file.replace(/\.md$/, "");
+    const lines = copyFile(dir, join(TASKS_MD, file)).split("\n");
+    let fenced = false;
+    for (const [index, line] of lines.entries()) {
+      if (line.startsWith("```")) { fenced = !fenced; continue; }
+      if (fenced) continue;
+      if (!/^\s*-\s*\*\*Verdicts\*\*/.test(line)) continue;
+      const replacement = change(line, id);
+      if (replacement === null) lines.splice(index, 1);
+      else lines[index] = replacement;
+      put(dir, join(TASKS_MD, file), lines.join("\n"));
+      return { id, index };
     }
-    if (id === undefined || !/^\s*-\s*\*\*Verdicts\*\*/.test(line)) continue;
-    const replacement = change(line, id);
-    if (replacement === null) lines.splice(index, 1);
-    else lines[index] = replacement;
-    put(dir, TASKS_MD, lines.join("\n"));
-    return { id, index };
   }
-  throw new Error(`no \`## T-<number>\` section with a Verdicts line found in ${TASKS_MD} — the file's shape moved`);
+  throw new Error(`no \`T-<number>.md\` task file with a Verdicts line found in ${TASKS_MD} — the directory's shape moved`);
 }
 
 // --------------------------------------------- asserting on a check's run
