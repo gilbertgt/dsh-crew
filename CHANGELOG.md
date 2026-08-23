@@ -8,7 +8,7 @@ Every version bump rewrites `$DSH_HOME/.agent-presets/crew`. Files you edited
 there are kept as `<name>.bak` and named in the boot log, but your settings do
 **not** come back on their own. Copy them into the new file after an upgrade.
 
-## 0.10.0 — unreleased
+## 0.10.0 — 2026-08-23
 
 ### Added
 
@@ -71,6 +71,17 @@ there are kept as `<name>.bak` and named in the boot log, but your settings do
   in that section reads like a boundary you agreed to, so a cheap request could
   look like you were reversing yourself. The rule is short now — if a thing is on
   that list it is a wall, and if it is not, just ask for it.
+- **The QA folder moved from `docs/qa/` to the repository root `qa/`.** QA's
+  cases are runnable scripts, not documents, so they no longer live under
+  `docs/`. The command that runs them is now `bash qa/run-all.sh`; the standing
+  gap list is `qa/gaps.md`.
+- **The task table became a folder.** The single `docs/design/tasks.md` (one
+  long file, every task of every job) is now `docs/tasks/` — one `T-<n>.md`
+  file per task, plus `README.md` for the non-task content. A task's Verdicts
+  line and DoD section live in its own file.
+- **A researcher's answer no longer enters the repository.** `docs/research/`
+  is gone; the researcher answers in its report, and the PM writes what is
+  durable into its own documents.
 
 ## 0.9.0 — 2026-08-22
 
