@@ -349,14 +349,13 @@ is**, never who made it:
 | `docs/release/` | a release and an upgrade plan for each milestone the user ships: `<milestone>-release.md` and `<milestone>-upgrade.md`; plus `<milestone>-gaps.md`, the **shipping gap list**, for a milestone that does not ship (not to be confused with `docs/qa/gaps.md`) |
 | `docs/research/` | one answer per question the PM sent to a researcher: `<short-name>.md` |
 
-Today this repository has `docs/decisions/`, `docs/qa/`, `docs/release/`, `docs/research/`, the one
+Today this repository has `docs/decisions/`, `docs/qa/`, `docs/research/`, the one
 task table at `docs/design/tasks.md`, and one PRD and one HLD per job under `docs/design/`. The PRD
 comes before the task rows and the HLD is written by the architect, which is the order the flow
 asks for. Both carry the date and the job slug in their file names —
 `prd-<date>-<job-slug>.md`, `hld-<date>-<job-slug>.md` — because a fixed name means the next job's
 opening document silently overwrites the last one's and no check goes red. Those two were called
-`docs/design/prd.md` and `docs/design/hld.md` until 0.9.0; never create either name again. `docs/release/` holds
-one shipping gap list and no plan: no milestone here has shipped yet. A module boundary contract
+`docs/design/prd.md` and `docs/design/hld.md` until 0.9.0; never create either name again. `docs/release/` does not exist yet: no milestone here has shipped, so no release plan, upgrade plan or shipping gap list has been written. A module boundary contract
 goes in `docs/design/api/`, one file per pair of modules that talk.
 
 **How a job runs, since 0.9.0.** Three of these changed together, and the reasons and the measured
