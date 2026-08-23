@@ -17,8 +17,15 @@
 // That is T-81's ground and it already has cases.
 //
 // PINNING STYLE: LINE-BASED — a `## ` heading cannot wrap — plus an exact string
-// comparison for the version, and a comparison against the job's start commit so
-// "untouched" means untouched rather than "happens to look right".
+// comparison for the version, and a version-field comparison against the job's
+// start commit so "untouched" means untouched rather than "happens to look right".
+//
+// The whole-file byte-for-byte pin was deliberately relaxed by the exception
+// T-113 records in `docs/design/tasks.md`: mounting the pm-write-guard plugin
+// legitimately adds one `exports` entry and one `scripts.test` command to
+// `package.json`, so "not one character of it moves" can no longer hold. What
+// stays pinned is exactly what the release gates depend on — `version` is
+// `0.9.0` and the top heading is `## 0.10.0 — unreleased` with no date.
 
 import { before } from "./baseline.mjs";
 import { check, done, repoFile } from "../lib/qa.mjs";
@@ -91,10 +98,12 @@ check(
 );
 
 if (was.ok) {
+  const wasVersion = JSON.parse(was.text).version;
   check(
-    "package.json is byte for byte what it was before this job",
-    was.text === repoFile("package.json"),
-    "package.json changed; DoD item 5 says not one character of it moves in this milestone",
+    "the version field still says what it said at the job's start commit",
+    version === wasVersion,
+    `the version field was ${JSON.stringify(wasVersion)} at the start commit and is ${JSON.stringify(version)} now`
+      + " — DoD item 5 protects the version field; the whole-file byte-for-byte pin was relaxed by T-113's recorded exception",
   );
 }
 

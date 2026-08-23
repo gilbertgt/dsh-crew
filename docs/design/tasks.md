@@ -2331,3 +2331,48 @@ PM 自己改文件的车道、team flow step 9 派工程师）。缺一个「一
 
 （本任务还有一个产物：PRD + 任务行本身就是本次改动的 opening document 与记录，它们和
 `roles/pm.md` 一个提交，或分开提交——按流程以 PM 判断，提交信息带 `(crew T-112)`。）
+
+## T-113 — PM 写文件 guard：运行时拦 PM 改受保护路径（host 插件，结构性，PRD 2026-08-23-pm-write-guard）
+
+- **Verdicts**：code: not run — 任务进行中，评审在第 10 步 ｜ security: not run — 任务进行中 ｜ qa: not run — 任务进行中 ｜ doc: not run — 任务进行中
+
+- **里程碑**：M1 ｜ **形状**：单人（solo），**工程师做**
+- **拥有的文件**：
+  - `host/pm-write-guard.js`（新增 host 插件中间件）
+  - `cordis.patch.yml`（挂载新插件行，`- id: dsh-crew-pm-write-guard`）
+  - `tools/verify-pm-write-guard.mjs`（新增单测，对 fake 文件路径断言"拦/放行"）
+  - `package.json`（只加一行 `exports["./host/pm-write-guard.js"]`；必要时把该测试并入 `scripts.test`）
+- **测试文件**：`tools/verify-pm-write-guard.mjs`（**写进 `scripts.test`**，在 `verify-guard` 之后加一段——否则 CI 不会跑新 guard 测试，回归门是空的；这是 PM 裁定，不是 PRD 的可选项）
+- **依赖**：PRD `docs/design/prd-2026-08-23-pm-write-guard.md`（按它实现）
+- **要求来源**：用户 2026-08-23 提出。"规则文本管不住 PM"——T-92、T-111 两次抓到 PM 直接改文件、事后补任务行，且 T-112 落地后仍无结构性拦截。用户确认：做一个像 git-guard 的 `tools/execute` 中间件，运行时拦 PM 对受保护路径的 write/edit。
+
+## 报的是什么（照抄 PRD 的核心，不转述）
+
+事实：prose is advice。`roles/pm.md` 写"没有 PM 自己改文件的车道"，但 PM 反复违反
+（T-92、T-111）。仅靠再写规则无效。需要一个运行时拦截：PM 尝试对"该由 crew role 写"的文件
+执行 write/edit 时，被 `tools/execute` 中间件拦下——像 git-guard 拦 push 一样。
+
+## 你要实现的（按 PRD G1-G5，工程师在此实现）
+
+| # | 实现 |
+| --- | --- |
+| 1 | 新建 `host/pm-write-guard.js`——`tools/execute` 中间件，拦 root/PM 会话的 `write`/`edit` 工具，按**受保护路径白名单**判定（允许 PM 写的放行，其余拦） |
+| 2 | 白名单按 PRD「PM 可写」节：`docs/design/prd-*.md`、`docs/decisions/crd/*.md`、`docs/decisions/adr/*.md`、`docs/design/tasks.md`（整文件，附记A的粗粒度）、`docs/qa/run-all.sh`、`docs/qa/gaps.md`、`CLAUDE.md`、`principles.md`、`roles/pm.md`、job 的 `state.json`（仓库外 `~/.dsh/crew/jobs/`） |
+| 3 | 受保护（拦）：产品代码（`src/`、`host/`、`tools/*.mjs`）、非 pm 的 role 文件（`roles/engineer.md` 等）、接口契约 `docs/design/api/*.md`、QA 案例 `docs/qa/T-*/case-*.mjs` 及 `run.sh` |
+| 4 | **放行机制**：拦到受保护路径时走 **dsh 批准通道**向用户发起批准请求（不是静默拒、不是一次性批准文件）。用户批准放行这一次，每次单独问。见 PRD（复用 dsh 现有 approval 机制，非 git-guard 的一次性文件） |
+| 5 | 只拦 PM（root）；crew role 写自己任务文件不受影响。判定要能用单测覆盖（对 fake 路径断言"拦/放行"） |
+
+## DoD（PM 写，在简报发出之前）
+
+| # | 怎么算做完 | 别人怎么验 |
+| --- | --- | --- |
+| 1 | 新增 `tools/verify-pm-write-guard.mjs`，至少覆盖：PM 写白名单路径放行；PM 写受保护路径（如 `roles/engineer.md`、`src/foo.js`）被拦；批准通道触发后放行一次 | `node tools/verify-pm-write-guard.mjs` 绿 |
+| 2 | `cordis.patch.yml` 加了 `- id: dsh-crew-pm-write-guard`，`name` 指到 `host/pm-write-guard.js` | `git diff cordis.patch.yml` 可见 |
+| 3 | 单测覆盖「只拦 PM 不拦 crew」：crew role 写自己任务文件不触发拦截 | `node tools/verify-pm-write-guard.mjs` 里有该断言 |
+| 4 | 放行走 dsh 批准通道（不是静默拒）——PM 写受保护路径会触发一次用户批准 | 单测断言"批准请求被触发且放行一次" |
+| 5 | guard 不改变 git-guard 已有的 push 拦截行为；两者叠加不冲突 | `node tools/verify-guard.mjs` 仍绿 |
+| 6 | 过一轮 `crew-code-reviewer` 和 `crew-security-reviewer`（它是 `tools/execute` 中间件，涉及权限/命令路径，属 risky 改动） | 两份 review 报告 |
+| 7 | `npm test` 全绿 | `npm test`（工程师在静树上跑） |
+
+**对本作业一个既有 case 的故意放宽（写在开始前，PM 2026-08-23）：**
+T-113 让 `docs/qa/T-110/case-03` 从「package.json 字节级不变」变红。这是**故意的、本作业自己造成的**：mount 新 guard 必须有 `exports` 加一行 + `scripts.test` 加一条命令，这两处是真实改动，必然破坏字节级 pin。放宽只针对**字节级全比**，**版本号 pin 保留**（version 仍 `0.9.0`、heading 仍 `## 0.10.0 — unreleased`、无日期——发布门 T-81/case-01 和 unreleased-heading 检查依赖版本不动）。QA 在 T-113 的 commit 里把断言改成按版本 pin 而非字节全比；工程师不改 `docs/qa/`，PM 不碰它——按回归例外规则。
