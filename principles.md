@@ -1143,24 +1143,35 @@ two moments: the PM says what fixed means, then the engineer proves it.
 
 **And this holds for every change, however small.** Two lanes remain: `ask`, where
 the user wants an answer and nothing changes, and `team`, where something changes.
-Inside `team`, the PM chooses a scale before starting any role. `direct` is the
+Inside `team`, the PM chooses a route before starting any role. `direct` is the
 default for a small, low-risk, single-module change: the PM makes it without a
-child role. `crew` is for work that crosses modules, reaches a boundary contract,
-touches the closed security-risk list, needs design, cannot be tested sharply, or
+child role. `solo` is the default for ordinary coding: one `crew_engineer` and
+nothing else — no architect, no QA, no reviewer. `crew` is for work that crosses
+modules, reaches a boundary contract, needs design, cannot be tested sharply, or
 is too large to hold as one small change. **Anything that changes still gets a
-milestone**, but its scale decides whether that milestone carries one executor or
-the full crew.
+milestone**, but its route decides whether that milestone carries one executor or
+several roles.
+
+**Whether a security review is needed is a second question.** It is answered from
+the closed risky list (principle 18) and it adds one `crew_security_reviewer` to
+whatever route was chosen; it never moves the route by itself. Taking input from
+the user is not a risky change by itself — a settings form, a dropdown or a
+search box is `solo`. The line is a change that checks who the user is or decides
+what they may do, or whose input reaches a trust boundary: a query, a shell
+command, a file path, a parser, a rendered page. Reading input as a crew trigger
+is what escalated every ordinary form to the full crew.
 
 The earlier PM-only lane was unsafe because it dropped the record and the check at
-the same time. The `direct` scale keeps both: one test that really ran and one
+the same time. The `direct` route keeps both: one test that really ran and one
 commit whose message holds the reason and real test numbers. It drops only the
 roles and documents that add no signal. If the PM write guard protects a product
-file, it still asks once per write; the scale never bypasses that guard.
+file, it still asks once per write; the route never bypasses that guard.
 
 Principles 6 and 18 now put targeted tests inside development and the full gates at
 the end, start only the QA or reviewer whose subject changed, and stop one issue
-after two review rounds. The fastest correct route is therefore the default, while
-the full crew remains available for large, risky or cross-module work.
+after two review rounds — which is why `limits.reviewRounds` defaults to 2. The
+fastest correct route is therefore the default, while the full crew remains
+available for large, risky or cross-module work.
 
 **A finished stage stays finished across sessions.** `state.json` carries a
 `stages` checkpoint for each milestone step, with the document versions it judged.

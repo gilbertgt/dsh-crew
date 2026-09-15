@@ -45,7 +45,12 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // crew agents as the work needs, and 4 awake at once left tasks with no shared
 // files queueing for no reason. See legacyLimitNote for the profiles that still
 // carry the old setting.
-const DEFAULT_LIMITS = { liveAgents: 20, reviewRounds: 3 };
+// `reviewRounds` is 2, not 3, and that is the whole rule: the initial review is
+// round one, the engineer's fix gets one re-check as round two, and a third round
+// is a bug in the flow rather than a longer argument. A profile may still raise
+// it, but the ceiling the PM is told about has to be the rule its reviewers
+// already follow, or the prompt and the personas disagree.
+const DEFAULT_LIMITS = { liveAgents: 20, reviewRounds: 2 };
 
 /** Read a positive whole number from config, falling back to the default. */
 function limitOf(configured, fallback, field) {

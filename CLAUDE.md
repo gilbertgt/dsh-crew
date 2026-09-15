@@ -381,9 +381,13 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
 **How a job runs.** The routing rules live in `roles/pm.md`; their reasons are in
 `principles.md` 6, 13, 18 and 20:
 
-- **Two lanes, then a scale.** `ask` answers a question and changes nothing; `team` handles a
+- **Two lanes, then a route.** `ask` answers a question and changes nothing; `team` handles a
   change. Inside `team`, `direct` is the default for small, low-risk, single-module work: the PM
-  executes it without a child role. `crew` is for large, risky, cross-module or design-heavy work.
+  executes it without a child role. `solo` is the default for ordinary coding: one `crew_engineer`
+  and no architect, QA or reviewer. `crew` is for large, risky, cross-module or design-heavy work.
+  Whether a security review is needed is a **separate** question, answered from the closed risky
+  list below; it adds one reviewer to whatever route was chosen and never moves the route by
+  itself, so an ordinary settings form or dropdown is not a crew because it takes input.
   The PM write guard remains active, so protected product files still require one approval per PM
   write. A milestone is not a release; push, tag and publish still need separate user permission.
 - **Delegate only when the role adds relevant skill or independent evidence.** A small test,

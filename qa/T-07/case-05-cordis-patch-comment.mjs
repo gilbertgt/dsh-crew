@@ -10,7 +10,8 @@ check("the limits example was found", patch.includes("limits:"), patch.slice(0, 
 check("cordis.patch.yml no longer offers agentsPerJob", !patch.includes("agentsPerJob"),
   `found at index ${patch.indexOf("agentsPerJob")}`);
 check("the liveAgents example says 20", /liveAgents:\s*20\b/.test(limits), limits);
-check("the reviewRounds example is still 3", /reviewRounds:\s*3\b/.test(limits), limits);
+check("the reviewRounds example is 2, the same number the runtime defaults to",
+  /reviewRounds:\s*2\b/.test(limits), limits);
 check("both lines are still commented examples, not live settings",
   limits.split("\n").filter(line => /liveAgents|reviewRounds/.test(line)).every(line => line.trim().startsWith("#")),
   limits);

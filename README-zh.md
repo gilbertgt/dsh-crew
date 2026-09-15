@@ -12,12 +12,17 @@ code engineer、QA、code reviewer、security reviewer、doc reviewer 與 resear
 child role。九個角色、model routing、Git guard、PM write guard、權限與 resume 支援
 都維持不變。
 
-兩條 lane，再選執行規模：
+兩條 lane，再選執行路線：
 
 - `ask` — 你要一個答案。PM 回答，不修改任何內容。
-- `team` — 你要一項變更。小型、低風險、單一模組的工作預設走 `direct`，由 PM
-  直接完成，不啟動 child role；大型、高風險或跨模組工作才走 `crew`，且只啟動與
-  該修改相關的角色。
+- `team` — 你要一項變更。PM 會選最省、又足以承載該工作的路線：小型低風險變更走
+  `direct`，由 PM 自己完成、不啟動 child role；一般 coding 走 `solo`，只啟動一位
+  engineer、其他角色都不啟動；只有大型、跨模組、高風險或動到架構的工作才走
+  `crew`，而且只啟動與該變更相關的角色。
+
+是否需要 security review 是另一個問題，依固定清單單獨判斷。設定頁面、表單或下拉
+選單雖然接受使用者輸入，仍然是 `solo`；若該變更同時動到登入或權限檢查，也維持
+`solo`，另外加一位 security reviewer。
 
 開發期間只跑 targeted tests。完整專案測試與 QA gate 在準備完成時跑一次；只有測試
 失敗並修正後才重跑。已完成的階段會寫入 checkpoint，resume 後不會重做。Push 與

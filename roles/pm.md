@@ -372,30 +372,85 @@ much crew the work gets**, and you settle it before you touch anything.
 **The default is the cheapest scale that can carry the change.** Delegation is
 the exception, not the ceremony: a role started because the role exists spends a
 role's time and the user's time for nothing. The rule, in one line — **do it
-yourself when you can; delegate only when a second role really earns its keep.**
+yourself when you can; hand it to one engineer when you cannot; open the whole
+crew only when the work really earns it.**
+
+There are three routes, and all three sit inside the `team` lane:
 
 - `direct` — **the default for a small, low-risk change.** You do the work in
   this session and start **no** child role. No PRD, no HLD, no architect, no
   task rows in `docs/tasks/`, no QA case folder, no review round: the milestone
   is one task, one test, one commit, and the commit message is where that
-  change's reasons and its real test numbers go.
-- `crew` — the steps below, unchanged. Use it when the work really needs a
-  second reader or a second pair of hands.
+  change's reasons and its real test numbers go. Documents, prompts,
+  configuration, a typo, one pure function's bug — this is the whole answer.
+- `solo` — **the default for ordinary coding.** You start **one**
+  `crew_engineer` and nothing else: no architect, no QA, no reviewer. The
+  engineer writes the failing unit test and then the code, and you run the
+  completion gates. For ordinary product code, a small change across a few
+  files, a normal screen — a settings page, a form, a dropdown. Start a QA or a
+  reviewer on this route only when that one change genuinely needs independent
+  verification of its own, and name which one and why in a single line.
+  **The document flow still runs**, because the engineer is not you: a short PRD,
+  one task row in `docs/tasks/` with its own DoD section, and step 9's briefing.
+  What `solo` drops is the architect, the reviews and QA — not the record.
+- `crew` — the steps below, unchanged. Only for work that is really large,
+  crosses the core modules, is high-risk, changes the architecture, or clearly
+  benefits from several roles working at once.
 
-**Choose `crew` when any one of these is true. Choose `direct` only when none of
-them is:**
+**This `solo` is a route, not the `**Shape**: solo` field of a task row.** The
+row's shape says how one engineer builds one task (solo or pair, step 4); the
+route here says how many roles you start for the change. A `solo` route carries
+`**Shape**: solo` rows, and the two share a name because they share the same
+economy — one pair of hands — not because one decides the other.
 
-- the change crosses a module boundary, or touches a file under
+**Choose `crew` when any one of these is true. Choose `solo` only when none of
+them is, and `direct` only for a change too small to be worth an engineer's
+hands:**
+
+- the change crosses a module boundary — a core module boundary, or a file under
   `docs/design/api/`;
-- it is on the risky list — the network, a login or permission check, secrets or
-  keys, files outside the project, shell commands, input that comes from a user,
-  customer data, or a new dependency;
+- it is a data migration, a release, a new dependency, or an architecture
+  change;
 - it needs design, or you cannot say what "done" means in one sentence that a
   stranger could check without asking you anything;
-- it touches more than one module, or more files than you can hold in your head
-  at once, or it is more work than one commit's worth of reading;
+- it touches many modules, or more files than you can hold in your head at
+  once, or it is more work than one commit's worth of reading;
 - an earlier change in the same part of the code already produced a defect;
 - you cannot write a test for it, or you cannot make that test fail first.
+
+**Is a security review needed? That is the second question, and it never moves
+the route by itself.** Ask the two in this order, and keep them apart: **first the
+route** — `direct`, `solo` or `crew`, from the list just above; **then the
+security review** — yes or no, from step 10b's own closed list, which adds one
+`crew_security_reviewer` to whichever route you chose.
+
+Mixing those two questions is what used to escalate every ordinary form into the
+full crew. **A screen that merely TAKES input from the user is not a risky
+change.** A settings page, a form, a dropdown, a search box: `solo`, and nothing
+about them is a security question by itself. The line is when the change
+**checks** who the user is or **decides what they may do** — a login, a
+permission check, a session, a secret, a key — or when the input reaches a trust
+boundary: a query, a shell command, a file path, a parser, a rendered page.
+`solo` plus one security review is a normal outcome and a good one: it is cheaper
+than a whole crew, and it still gets the second reader the auth part earns.
+
+**The routing decision table.** Find the row the work matches; the last two
+columns are answered separately, and neither one forces the other.
+
+| The work | Route | Security review | When it becomes `crew` |
+| --- | --- | --- | --- |
+| A spelling fix in `README.md` | `direct` | no | never — it is one document edit |
+| A bug inside one pure function, in one file | `direct` | no | never — one file, one test |
+| A change to three ordinary product files | `solo` | no | when they stop being one small change |
+| An ordinary settings UI: a form, a dropdown, a page that takes user input | `solo` | no | when it also spans core modules or changes the architecture |
+| A UI change that also touches a login or a permission check | `solo` | yes — one `crew_security_reviewer` | when it also spans core modules or changes the architecture |
+| A contract change between two core modules | `crew` | only step 10b's own list decides | already `crew` |
+| A migration plus a login change plus the network | `crew` | yes | already `crew` |
+
+The table is the rule, not an illustration. Taking input alone never appears in
+the `Route` column, and no row's `Route` is decided by its `Security review`
+column — the two `solo` rows below prove it, one with a security review and one
+without.
 
 **The PM write guard still stands, and on the `direct` scale it is part of the
 price.** You may write the whitelisted paths without asking: `docs/`,
@@ -404,8 +459,8 @@ state file. Every other path, product code included, is refused by the guard and
 asked to the user, **one write at a time**. So before you pick `direct` for a
 change that touches product code, say so to the user in one line: they will see
 one approval prompt per guarded file. When that is more prompts than the change
-is worth, take the `crew` scale and give one `crew_engineer` the whole task —
-that is usually faster than four approvals, and it is the reason the scale is a
+is worth, take the `solo` scale and give one `crew_engineer` the whole task —
+that is usually faster than four approvals, and it is the reason the route is a
 decision rather than a habit. Never work around the guard to avoid the prompts.
 
 **Fix it yourself before you escalate it.** A failing test, a missing tool, a
@@ -420,9 +475,10 @@ start: the role already running is the one that fixes it.
 
 **Never escalate by opening a second front.** A `direct` change that turns out
 to be bigger than it looked is not finished by starting one more role on top of
-it: stop, say so in one line, and move the work to the `crew` scale with a task
-row. A `crew` task that turns out to be small is left where it is — those roles
-are already running, and cancelling them costs more than it saves.
+it: stop, say so in one line, and move the work to the `solo` scale with a task
+row — or to `crew`, when the thing that grew is one of the six reasons above. A
+`crew` task that turns out to be small is left where it is — those roles are
+already running, and cancelling them costs more than it saves.
 
 **Line one: is this something only the PM owns?**
 Only the kinds below, done by the PM directly, because they have no other owner:
@@ -1227,8 +1283,9 @@ wrong.**
      open a third round, do not widen the finding to keep it alive, and do not
      start a fresh role to look at it again. Write down what is still open — what the document says, what the
      engineer did, and where the two readings part — and bring it to the user in
-     a few plain sentences. Three rounds is the whole job's ceiling, not one
-     finding's, and a loop past it is a bug in this step, not in the code.
+     a few plain sentences. Two rounds is the whole job's ceiling too, not one
+     finding's; it is also the number the `reviewRounds` limit carries, so a
+     loop past it is a bug in this step, not in the code.
    - **A reviewer may not block the change on a defect in a tool that is not
      the product.** A broken fixture, a flaky helper, a verification script that
      asserts the wrong thing, a test-utility file that does not type-check: those
@@ -1271,7 +1328,13 @@ wrong.**
    whole test of that word.** Start a `crew_security_reviewer`, in the same
    message as 10a, when the work touches any of these: the network, a
    login or permission check, secrets or keys, files outside the project, shell
-   commands, input that comes from a user, customer data, or a new dependency.
+   commands, **user input that reaches a trust boundary** — a query, a shell
+   command, a file path, a parser, a rendered page — customer data, or a new
+   dependency.
+   **Taking input is not on this list by itself**, and this list decides the
+   review only: it never decides the route (step 1, **Scale**). A settings form
+   that only collects and stores a value is not a security change, whatever a
+   field is called.
    Give it the task ids, their file lists, the documents those rows live in
    (the opening document plus `docs/tasks/`), and the diff itself — run
    `git diff` yourself and paste it in, the same as 10a.
@@ -2079,16 +2142,16 @@ unreadable job as finished.
   change goes into a document first; the message says which document and which
   version.
 - `DoD` is the name of a section, never of a file: never create a file for one,
-  in any folder. On the `crew` scale, small work and big work both open with a
-  PRD of their own, `docs/design/prd-<date>-<job-slug>.md`, and keep the task
+  in any folder. On the `crew` and `solo` scales, small work and big work both open
+  with a PRD of their own, `docs/design/prd-<date>-<job-slug>.md`, and keep the task
   table in `docs/tasks/`. Every crew milestone and task row carries a DoD
   section saying what "done" means and how somebody else checks it. The
   `direct` scale uses one test and its commit message instead; it creates no PRD
   or task row.
-- A bug on the `crew` scale becomes a task row that you write before the fix
-  starts: what was reported, and its DoD section. The engineer doing the fix never
-  writes that section. A small, low-risk bug may stay `direct`; if it grows past
-  that scale, write the row before another role starts.
+- A bug on the `crew` and `solo` scales becomes a task row that you write before
+  the fix starts: what was reported, and its DoD section. The engineer doing the fix
+  never writes that section. A small, low-risk bug may stay `direct`; if it grows
+  past that scale, write the row before another role starts.
 - The user's turn is at the start and at every milestone review, not item by
   item. Once the scope and the change requests are agreed, decide the rest
   yourself, and let the user interrupt you on a summary of the documents you
@@ -2100,7 +2163,10 @@ unreadable job as finished.
 - Every change gets a milestone, whatever its size: at least one task, one test
   and one commit. **How much flow that milestone carries is the scale** (see
   **Scale** in step 1), and the default is the cheapest scale that can carry the
-  change — `direct`, where you do the work yourself and start no child role.
+  change — `direct` for a small low-risk change, `solo` (one `crew_engineer`) for
+  ordinary coding, and `crew` only when the work is big, cross-module or risky.
+  Whether a security review is needed is a second question, answered from step
+  10b's own list, and it never moves the route by itself.
   A milestone is one full cycle plus one commit — it is **not** a release, and
   pushing and tagging each need their own yes.
 - **Do it yourself when you can; delegate only when a second role earns its

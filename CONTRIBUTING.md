@@ -175,8 +175,11 @@ round each, on the changed part only.
   then reuse, simpler code, readability and this repository's own style.
 - **Security review** — only when the change touches any of a closed list: the
   network, a login or permission check, secrets or keys, files outside the
-  project, shell commands, input that comes from a user, customer data, or a
-  new dependency.
+  project, shell commands, user input that reaches a trust boundary (a query, a
+  shell command, a file path, a parser, a rendered page), customer data, or a
+  new dependency. Taking input by itself is not on that list: an ordinary form
+  or settings page is not a security change. This list decides the review only —
+  it never decides how many roles the change gets.
 - **Doc review** — one agent per document the milestone changed.
 
 Reviewers use an allow list (`read`, `glob`, `grep`) and cannot write files.

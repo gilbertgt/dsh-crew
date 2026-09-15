@@ -13,12 +13,19 @@ You talk only to the PM. The crew stays flat, but the PM starts a child role onl
 when that role adds relevant skill or independent evidence. The nine roles, model
 routing, Git guard, PM write guard, permissions and resume support stay in place.
 
-Two lanes, then a scale:
+Two lanes, then a route:
 
 - `ask` — you want an answer. The PM answers. Nothing changes.
-- `team` — you want a change. Small, low-risk, single-module work defaults to
-  `direct`: the PM does it without child roles. Large, risky or cross-module work
-  uses `crew` and starts only the roles relevant to that change.
+- `team` — you want a change. Inside it the PM picks the cheapest route that can
+  carry the work: `direct` for a small, low-risk change, done by the PM with no
+  child role; `solo` for ordinary coding, which is one engineer and nobody else;
+  and `crew` only for work that is large, cross-module, high-risk or
+  architecture-changing, where the relevant roles are started and no others.
+
+Whether a security review is needed is a separate question, answered from a
+closed list. A settings page, form or dropdown is `solo` even though it takes
+input; a change that also touches a login or a permission check stays `solo` and
+adds one security reviewer.
 
 Development runs targeted tests. The full project and QA gates run once when the
 change is ready, then again only after a failure requires a fix. Completed stages

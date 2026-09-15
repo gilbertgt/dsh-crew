@@ -37,9 +37,21 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   pre-upgrade archive too. The settings namespace is outside the preset folder and is not
   removed by that refresh or upgrade, but whether it survives restart still depends on the
   host settings backend.
-- **Small, low-risk work now defaults to direct PM execution.** Full Crew is reserved for
-  large, risky or cross-module changes, and only relevant QA or reviewer roles are started.
-  Development runs targeted tests; full gates run once at completion, review issues stop
+- **A change now has three routes, not two: `direct`, `solo` and `crew`.** Small,
+  low-risk work stays with the PM (`direct`); ordinary coding — product code, a small
+  change across a few files, a normal settings page — goes to **one** engineer and
+  nobody else (`solo`); and `crew` is reserved for work that is really large,
+  cross-module, high-risk or architecture-changing. No role is started to fill a slot.
+- **"Does this need a security review?" is now a separate question from "how much crew
+  does this get?"** The security list no longer reads user input as a risk by itself, so
+  a settings form or dropdown is not escalated to the full crew for having a text field.
+  A change that checks who the user is, or whose input reaches a trust boundary, stays
+  `solo` and adds one security reviewer.
+- **The `reviewRounds` default is 2**, and the PM prompt, the settings example and the
+  three reviewer prompts now all say the same thing: round one is the initial review and
+  round two is the one re-check after the fix, with no third round. The runtime default
+  and the written rule used to disagree.
+- Development runs targeted tests; full gates run once at completion, review issues stop
   after two rounds, and resumed jobs skip stages already recorded as complete.
 
 ## 0.10.0 — 2026-08-23

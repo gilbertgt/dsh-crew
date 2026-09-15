@@ -1917,13 +1917,15 @@ function applyCapturingLogs(config, options) {
 
   // The PM prompt is built from the limits, so it is where a limit that no
   // longer exists would keep being promised to the PM. Defaults after CRD 0003:
-  // 20 agents awake at the same time, review rounds unchanged at 3.
+  // 20 agents awake at the same time. `reviewRounds` is 2 — round one is the
+  // initial review and round two is the one re-check after the fix, which is the
+  // same ceiling every reviewer persona names; the three used to disagree.
   const promptText = ctx.sections[0]?.text ?? "";
   if (/agentsPerJob|agents for one job/.test(promptText)) fail("the PM prompt still names a per-job agent limit, which CRD 0003 removed");
   else if (!promptText.includes("crew agents awake at the same time: 20")) fail("the PM prompt does not carry the default of 20 crew agents awake at the same time");
-  else if (!promptText.includes("review rounds before you bring the disagreement to the user: 3")) fail("the PM prompt does not carry the default of 3 review rounds");
+  else if (!promptText.includes("review rounds before you bring the disagreement to the user: 2")) fail("the PM prompt does not carry the default of 2 review rounds");
   else if (!promptText.includes("Taiwan Traditional Chinese")) fail("the PM prompt does not carry the Taiwan Traditional Chinese language policy");
-  else ok("PM prompt has no per-job limit, carries the language policy, and defaults to 20 agents awake and 3 review rounds");
+  else ok("PM prompt has no per-job limit, carries the language policy, and defaults to 20 agents awake and 2 review rounds");
 }
 
 if (roles) {
