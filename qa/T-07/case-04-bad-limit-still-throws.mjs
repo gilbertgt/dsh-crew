@@ -26,7 +26,10 @@ for (const [limits, field] of bad) {
 }
 
 // And a good value still mounts, so the check is not simply refusing everything.
-const good = await mountCrew({ plugin: { limits: { liveAgents: 1, reviewRounds: 9 } } });
+// `reviewRounds` is bounded above at 2, so the accepted pair names the ceiling
+// itself; `qa/T-137/case-04-review-rounds-cap.mjs` is what proves a larger value
+// is refused.
+const good = await mountCrew({ plugin: { limits: { liveAgents: 1, reviewRounds: 2 } } });
 try {
   check("a valid pair of limits still mounts", good.thrown === undefined, good.thrown?.message ?? "");
 } finally {

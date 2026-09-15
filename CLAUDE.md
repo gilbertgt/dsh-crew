@@ -410,14 +410,16 @@ earlier.
 Eight rules there are load-bearing, and `principles.md` 8, 13, 14, 15, 19, 20 and 22 carry the
 reasons:
 
-- **`DoD` is a section, never a file, and the checks live next to the work they govern.** Small work
-  and big work alike open with a PRD of their own under `docs/design/` and keep one task table at
-  `docs/tasks/`. Every milestone
+- **`DoD` is a section, never a file, and the checks live next to the work they govern.** On the
+  `crew` route small work and big work alike open with a PRD of their own under `docs/design/`, and
+  every route that starts a role keeps one task table at `docs/tasks/` — `solo` does, and `direct`
+  carries nothing but its one test and its commit message. Every milestone
   (big work) and every task row (small work and big work alike) carries a DoD section saying what "done" means and
   **how somebody else checks it** — the QA case and the exact command. There is no globally numbered
-  list of acceptance checks anywhere: a check is "item 2 of T-05's DoD". A bug in the `team` lane
-  becomes a task row whose DoD section the **PM** writes before the fix starts, never the engineer
-  doing the fix. `principles.md` 20 carries the reasons and the measured cost.
+  list of acceptance checks anywhere: a check is "item 2 of T-05's DoD". A bug on the `crew` or
+  `solo` route becomes a task row whose DoD section the **PM** writes before the fix starts, never
+  the engineer doing the fix; a `direct` bug's record is its commit message.
+  `principles.md` 20 carries the reasons and the measured cost.
 - **Dropping a single-use document requires moving its durable half out first**, and only after
   the PM's final summary — not when the DoD items turn green. There are **seven**
   destinations, not five: a rule goes to

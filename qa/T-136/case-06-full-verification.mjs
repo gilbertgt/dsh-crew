@@ -310,6 +310,12 @@ const AGGREGATE_COPY_ENTRIES = [
   "README.md",
   "README-zh.md",
   "CHANGELOG.md",
+  // `CONTRIBUTING.md` is here for the same reason the four documents above are:
+  // a case in the aggregate run reads it (`qa/T-137/case-05` judges the
+  // contributor guide's three routes). Leaving it out does not fail loudly — the
+  // case dies on a missing file inside a copy that looks complete, and the
+  // aggregate run goes red for a reason that is not true of the repository.
+  "CONTRIBUTING.md",
   "host",
   "roles",
   "preset",

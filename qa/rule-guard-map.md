@@ -202,7 +202,7 @@ Rules mapped: 93 (guarded 38 · bare 51 · judgment 4)
 | Documents are the only channel | PM | bare |
 | **Never decide anything in a message.** | PM | bare |
 | Every one becomes a file you write, before anything moves. | PM | bare |
-| A bug becomes a task row, and you write its DoD section first | PM | bare |
+| A bug becomes a task row — on the `crew` and `solo` routes only | PM | bare |
 | The slug's shape is fixed: lowercase letters, digits and `-`, nothing else | PM | guarded: qa/T-06/case-01-slug-shape-rule.mjs |
 | Create a work branch: `git switch -c crew/<job-slug>` | PM | bare |
 | **Parallel by default.** | PM | bare |

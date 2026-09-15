@@ -47,16 +47,33 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // carry the old setting.
 // `reviewRounds` is 2, not 3, and that is the whole rule: the initial review is
 // round one, the engineer's fix gets one re-check as round two, and a third round
-// is a bug in the flow rather than a longer argument. A profile may still raise
-// it, but the ceiling the PM is told about has to be the rule its reviewers
-// already follow, or the prompt and the personas disagree.
+// is a bug in the flow rather than a longer argument. And 2 is not only the
+// default — it is the CEILING (`MAX_REVIEW_ROUNDS`), because the number the PM is
+// told about has to be the rule its reviewers already follow. A profile that asks
+// for a third round is not asking for a longer argument, it is asking the runtime
+// to contradict every reviewer persona, so the mount refuses it loudly instead.
 const DEFAULT_LIMITS = { liveAgents: 20, reviewRounds: 2 };
 
-/** Read a positive whole number from config, falling back to the default. */
-function limitOf(configured, fallback, field) {
+/** The hard ceiling for `reviewRounds`: round one, one re-check, and stop. */
+const MAX_REVIEW_ROUNDS = DEFAULT_LIMITS.reviewRounds;
+
+/**
+ * Read a positive whole number from config, falling back to the default.
+ *
+ * `max` is the value's ceiling, for a setting the product itself bounds: a
+ * `reviewRounds` above it would leave the runtime promising a loop the reviewer
+ * prompts are forbidden to run, so it is refused here rather than obeyed.
+ *
+ * @param configured - the value the profile wrote, if any
+ * @param fallback - the default to use when it wrote none
+ * @param field - the setting's name, for the error message
+ * @param max - the largest value this setting may take, if it is bounded
+ */
+function limitOf(configured, fallback, field, max) {
   if (configured === undefined) return fallback;
-  if (!Number.isSafeInteger(configured) || configured < 1) {
-    throw new Error(`dsh-crew: limits.${field} must be a whole number of 1 or more (got ${JSON.stringify(configured)})`);
+  const bound = max === undefined ? "" : ` and at most ${max}`;
+  if (!Number.isSafeInteger(configured) || configured < 1 || (max !== undefined && configured > max)) {
+    throw new Error(`dsh-crew: limits.${field} must be a whole number of 1 or more${bound} (got ${JSON.stringify(configured)})`);
   }
   return configured;
 }
@@ -327,7 +344,10 @@ function runtimeFactsSection(limits) {
     "",
     "Limits you must respect. Stop and ask the user before going over any of them:",
     `- crew agents awake at the same time: ${limits.liveAgents}`,
-    `- review rounds before you bring the disagreement to the user: ${limits.reviewRounds}`,
+    // The review ceiling is the one limit that is not negotiable: it is the same
+    // number every reviewer persona is told to stop at, so "ask the user before
+    // going over it" does not apply — there is nothing a yes could buy.
+    `- review rounds before you bring the disagreement to the user: ${limits.reviewRounds} — a hard ceiling, not a preference: round two is where the loop stops, and no profile can raise it past ${MAX_REVIEW_ROUNDS}`,
     "",
     "If the user says \"stop\", kill every crew agent you started (`interrupt_agent`, then `job_kill` for anything still running) and say what was left unfinished.",
     "",
@@ -346,7 +366,7 @@ export function apply(ctx, config) {
   const rolesDir = config?.rolesDir;
   const limits = {
     liveAgents: limitOf(config?.limits?.liveAgents, DEFAULT_LIMITS.liveAgents, "liveAgents"),
-    reviewRounds: limitOf(config?.limits?.reviewRounds, DEFAULT_LIMITS.reviewRounds, "reviewRounds"),
+    reviewRounds: limitOf(config?.limits?.reviewRounds, DEFAULT_LIMITS.reviewRounds, "reviewRounds", MAX_REVIEW_ROUNDS),
   };
 
   // Read every role file at load time, including the ones the preset mounts: a

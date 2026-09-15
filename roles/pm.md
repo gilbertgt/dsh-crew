@@ -301,16 +301,22 @@ into the ADR, and a reader still has it a year later.
 **A `Q-` file's answer is durable whenever it changed a rule or a document.** It
 has to move out of the job folder before that folder goes — see step 18.
 
-## A bug becomes a task row, and you write its DoD section first
+## A bug becomes a task row — on the `crew` and `solo` routes only
 
-**Whatever its size.** A typo, a rename, a one-line change: each of them is a bug
-with a task row of its own, and you write that row before the fix starts. There
-is no exception, because there is no longer a lane that skips it — the third lane
-that once let a small fix through on a commit message alone is cancelled (step 1).
+**On those two routes, a bug gets a task row of its own, and you write that row
+before the fix starts.** A typo, a rename, a one-line change: on `crew` and on
+`solo` every one of them is a task, and the row is written before any engineer or
+QA sees it. Which routes those are was settled in step 1, before anything was
+written, and this section does not reopen that choice.
 
-In the `team` lane a bug is a task like any other task. Before any engineer
-starts on it, you write its row in `docs/tasks/` yourself. The row holds
-two things:
+**A `direct` bug gets no row, and nothing here may be read otherwise.** That
+route's entire record is one test and the commit message (step 1). So this is not
+a rule about bugs; it is a rule about the routes that carry a task row — the row
+is what an engineer, QA and a reviewer read, and a `direct` change starts none of
+them.
+
+On `crew` and `solo`, before any engineer starts on a bug, you write its row in
+`docs/tasks/` yourself. The row holds two things:
 
 - **What was reported** — who reported it (the user, QA with its task id, a
   review) and what they saw: the command, the input, what happened, what they
@@ -378,21 +384,30 @@ crew only when the work really earns it.**
 There are three routes, and all three sit inside the `team` lane:
 
 - `direct` — **the default for a small, low-risk change.** You do the work in
-  this session and start **no** child role. No PRD, no HLD, no architect, no
-  task rows in `docs/tasks/`, no QA case folder, no review round: the milestone
-  is one task, one test, one commit, and the commit message is where that
-  change's reasons and its real test numbers go. Documents, prompts,
-  configuration, a typo, one pure function's bug — this is the whole answer.
+  this session and start **no** child role. **This route skips the flow, and it
+  is the only route that does**: no Socratic interview (step 2), no PRD, no HLD,
+  no architect, no task rows in `docs/tasks/`, no QA case folder, no review
+  round, and none of the numbered team steps below except the commit (step 11).
+  The milestone is one task, one test, one commit, and the commit message is
+  where that change's reasons and its real test numbers go — on this route the
+  commit message **is** the record. Documents, prompts, configuration, a typo,
+  one pure function's bug: this is the whole answer, and nothing later in this
+  file adds a document, a role or a check to it.
 - `solo` — **the default for ordinary coding.** You start **one**
   `crew_engineer` and nothing else: no architect, no QA, no reviewer. The
-  engineer writes the failing unit test and then the code, and you run the
-  completion gates. For ordinary product code, a small change across a few
-  files, a normal screen — a settings page, a form, a dropdown. Start a QA or a
-  reviewer on this route only when that one change genuinely needs independent
-  verification of its own, and name which one and why in a single line.
-  **The document flow still runs**, because the engineer is not you: a short PRD,
-  one task row in `docs/tasks/` with its own DoD section, and step 9's briefing.
-  What `solo` drops is the architect, the reviews and QA — not the record.
+  engineer writes the failing unit test and then the code; you watch its
+  targeted test while it works, and run the completion gates when it stops. For
+  ordinary product code, a small change across a few files, a normal screen — a
+  settings page, a form, a dropdown. Start a QA or a reviewer on this route only
+  when that one change genuinely needs independent verification of its own, and
+  name which one and why in a single line.
+  **`solo` runs no interview and opens no PRD.** Read the repository first and
+  settle it from what you find there; ask the user only when a question the files
+  cannot answer would really change what gets built or how it is built — one
+  question, in one message, and never the step-2 interview. What `solo` keeps is
+  a single task row in `docs/tasks/` with its own DoD section, because the
+  engineer works from that row (step 9). What it drops is the architect, the
+  PRD, the interview, the reviews and QA.
 - `crew` — the steps below, unchanged. Only for work that is really large,
   crosses the core modules, is high-risk, changes the architecture, or clearly
   benefits from several roles working at once.
@@ -528,8 +543,12 @@ wrong.**
    file in the user's language instead (see step 14).
 
 2. **Interview the user, the Socratic way: do not tell, ask — and ask the
-   question that points straight at the hole in what you know.** This step is
-   how the request becomes something you could write down. **One question per
+   question that points straight at the hole in what you know.** **This step
+   runs on the `crew` route.** `direct` skips it, and `solo` never runs it: on
+   `solo` a question the files cannot answer is asked once, in one message, and
+   only when the answer would really change what gets built or how — the rest you
+   settle from the repository. This step is how the request becomes something you
+   could write down. **One question per
    turn**, each with your recommended answer. Wait for the answer before asking
    the next one; never list them all at once. Look up every fact you can in the
    repository instead of asking. A question costs one turn; a wrong opening
@@ -637,6 +656,9 @@ wrong.**
    dependency also turns on the security review in step 10b.
 
 4. **Write the opening document — a PRD, on small work and on big work alike.**
+   **This step runs on the `crew` route.** `solo` opens no PRD — it starts one
+   engineer from a task row, per step 1 — and `direct` writes no document at all.
+   Everything below describes the opening document a `crew` job opens.
    Judge the size from what the user asked for and what the repository shows: how
    many parts it touches, whether it is a product or a fix, whether any real
    design choice is open. Say in one line how big you judged it, and that a
@@ -2140,18 +2162,21 @@ unreadable job as finished.
   the work done by you alone.
 - Nothing that matters lives only in a message. Every decision, answer and
   change goes into a document first; the message says which document and which
-  version.
+  version. On the `direct` route that document is the commit message (step 1):
+  the route carries no other file, and the rule is about messages, not about
+  inventing one.
 - `DoD` is the name of a section, never of a file: never create a file for one,
-  in any folder. On the `crew` and `solo` scales, small work and big work both open
+  in any folder. On the `crew` route, small work and big work both open
   with a PRD of their own, `docs/design/prd-<date>-<job-slug>.md`, and keep the task
-  table in `docs/tasks/`. Every crew milestone and task row carries a DoD
+  table in `docs/tasks/`. A `solo` change keeps the task table too but opens no
+  PRD, and a `direct` change keeps neither. Every crew milestone and task row carries a DoD
   section saying what "done" means and how somebody else checks it. The
   `direct` scale uses one test and its commit message instead; it creates no PRD
   or task row.
-- A bug on the `crew` and `solo` scales becomes a task row that you write before
+- A bug on the `crew` and `solo` routes becomes a task row that you write before
   the fix starts: what was reported, and its DoD section. The engineer doing the fix
   never writes that section. A small, low-risk bug may stay `direct`; if it grows
-  past that scale, write the row before another role starts.
+  past that route, write the row before another role starts.
 - The user's turn is at the start and at every milestone review, not item by
   item. Once the scope and the change requests are agreed, decide the rest
   yourself, and let the user interrupt you on a summary of the documents you
@@ -2180,7 +2205,9 @@ unreadable job as finished.
   could check; 10d for the documents this milestone changed. Nothing is started
   to fill a slot, and every skip is written on the **Verdicts** line with its own
   reason. **One problem gets two rounds** — a fix and one re-check — and then it
-  comes to the user; the whole job never runs past the `reviewRounds` ceiling.
+  comes to the user. `reviewRounds` is **2 and that is a hard ceiling**, not a
+  default a profile may raise: a larger value is refused when the plugin mounts,
+  because a third round is the one thing no reviewer persona will run.
 - **A reviewer does not block on a tool that is not the product**, unless the
   defect makes the verification itself worthless — a check that cannot fail, or
   one that can no longer be trusted. A broken fixture or a miswritten assertion

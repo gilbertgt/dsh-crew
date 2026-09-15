@@ -55,6 +55,7 @@ const ID = {
   runtime: "host/crew.js gives `reviewRounds` the default of 2, not 3",
   prompt: "the mounted PM prompt carries that exact ceiling, once",
   patch: "the cordis.patch.yml example is the same number, and still a comment",
+  patchCap: "the cordis.patch.yml example says that number is the maximum",
   mountCheck: "tools/verify-mount.mjs pins the same sentence the prompt carries",
   wording: "roles/pm.md states the same ceiling in words",
   stale: "roles/pm.md states no other whole-job ceiling",
@@ -88,13 +89,23 @@ function audit(files, promptText) {
   );
 
   // --- the documented example --------------------------------------------
-  const patchLines = files[PATCH].split("\n").filter((line) => /reviewRounds/.test(line));
+  //
+  // Only the line that really ASSIGNS the value is counted: the option's
+  // documentation may name it in prose as well, and a check that counted every
+  // mention would red a file that documents its own ceiling.
+  const patchLines = files[PATCH].split("\n").filter((line) => /reviewRounds:\s*\d/.test(line));
   const patchRounds = Number(/reviewRounds:\s*(\d+)/.exec(files[PATCH])?.[1]);
   add(
     ID.patch,
     patchRounds === rounds && patchLines.length === 1 && patchLines[0].trim().startsWith("#"),
     `the example reads ${JSON.stringify(patchLines.join(" | "))} and the runtime default is ${rounds}. `
       + "It must agree, and it must stay a commented example rather than a live setting",
+  );
+  add(
+    ID.patchCap,
+    new RegExp(`reviewRounds:\\s*${rounds}\\b[^\\n]*maximum`, "i").test(files[PATCH]),
+    "the commented example does not say that this number is the maximum, so a user reading the config file "
+      + "cannot tell that a larger one is refused at startup",
   );
 
   // --- the project check that pins the prompt's sentence ------------------

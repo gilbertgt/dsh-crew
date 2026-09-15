@@ -1,8 +1,10 @@
 # Contributing to dsh-crew
 
-This guide says how a change moves through this repository: from a task row in
-`docs/tasks/` with its DoD section, through an engineer's test-first
-code or a document, to QA, the reviews, the Verdicts line and `npm test`.
+This guide says how a change moves through this repository. Inside the `team`
+lane a change takes one of three routes, and the route decides how much of this
+guide applies to it: `direct` (the PM does the work alone), `solo` (one
+engineer), `crew` (the full flow). What follows describes the `crew` route unless
+it says otherwise, and `direct` and `solo` are named where they differ.
 
 The source of these facts is `CLAUDE.md`. Read `CLAUDE.md` first — it is the
 authoritative map of how this repository works today. This file is a shorter
@@ -29,15 +31,31 @@ loaded) and the **agent plane** (the `crew` agent preset, where the
 model-facing tools live). A role's tool names must exist in that preset, or the
 role fails to start when it is used.
 
+## The three routes, and what each one carries
+
+Every change is a `team` job, and the PM picks the cheapest route that can carry
+it before doing anything (`roles/pm.md` step 1):
+
+| Route | Who does it | What it carries |
+| --- | --- | --- |
+| `direct` | the PM alone, no child role | one test and one commit. No interview, no PRD, no task row, no QA, no review |
+| `solo` | one `crew_engineer` | a task row with its own DoD section. No interview, no PRD, no architect, no QA and no review, unless that one change really needs independent verification |
+| `crew` | the flow below, several roles | a PRD, the task table, an optional architect, QA, and the reviews |
+
+`direct` is where a typo, a rename, a config line, a one-line fix, a document
+edit or one small bug goes: the commit message is its record, and nothing later
+in this file adds work to it. `solo` is for ordinary coding — a small change
+across a few files, a normal screen. `crew` is for work that is really large,
+crosses the core modules, is high-risk, or changes the architecture. A milestone
+is one full cycle plus one commit, whatever the route.
+
 ## The task row and the DoD
 
-Every change, whatever its size, is a `team` job. There is no lane where a file
-is changed alone. A milestone is one full cycle plus one commit: at least one
-task, one round of QA, and one round of each review.
-
-Each job opens with a PRD of its own: `docs/design/prd-<date>-<job-slug>.md`.
-The one task table of the whole repository is `docs/tasks/`. Every
-task section holds:
+On the `crew` route each job opens with a PRD of its own:
+`docs/design/prd-<date>-<job-slug>.md`. `solo` opens no PRD — the PM starts one
+engineer from a task row instead — and `direct` writes no document at all. The one
+task table of the whole repository is `docs/tasks/`. On the routes that have one,
+every task section holds:
 
 - an id (`T-01`);
 - one sentence of work;
@@ -49,11 +67,14 @@ checks it** — the QA case and the exact command. **DoD is a section, never a
 file.** There is no `dod.md` anywhere: a file of its own is a file that gets
 dropped. A check is "item 2 of T-05's DoD", never a numbered list.
 
-A bug becomes a task row whose DoD section the PM writes before the fix starts —
-never the engineer doing the fix. The files a task owns live in its row, and
-two tasks never own the same file.
+A bug on the `crew` or `solo` route becomes a task row whose DoD section the PM
+writes before the fix starts — never the engineer doing the fix. A `direct` bug
+gets no row at all; its record is the commit message. The files a task owns live
+in its row, and two tasks never own the same file.
 
 ## How code changes move
+
+On the `crew` and `solo` routes:
 
 1. The PM starts one engineer per task. The default shape is `solo`: one
    engineer writes the failing unit test, then the code that makes it pass.
@@ -92,8 +113,9 @@ role talks only to the PM, the persona copies the shared wording from
 
 ## How documentation changes move
 
-A documentation change is a change like any other: it gets a task row, a DoD
-section, a milestone, the reviews, and a commit.
+A documentation change follows the route it is on. A README typo is `direct`: one
+commit, no task row, no review. A larger documentation change on `crew` gets a
+task row, a DoD section, a milestone, the reviews, and a commit.
 
 Where a document lives depends on how long it lives:
 
@@ -164,7 +186,19 @@ trusts an earlier push's green. Expect `npm test` to get slower as jobs add
 cases; when that starts to hurt, split it into a fast check and a full one
 rather than dropping the cases.
 
+**A fork runs no workflow until its own Actions are enabled, and nothing in the
+repository can change that.** A `push` to a fork whose workflow index is empty
+produces no run at all — not a failed one — and GitHub reports
+`GET /repos/<owner>/<repo>/actions/workflows` as `total_count: 0` while the same
+files register normally in the parent repository. So when a push shows no run:
+check that endpoint first. If it is `0` while `.github/workflows/*.yml` is present
+and valid, the fix is the enable button on the fork's Actions page, not a change
+to the workflow files.
+
 ## The review rounds
+
+These run on the `crew` route. A `direct` change has none of them, and a `solo`
+change starts one only when that change really needs independent verification.
 
 QA and the three reviews run **once per milestone, at the end of it**, after
 the coding has stopped — a blocking finding changes the code and throws an
@@ -191,6 +225,11 @@ code change re-runs the code review, a documentation change the doc review, a
 security change the security review. The three never re-run together. After the
 milestone, a last doc review pass reads only what landed after the milestone
 round — the reader-facing files.
+
+One issue gets **two rounds**: the initial review is round one, and the re-check
+after the fix is round two. `limits.reviewRounds` is `2` and it is a hard
+ceiling — a profile that asks for a third round is refused when the plugin
+mounts, because no reviewer prompt will run one.
 
 ## The Verdicts line
 

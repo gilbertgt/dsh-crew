@@ -1249,8 +1249,8 @@ that. It is the one part of this flow a check can read, and what it reads is one
 line of one file — it says nothing about whether the migration ran, and nothing
 about whether a review happened.
 
-**Lives in** `roles/pm.md` (**A bug becomes a task row, and you write its DoD
-section first**, step 4 **Write the opening document**, step 8 **Design**, step 9
+**Lives in** `roles/pm.md` (**A bug becomes a task row — on the `crew` and `solo`
+routes only**, step 4 **Write the opening document**, step 8 **Design**, step 9
 **Run the tasks**, step 10c **QA**, step 18 **Finish**, and the hard rules),
 `roles/architect.md` (**Task breakdown**), `roles/engineer.md` (what to read
 first, and the bug-fix section), `roles/qa.md` (the plan starts from the task's
