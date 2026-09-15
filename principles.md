@@ -675,7 +675,13 @@ the PM's finish summary; a way that would change a boundary contract gets a CRD.
 Every such decision is written into a document before the engineer starts again,
 and holds the same five things: the cause, **every** option with its cost and
 **why it lost**, which one was chosen, who chose it, and the reason. It goes in an
-ADR at `docs/decisions/adr/NNNN-<short-name>.md`, whatever the size of the job.
+ADR at `docs/decisions/adr/NNNN-<short-name>.md`, whatever the size of the job —
+**on the `solo` and `crew` routes**. A `direct` change writes no ADR and no CRD:
+its small implementation choice stays in the code and the commit message, and a
+decision that deserves a record of its own moves the work to `solo` or `crew`
+rather than adding a document to `direct`. This is the route rule of principle 6
+read one level down: a route that carries no second reader carries no record for
+one either.
 Big work may have a fresh architect write it; small work has no architect, so
 the PM writes it itself, in the same shape. And every ADR — bug fix
 or not — lists every option with its cost and why it lost, **marks** the one it
@@ -1150,7 +1156,15 @@ nothing else — no architect, no QA, no reviewer. `crew` is for work that cross
 modules, reaches a boundary contract, needs design, cannot be tested sharply, or
 is too large to hold as one small change. **Anything that changes still gets a
 milestone**, but its route decides whether that milestone carries one executor or
-several roles.
+several roles — and only `crew` runs the numbered flow of `roles/pm.md` around
+it, with `solo` borrowing step 9's briefing list and step 11's commit and nothing
+else. `solo` has a flow of its own, five lines long: read the repository, ask at
+most one question, write the task row with its DoD section, start one engineer —
+plus the single reviewer step 1 named, if it named one — run the targeted test
+and the completion gates, commit. `direct` shares only the
+commit. Neither of them opens an opening document, waits for the user to confirm
+one, or keeps a milestone of its own; a `direct` change writes no ADR and no CRD
+either, while `solo` writes one when a choice deserves its own record.
 
 **Whether a security review is needed is a second question.** It is answered from
 the closed risky list (principle 18) and it adds one `crew_security_reviewer` to

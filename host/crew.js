@@ -47,35 +47,49 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // carry the old setting.
 // `reviewRounds` is 2, not 3, and that is the whole rule: the initial review is
 // round one, the engineer's fix gets one re-check as round two, and a third round
-// is a bug in the flow rather than a longer argument. And 2 is not only the
-// default — it is the CEILING (`MAX_REVIEW_ROUNDS`), because the number the PM is
-// told about has to be the rule its reviewers already follow. A profile that asks
-// for a third round is not asking for a longer argument, it is asking the runtime
-// to contradict every reviewer persona, so the mount refuses it loudly instead.
+// is a bug in the flow rather than a longer argument. The rule pins the number at
+// both ends, which is why the setting takes `2` and nothing else: the number the
+// PM is told about has to be the rule its reviewers already follow, so a profile
+// asking for 3 asks the runtime to promise a loop every reviewer persona refuses
+// to run, and a profile asking for 1 asks it to drop the re-check the whole
+// two-round rule exists for. Both are refused loudly at the mount instead.
 const DEFAULT_LIMITS = { liveAgents: 20, reviewRounds: 2 };
 
-/** The hard ceiling for `reviewRounds`: round one, one re-check, and stop. */
-const MAX_REVIEW_ROUNDS = DEFAULT_LIMITS.reviewRounds;
+/** The one value `reviewRounds` may take: round one, one re-check, and stop. */
+const REVIEW_ROUNDS = DEFAULT_LIMITS.reviewRounds;
 
 /**
  * Read a positive whole number from config, falling back to the default.
  *
- * `max` is the value's ceiling, for a setting the product itself bounds: a
- * `reviewRounds` above it would leave the runtime promising a loop the reviewer
- * prompts are forbidden to run, so it is refused here rather than obeyed.
- *
  * @param configured - the value the profile wrote, if any
  * @param fallback - the default to use when it wrote none
  * @param field - the setting's name, for the error message
- * @param max - the largest value this setting may take, if it is bounded
  */
-function limitOf(configured, fallback, field, max) {
+function limitOf(configured, fallback, field) {
   if (configured === undefined) return fallback;
-  const bound = max === undefined ? "" : ` and at most ${max}`;
-  if (!Number.isSafeInteger(configured) || configured < 1 || (max !== undefined && configured > max)) {
-    throw new Error(`dsh-crew: limits.${field} must be a whole number of 1 or more${bound} (got ${JSON.stringify(configured)})`);
+  if (!Number.isSafeInteger(configured) || configured < 1) {
+    throw new Error(`dsh-crew: limits.${field} must be a whole number of 1 or more (got ${JSON.stringify(configured)})`);
   }
   return configured;
+}
+
+/**
+ * `reviewRounds` is not a range: it is the one number the review loop is built
+ * on, so the only legal profile values are that number and "not written at all".
+ *
+ * A value of 1 is refused as firmly as a value of 3, and for the same reason —
+ * the PM prompt, the settings example and all three reviewer personas state the
+ * same two rounds, and a runtime that obeyed any other number would leave the PM
+ * promising something its reviewers are forbidden to do.
+ *
+ * @param configured - the value the profile wrote, if any
+ */
+function reviewRoundsOf(configured) {
+  if (configured === undefined) return REVIEW_ROUNDS;
+  if (configured !== REVIEW_ROUNDS) {
+    throw new Error(`dsh-crew: limits.reviewRounds must be ${REVIEW_ROUNDS} — round one is the initial review and round two is the one re-check after the fix — or left unset (got ${JSON.stringify(configured)})`);
+  }
+  return REVIEW_ROUNDS;
 }
 
 /**
@@ -344,10 +358,11 @@ function runtimeFactsSection(limits) {
     "",
     "Limits you must respect. Stop and ask the user before going over any of them:",
     `- crew agents awake at the same time: ${limits.liveAgents}`,
-    // The review ceiling is the one limit that is not negotiable: it is the same
+    // The review rounds are the one limit that is not a range: it is the same
     // number every reviewer persona is told to stop at, so "ask the user before
-    // going over it" does not apply — there is nothing a yes could buy.
-    `- review rounds before you bring the disagreement to the user: ${limits.reviewRounds} — a hard ceiling, not a preference: round two is where the loop stops, and no profile can raise it past ${MAX_REVIEW_ROUNDS}`,
+    // going over it" does not apply — there is nothing a yes could buy, in either
+    // direction.
+    `- review rounds before you bring the disagreement to the user: ${limits.reviewRounds} — fixed, not a preference: round one is the initial review and round two is the one re-check, and no profile can set it to any other number`,
     "",
     "If the user says \"stop\", kill every crew agent you started (`interrupt_agent`, then `job_kill` for anything still running) and say what was left unfinished.",
     "",
@@ -366,7 +381,7 @@ export function apply(ctx, config) {
   const rolesDir = config?.rolesDir;
   const limits = {
     liveAgents: limitOf(config?.limits?.liveAgents, DEFAULT_LIMITS.liveAgents, "liveAgents"),
-    reviewRounds: limitOf(config?.limits?.reviewRounds, DEFAULT_LIMITS.reviewRounds, "reviewRounds", MAX_REVIEW_ROUNDS),
+    reviewRounds: reviewRoundsOf(config?.limits?.reviewRounds),
   };
 
   // Read every role file at load time, including the ones the preset mounts: a

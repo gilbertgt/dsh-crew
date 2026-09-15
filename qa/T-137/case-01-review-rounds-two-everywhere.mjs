@@ -55,7 +55,7 @@ const ID = {
   runtime: "host/crew.js gives `reviewRounds` the default of 2, not 3",
   prompt: "the mounted PM prompt carries that exact ceiling, once",
   patch: "the cordis.patch.yml example is the same number, and still a comment",
-  patchCap: "the cordis.patch.yml example says that number is the maximum",
+  patchCap: "the cordis.patch.yml example says that number is the only accepted value",
   mountCheck: "tools/verify-mount.mjs pins the same sentence the prompt carries",
   wording: "roles/pm.md states the same ceiling in words",
   stale: "roles/pm.md states no other whole-job ceiling",
@@ -103,9 +103,11 @@ function audit(files, promptText) {
   );
   add(
     ID.patchCap,
-    new RegExp(`reviewRounds:\\s*${rounds}\\b[^\\n]*maximum`, "i").test(files[PATCH]),
-    "the commented example does not say that this number is the maximum, so a user reading the config file "
-      + "cannot tell that a larger one is refused at startup",
+    new RegExp(`reviewRounds:\\s*${rounds}\\b[^\\n]*(only accepted value|only value)`, "i").test(files[PATCH])
+      && /leave it out/i.test(files[PATCH]),
+    "the commented example does not say that this number is the only accepted value and that leaving the "
+      + "setting out gives the same one, so a user reading the config file cannot tell that anything else is "
+      + "refused at startup",
   );
 
   // --- the project check that pins the prompt's sentence ------------------

@@ -38,16 +38,23 @@ it before doing anything (`roles/pm.md` step 1):
 
 | Route | Who does it | What it carries |
 | --- | --- | --- |
-| `direct` | the PM alone, no child role | one test and one commit. No interview, no PRD, no task row, no QA, no review |
-| `solo` | one `crew_engineer` | a task row with its own DoD section. No interview, no PRD, no architect, no QA and no review, unless that one change really needs independent verification |
-| `crew` | the flow below, several roles | a PRD, the task table, an optional architect, QA, and the reviews |
+| `direct` | the PM alone, no child role | one test and one commit. No interview, no PRD, no design document, no task row, no ADR, no CRD, no QA, no review |
+| `solo` | one `crew_engineer` | a task row with its own DoD section, and an ADR or a CRD only when a decision really deserves one. No interview, no PRD, no architect, no QA and no review, unless that one change really needs independent verification |
+| `crew` | the numbered flow below, several roles | a PRD, the task table, an optional architect, the ADRs and CRDs, QA, and the reviews |
 
 `direct` is where a typo, a rename, a config line, a one-line fix, a document
-edit or one small bug goes: the commit message is its record, and nothing later
+edit or one small bug goes: the commit message is its record — a small
+implementation choice included — and nothing later
 in this file adds work to it. `solo` is for ordinary coding — a small change
-across a few files, a normal screen. `crew` is for work that is really large,
-crosses the core modules, is high-risk, or changes the architecture. A milestone
-is one full cycle plus one commit, whatever the route.
+across a few files, a normal screen — and its flow is five lines: read the
+repository, ask at most one question, write the task row, start one engineer (plus
+the single reviewer step 1 named, if it named one), run the targeted test and the
+completion gates, commit. `crew` is for work that is
+really large, crosses the core modules, is high-risk, or changes the
+architecture, and only `crew` runs the numbered steps — `solo` borrows step 9's
+briefing list and step 11's commit, and nothing else. A milestone is one unit of
+work with one commit, whatever the route; `solo` and `direct` keep no milestone
+record of their own.
 
 ## The task row and the DoD
 
@@ -131,9 +138,12 @@ Where a document lives depends on how long it lives:
   files — and the folder is dropped when the job ends. DoD sections and file
   ownership are never single-use; they live in `docs/tasks/`.
 
-A decision about **how** something is done goes into an ADR under
-`docs/decisions/adr/`, whatever the size of the job. A change to scope or to a
-contract goes into a CRD under `docs/decisions/crd/`.
+On the `solo` and `crew` routes, a decision about **how** something is done goes
+into an ADR under `docs/decisions/adr/`, whatever the size of the job. A change to
+scope or to a contract goes into a CRD under `docs/decisions/crd/`. **A `direct`
+change writes neither**: a small implementation choice stays in the code and the
+commit message, and a decision big enough to deserve its own record moves the work
+to `solo` or `crew`.
 
 The reader-facing files follow their own rules:
 
@@ -227,9 +237,10 @@ milestone, a last doc review pass reads only what landed after the milestone
 round — the reader-facing files.
 
 One issue gets **two rounds**: the initial review is round one, and the re-check
-after the fix is round two. `limits.reviewRounds` is `2` and it is a hard
-ceiling — a profile that asks for a third round is refused when the plugin
-mounts, because no reviewer prompt will run one.
+after the fix is round two. `limits.reviewRounds` is `2`, and 2 is the only value
+it takes — leave it out or write it. Anything else is refused when the plugin
+mounts: `1` would drop the re-check the two-round rule exists for, and `3` would
+promise a round no reviewer prompt will run.
 
 ## The Verdicts line
 

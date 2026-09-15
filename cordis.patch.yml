@@ -28,12 +28,13 @@
       #   rolesDir: '~/.dsh/crew/roles'
       #
       #   # Limits the PM must respect. It asks you before going over any of them,
-      #   # except `reviewRounds`, which is a hard ceiling: round one is the initial
-      #   # review and round two is the one re-check, so a larger value is refused
-      #   # at startup rather than promised to the PM.
+      #   # except `reviewRounds`, which is not a range at all: the review loop is
+      #   # round one plus the one re-check, so 2 is the only accepted value and
+      #   # anything else (1, 3, a fraction) is refused at startup rather than
+      #   # promised to the PM.
       #   limits:
       #     liveAgents: 20      # crew agents awake at the same time
-      #     reviewRounds: 2     # review rounds before the PM asks you to decide; 2 is the maximum
+      #     reviewRounds: 2     # round one plus the one re-check — 2 is the only accepted value; leave it out to get the same 2
       #
       #   # Set false to stop the plugin writing the `crew` preset into
       #   # $DSH_HOME/.agent-presets. A preset folder this plugin did not write

@@ -365,7 +365,7 @@ is**, never who made it:
 | --- | --- |
 | `docs/design/` | `prd-<date>-<job-slug>.md` — the opening document, **one per job**, holding a **DoD section** per milestone on big work; `hld-<date>-<job-slug>.md`, one per job; and one module boundary contract per pair of modules that talk (`docs/design/api/<caller>-<callee>.md`) |
 | `docs/tasks/` | the task table — one `T-<n>.md` per task row, holding a **DoD section** per row, plus `README.md` for the non-task content |
-| `docs/decisions/` | `adr/NNNN-<short-name>.md` (how it was done, whatever the size of the job) and `crd/NNNN-<short-name>.md` (one change request per scope-or-contract change) |
+| `docs/decisions/` | `adr/NNNN-<short-name>.md` (how it was done — on the `solo` and `crew` routes only: a `direct` change keeps a small implementation choice in its commit message) and `crd/NNNN-<short-name>.md` (one change request per scope-or-contract change, and no `direct` change has one) |
 | `qa/` | QA's **runnable** cases — `<task-id>/case-*`, a `run.sh` per task and one `qa/run-all.sh` that finds them all — plus `gaps.md`, the standing list of what no case can check |
 | `docs/release/` | a release and an upgrade plan for each milestone the user ships: `<milestone>-release.md` and `<milestone>-upgrade.md`; plus `<milestone>-gaps.md`, the **shipping gap list**, for a milestone that does not ship (not to be confused with `qa/gaps.md`) |
 
@@ -385,6 +385,12 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
   change. Inside `team`, `direct` is the default for small, low-risk, single-module work: the PM
   executes it without a child role. `solo` is the default for ordinary coding: one `crew_engineer`
   and no architect, QA or reviewer. `crew` is for large, risky, cross-module or design-heavy work.
+  **The three flows are separate in `roles/pm.md`**: the numbered steps are `crew`'s — with `solo`
+  borrowing step 9's briefing list and step 11's commit, and nothing else — `solo` has its own
+  five-bullet flow and at most the single reviewer step 1 named, and `direct` shares only the
+  commit. Neither `solo` nor `direct` opens an opening document, confirms one with the user, or
+  keeps a milestone of its own; a `direct` change writes no ADR and no CRD, while `solo` writes one
+  when a choice deserves its own record, because that route has no architect and the PM writes it.
   Whether a security review is needed is a **separate** question, answered from the closed risky
   list below; it adds one reviewer to whatever route was chosen and never moves the route by
   itself, so an ordinary settings form or dropdown is not a crew because it takes input.
@@ -433,10 +439,13 @@ reasons:
   skip the move and it quietly means "lost". The same reason makes an ADR **quote** the engineer's `Q-`
   file word for word: an ADR that says "options: see Q-03" points at a file that is about to
   disappear.
-- **Every decision about how gets an ADR, whatever the size of the job**, and the test is one
+- **Every decision about how gets an ADR, whatever the size of the job — on the `solo` and `crew`
+  routes**, and the test is one
   question: did someone ask for this? Someone asked → a CRD. Nobody asked and the crew hit the
   choice while working → an ADR. Small work has no architect, so the PM writes it. Nothing else
-  decides where it lands — not the size of the job, not who was in the room.
+  decides where it lands — not the size of the job, not who was in the room. A `direct` change
+  writes no ADR *and* no CRD: its small implementation choice stays in the commit message, and a
+  decision that deserves a record is a re-route to `solo` or `crew`, not a document on `direct`.
 - **Everything QA puts in the repository goes under `qa/`** — its cases, their `run.sh`
   files and its entries in `gaps.md` — in the project's own test framework, never into the
   product's test folder and never into project config. **QA cases are scripts, not documents,
