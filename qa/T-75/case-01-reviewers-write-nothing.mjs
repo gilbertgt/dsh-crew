@@ -87,9 +87,8 @@
 // files. A reworded claim goes red on purpose; the fix is to change this case in
 // the same commit as the rewording (`ADR 0018`), never to widen the assertion.
 
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, check, done, flat, repoFile } from "../lib/qa.mjs";
+import { REPO, check, done, flat, repoFile, repoTextAt } from "../lib/qa.mjs";
 
 const WRITE_SET_HEADING = "## What you may write";
 const TABLE_HEADER = "| Class of document | Who writes it |";
@@ -209,7 +208,7 @@ for (const [relative, statement] of statements) {
  * @throws when the table's shape has moved
  */
 function whoWritesRows(relative) {
-  const lines = readFileSync(join(REPO, relative), "utf8").split("\n");
+  const lines = repoTextAt(join(REPO, relative)).split("\n");
   const headers = lines
     .map((line, index) => ({ line: line.trim(), index }))
     .filter(({ line }) => line === TABLE_HEADER);

@@ -7,48 +7,58 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `dsh-crew` is a **plugin for DeepSeek Harness (dsh)**, not an application. Nothing here runs on its
 own. dsh loads the modules in `host/` and the agent preset in `preset/crew/`, and the result is a
 "crew": your dsh session becomes a product manager (PM) that starts role agents (architect, engineer,
-the two engineers of a paired task, reviewers, QA, researcher) as its direct children.
+the two engineers of a paired task, reviewers, QA, researcher) as its direct children. Its optional
+Web half is the native Settings card in `client/`; the host remains responsible for the settings
+namespace and role-tool runtime.
 
-There is no build step and no bundler. The package ships plain ES modules (`"type": "module"`).
+There is no build step and no bundler. The package ships plain ES modules (`"type": "module"`) and a
+browser-safe `window.__ModuleLoader__.load` client bundle because dsh loads `exports["./client"]`
+directly.
 
 ## Commands
 
 ```sh
 npm test                            # every check below, in order
 node tools/verify-guard.mjs         # git-guard rules, replayed against fake commands
-node tools/verify-pm-write-guard.mjs# the PM write guard, against fake write/edit paths
-node tools/verify-rule-guard-map.mjs# the rule→guard map does not lie
+node tools/verify-pm-write-guard.mjs # the PM write guard, against fake write/edit paths
+node tools/verify-rule-guard-map.mjs # the rule→guard map does not lie
 node tools/verify-jobs.mjs          # the unfinished-job notice, using throwaway job folders
+node tools/verify-role-settings.mjs # settings schema, route fallback, and optional live role reload
 node tools/verify-mount.mjs         # package shape, preset shape, role table, real mount
 node tools/verify-preset-install.mjs # installing and upgrading the crew preset
 bash qa/run-all.sh             # every crew job's QA cases, past and present
 node tools/verify-tasks.mjs         # the Verdicts line of every task file under docs/tasks/
 ```
 
-Every check runs against temporary folders and a throwaway `DSH_HOME`. None of
-them may read or write the real `~/.dsh` — keep it that way when adding cases.
+Every check that writes anything runs against temporary folders and a throwaway `DSH_HOME`; the
+repository-shape checks (`verify-tasks.mjs`, `verify-links.mjs`, `verify-rule-guard-map.mjs`) only
+read the checkout. None of them may read or write the real `~/.dsh` — keep it that way when adding
+cases.
 
 Run one check on its own by calling its file directly — that is the "single test" here.
 
 `npm test` runs every check below in order: the project checks first, then
 `bash qa/run-all.sh`, then `node tools/verify-tasks.mjs`. QA's cases and the Verdicts gate are
-part of the default test command and not things you have to remember. `npm test` is what CI runs:
-`.github/workflows/test.yml` runs it on **every push**; `.github/workflows/publish.yml` runs on a
-`v*` **tag** only and runs `npm test` again before it publishes — a release never trusts an earlier
+part of the default test command and not things you have to remember. **CI runs two things, and
+only the second is `npm test`**: `.github/workflows/test.yml` first runs a markdown-link check that
+is not in `scripts.test` (`node tools/verify-links.mjs`, its own step, "cheap check first, fail
+fast") and then `npm test`, on **every push**; `.github/workflows/publish.yml` runs on a `v*`
+**tag** only and runs `npm test` again before it publishes — a release never trusts an earlier
 push's green. Expect `npm test` to get slower as jobs add cases; when that starts to hurt, split it
 into a fast check and a full one rather than dropping the cases. `test.yml` checks out with
 `fetch-depth: 0` on purpose: some QA cases read this repository's own commits, and the default
 shallow clone has no history.
 
 `verify-tasks.mjs` is the last check, and it reads no code — it reads the task files under `docs/tasks/`.
-One file per task: a `T-<n>.md` file whose top heading `# T-<n> — …` declares the same id is one
-task section; `README.md` and any other file are not read, and an empty directory is red. A
+One file per task: a `T-<task-id>.md` file whose top heading `# T-<task-id> — …` declares the same id
+is one task section, and the id may carry a letter suffix for a task split after the fact
+(`T-122a`); `README.md` and any other file are not read, and an empty directory is red. A
 section turns the check **red** when:
 
 1. it has no `- **Verdicts**：` line, or more than one;
 2. any of the four values `code`, `security`, `qa` and `doc` is missing;
 3. a `not run` or `skipped` value carries no reason of its own after the dash;
-4. a `changes needed` value names no `T-<number>` to carry the fix.
+4. a `changes needed` value names no `T-<task-id>` to carry the fix.
 
 Every run also prints the totals out loud — how many values are `not run` and how many are `skipped` across all task sections.
 **Passing is not the same as clean**: the check proves the Verdicts line was written and every skip
@@ -69,8 +79,8 @@ ln -s ~/.dsh/profiles/node_modules/@deepseek-ai/dsh-tool-subagent \
       node_modules/@deepseek-ai/dsh-tool-subagent
 ```
 
-That link already exists in this working copy. Never add a real dependency on that package — it is a
-`peerDependencies` entry on purpose.
+Create that link only when you need the optional full role-tool check. Never add a real dependency on
+that package — it is a `peerDependencies` entry on purpose.
 
 Releases: put the new version's section at the top of `CHANGELOG.md` (newest first, plain
 English, what a user would notice). **On the release day, replace `— unreleased` in that heading
@@ -136,15 +146,23 @@ built from. Only their instructions are unusual — the plumbing is not.
 with the package version (`.installed-by-dsh-crew`). A `crew` folder without that stamp is somebody
 else's and is never touched.
 
-A **version bump deletes and rewrites that folder**, and users are told by the README to configure
-`roleAllow` / `roleDeny` / `roleModels` inside it. So the installer reads every file that differs
-from the shipped copy before deleting, writes it back as `<name>.bak`, and names it in the boot log.
-Never make that folder the only home for a setting a user has to keep.
+A **package-version or shipped-preset-revision change deletes and rewrites that folder**, and users
+configure tool filters there while per-role model routes live in the stable `dsh-crew-roles` Settings
+namespace. The legacy `roleModels` line remains only as the composition fallback. The installer reads
+every file that differs from the shipped copy before deleting, writes it back as `<name>.bak`, carries
+earlier `.bak` files forward without making `.bak.bak`, and writes a durable pre-upgrade archive beside
+the folder at `.agent-presets/crew.backups/`. It names the kept files in the boot log. Settings
+persistence across restart still depends on the host backend. Never make the preset folder the only
+home for a setting a user has to keep.
 
 ## Design rules a change must not break
 
-These are not style preferences. Each one is checked by `tools/verify-mount.mjs`, and most exist
-because a live test showed the weaker version failing.
+These are not style preferences. `tools/verify-mount.mjs` checks each one's repository-level half,
+and most exist because a live test showed the weaker version failing. It is a static pin on shipped
+files: the parts that only exist in a running deployment are **not** covered by it — dsh's own
+`authorizeLineage` refusal, the two-worktree isolation of the paired shape, and anything that
+happens only when a child actually starts. Its role-tool half also skips out loud on a machine
+without dsh's own copy linked in, which is every CI run (see **Commands**).
 
 1. **The crew is flat.** Only the PM starts agents. dsh delivers a message to *direct children*
    only, a child answers only its *direct parent*, and two children cannot talk at all — so a role
@@ -290,11 +308,12 @@ repository is worked in:
 ## Users override, the package does not change
 
 A user's own `~/.dsh/crew/roles/<file>.md` replaces a shipped persona by file name (`rolesDir`).
-Tool filters and per-role models are overridden in the `dsh-crew-roles` row of
-`~/.dsh/.agent-presets/crew/agent.cordis.yml` (`roleAllow`, `roleDeny`, `roleModels`). The PM's
-limits, jobs folder and the git guard are configured in the profile's `cordis.patch.yml`. When you
-add a setting, add it as a commented example in the config file it belongs to — that is how these
-options are documented.
+Tool filters remain in the `dsh-crew-roles` row of
+`~/.dsh/.agent-presets/crew/agent.cordis.yml` (`roleAllow`, `roleDeny`). Per-role model routes
+use the native Web Settings card under the `dsh-crew-roles` namespace; the old `roleModels`
+entry in that row remains a legacy composition fallback. The PM's limits, jobs folder and the git
+guard are configured in the profile's `cordis.patch.yml`. When you add a setting, add it as a
+commented example in the config file it belongs to — that is how these options are documented.
 
 ## The git guard
 
@@ -329,7 +348,7 @@ Note that this repository's own `.github/workflows/publish.yml` is tag-triggered
 
 | File | What it is |
 | --- | --- |
-| `state.json` | job progress: tasks, milestones, versions, the merge result |
+| `state.json` | job progress: tasks, milestones, versions, fine-grained stage checkpoints, the merge result |
 | `<task-id>-plan.md` | QA's test plan, written before it reads the code; the cases replace it |
 | `inbox/Q-<number>.md` | a role's question to the PM, and the ways an engineer found for a fix |
 | — | the output of a test run: it goes to stdout and is never written to a file |
@@ -359,21 +378,26 @@ opening document silently overwrites the last one's and no check goes red. Those
 `docs/design/prd.md` and `docs/design/hld.md` until 0.9.0; never create either name again. `docs/release/` does not exist yet: no milestone here has shipped, so no release plan, upgrade plan or shipping gap list has been written. A module boundary contract
 goes in `docs/design/api/`, one file per pair of modules that talk.
 
-**How a job runs, since 0.9.0.** Three of these changed together, and the reasons and the measured
-cost are in `docs/decisions/crd/0020-apply-req-speed-items.md` and `principles.md` 6, 13 and 18:
+**How a job runs.** The routing rules live in `roles/pm.md`; their reasons are in
+`principles.md` 6, 13, 18 and 20:
 
-- **Two lanes, not three.** `ask` answers a question and changes nothing; `team` does everything
-  else. There is no third lane where the PM changes a file alone, whatever the size of the change:
-  a typo gets a milestone too, with at least one task, one round of QA and one round of each review.
-  A milestone is **one full cycle plus one commit** — pushing, tagging and publishing each still
-  need the user's own yes, every time.
-- **One round of QA per milestone, not per task**, after all the coding and before the reviews, in
-  two steps: one `crew_qa` writes the case list from the DoD sections without reading the code, then
-  one agent per case. A task is finished when **its own unit tests pass**; nothing waits on a
-  reviewer to call a task done.
-- **One round of each review, in parallel, on the changed part only.** Only a review's own finding
-  brings that review back — a code change re-runs the code review, a documentation change the doc
-  review, a security change the security review, and the three never re-run together.
+- **Two lanes, then a scale.** `ask` answers a question and changes nothing; `team` handles a
+  change. Inside `team`, `direct` is the default for small, low-risk, single-module work: the PM
+  executes it without a child role. `crew` is for large, risky, cross-module or design-heavy work.
+  The PM write guard remains active, so protected product files still require one approval per PM
+  write. A milestone is not a release; push, tag and publish still need separate user permission.
+- **Delegate only when the role adds relevant skill or independent evidence.** A small test,
+  fixture or environment failure is read and fixed by the current executor first. It does not
+  automatically start research, architecture, QA or review work.
+- **Use targeted tests during development.** The full project test command and `qa/run-all.sh` run
+  once as completion gates, and again only after a failure demanded a fix.
+- **Start only applicable checks.** QA runs where behaviour moved, code review where code moved,
+  security review for the closed risky list, and doc review where documents moved. The initial
+  review and one re-check are the two-round limit for one issue. A flaw in non-production test
+  tooling blocks only when it invalidates the evidence.
+- **Resume from checkpoints.** `state.json.stages` records `done`, `skipped`, `running` and `stale`
+  stages with the document versions they judged. A resumed session never repeats a valid completed
+  stage.
 
 The cost is written down rather than implied: defects surface later than they used to, and the
 user accepted that trade knowingly. Per-task QA in the job before this one really did catch things

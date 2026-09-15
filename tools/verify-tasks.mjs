@@ -58,7 +58,7 @@ function parseTasksDir() {
   for (const file of files) {
     const id = file.replace(/\.md$/, "");
     const label = `${TASKS_DIR}/${file}`;
-    const lines = readFileSync(join(tasksDir, file), "utf8").split("\n");
+    const lines = readFileSync(join(tasksDir, file), "utf8").split(/\r?\n/);
 
     // A file named T-121.md whose top heading says T-122 — or nothing — means
     // the file is not a task section the way this gate can read it. Skipping it

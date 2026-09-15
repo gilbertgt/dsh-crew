@@ -17,7 +17,7 @@
 // inside somebody's comment satisfies nothing.
 
 /** Every line whose first non-space character is `#`, removed. */
-export const codeOnly = (text) => text.split("\n").filter((line) => !/^[ \t]*#/.test(line)).join("\n");
+export const codeOnly = (text) => text.split(/\r?\n/).filter((line) => !/^[ \t]*#/.test(line)).join("\n");
 
 /** A YAML scalar as written on one line: trailing `# comment` off, quotes off. */
 export const scalar = (raw) => raw.replace(/[ \t]#.*$/, "").trim().replace(/^["']|["']$/g, "");
@@ -39,7 +39,7 @@ export const scalar = (raw) => raw.replace(/[ \t]#.*$/, "").trim().replace(/^["'
  *         whose shape moved instead of quietly passing on an empty list.
  */
 export function publishSteps(text) {
-  const lines = text.split("\n");
+  const lines = text.split(/\r?\n/);
   const stepsAt = lines.findIndex((line) => /^([ \t]+)steps:[ \t]*$/.test(line));
   if (stepsAt === -1) throw new Error("no `steps:` key found in the workflow — the file's shape moved");
   const stepsIndent = /^([ \t]*)/.exec(lines[stepsAt])[1].length;

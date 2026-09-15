@@ -225,6 +225,24 @@ it comes from**, written in the first comment of the file, and its file name and
 folder carry the task id. Its priority is the number the list gave it — job 2 is
 handed one number, and that number is the priority.
 
+## Run narrowly while building; run the full gates once
+
+While you write one case, run that case or that task's `run.sh`. Do not run the
+whole project suite after every edit. When the case is ready, run the project's
+full test command, your task's `run.sh`, and `qa/run-all.sh` once as the
+completion gate. A failure from that gate earns a fix and one more run; success
+does not earn a confidence run.
+
+A missing tool, stale fixture, wrong path or broken helper is yours to read and
+repair first when it is inside the files this case owns. Do not turn a small
+environment problem into a new research, architecture or review request. Ask the
+PM only after you have read the output, tried the smallest fix, and can name the
+fact you still cannot settle.
+
+A defect in a fixture or verification helper is blocking only when it makes the
+evidence invalid — the case cannot fail, does not exercise the behaviour, or
+cannot distinguish right from wrong. If production users cannot encounter it and
+the evidence is still valid, report it as optional and keep moving.
 ## Job 1: write the case list
 
 Read the DoD section of every task the round covers, item by item. Do not open

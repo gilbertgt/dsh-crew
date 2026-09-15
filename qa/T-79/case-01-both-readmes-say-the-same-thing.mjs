@@ -175,11 +175,11 @@ check(
 const headingsOf = (text) => [...text.matchAll(/^## (.+)$/gm)].map((match) => match[1].trim());
 
 const HEADING_PAIRS = [
-  ["What it is", "\u5b83\u662f\u4ec0\u4e48"],       // "what it is"
-  ["Install", "\u5b89\u88c5"],                       // "install"
-  ["Quick start", "\u5feb\u901f\u5f00\u59cb"],       // "quick start"
-  ["Configuration", "\u914d\u7f6e"],                 // "configuration"
-  ["License", "\u8bb8\u53ef"],                       // "license"
+  ["What it is", "\u9019\u662f\u4ec0\u9ebc"],       // "what it is"
+  ["Install", "\u5b89\u88dd"],                       // "install"
+  ["Quick start", "\u5feb\u901f\u958b\u59cb"],       // "quick start"
+  ["Configuration and compatibility", "\u8a2d\u5b9a\u8207\u76f8\u5bb9\u6027"], // "configuration and compatibility"
+  ["License", "\u6388\u6b0a"],                       // "license"
 ];
 
 const enHeadings = headingsOf(FILES.en.text);
@@ -269,28 +269,28 @@ for (const word of ["Crew", "ask", "team"]) {
 const SENTENCES = [
   {
     id: "the reader talks to the PM",
-    en: "You talk to the PM",
-    zh: "\u4f60\u8ddf PM \u8bf4\u8bdd", // "you talk to the PM"
+    en: "You talk only to the PM",
+    zh: "\u4f60\u53ea\u548c PM \u6e9d\u901a", // "you talk only to the PM"
   },
   {
     id: "the two-lane lead-in",
     en: "Two lanes",
-    zh: "\u4e24\u6761\u901a\u9053", // "two lanes"
+    zh: "\u5169\u689d lane", // "two lanes"
   },
   {
     id: "restart dsh after installing",
     en: "Restart dsh",
-    zh: "\u91cd\u542f dsh", // "restart dsh"
+    zh: "\u91cd\u65b0\u555f\u52d5 dsh", // "restart dsh"
   },
   {
     id: "the quick-start last step",
-    en: "Ask a question, or ask for a change",
-    zh: "\u95ee\u4e00\u4e2a\u95ee\u9898\uff0c\u6216\u8005\u8981\u4e00\u4e2a\u6539\u52a8", // "ask a question, or ask for a change"
+    en: "Ask a question, ask for a change",
+    zh: "\u63d0\u51fa\u554f\u984c\u3001\u8981\u6c42\u8b8a\u66f4", // "ask a question, ask for a change"
   },
   {
     id: "the configuration lead-in",
-    en: "Everything is optional",
-    zh: "\u5168\u90e8\u53ef\u9009", // "everything is optional"
+    en: "Crew Settings overrides are optional",
+    zh: "Crew Settings override \u90fd\u662f\u9078\u7528\u7684", // "Crew Settings overrides are optional"
   },
 ];
 

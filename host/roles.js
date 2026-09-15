@@ -175,6 +175,21 @@ export const ROLES = [
   },
 ];
 
+/**
+ * Policy appended to every PM/child persona after the role-specific text.
+ *
+ * It is deliberately short and operational. The preset also carries the same
+ * policy in its base persona, but child persona sections shadow that base in
+ * dsh, so the role-tools bridge must append it after every role file it loads.
+ */
+export const TAIWAN_LANGUAGE_POLICY = [
+  "Language policy (mandatory):",
+  "- All user-visible natural-language communication must use Taiwan Traditional Chinese (繁體中文，臺灣用語).",
+  "- Child roles report only to the PM; write reports and questions to the PM in Taiwan Traditional Chinese.",
+  "- Keep code, commands, file paths, identifiers, API names, package names, exact logs and error messages unchanged.",
+  "- Do not switch the communication language to English because a repository, source file or tool result is written in English.",
+].join("\n");
+
 /** The PM rules; a prompt section rather than a role tool. */
 export const PM_PERSONA_FILE = "pm.md";
 

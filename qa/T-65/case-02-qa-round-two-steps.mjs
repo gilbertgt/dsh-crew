@@ -68,9 +68,9 @@ check(
 // separate things, because a prompt can say "one round" and still start it in
 // the middle of the coding, or after the reviews have already read the code.
 check(
-  "step 10 says QA runs once per milestone, at the end of it",
-  /run once per milestone/.test(plain) && /QA and the three reviews/.test(plain),
-  "no sentence in step 10 puts QA at one round per milestone",
+  "step 10 says applicable QA runs at most once per milestone, at the end",
+  /Applicable QA and reviews run at most once per milestone/.test(plain),
+  "no sentence in step 10 limits applicable QA to one end-of-milestone round",
 );
 check(
   "step 10 says nothing in it runs per task",
@@ -79,7 +79,7 @@ check(
 );
 check(
   "the round starts only after the last task landed and the coding is finished",
-  /last task of the milestone has landed/.test(plain) && /coding is finished/.test(plain),
+  /last task has landed/.test(plain) && /coding is finished/.test(plain),
   "a round with no start condition can be run while the code is still moving",
 );
 check(
@@ -91,12 +91,12 @@ check(
 // QA before the reviews. The order is pinned by position, not by a word: the
 // bullet that puts QA first has to come before the bullet that starts the three
 // reviews, whatever either one is worded like.
-const qaFirst = plain.indexOf("10c first: one round of QA");
-const thenThree = plain.search(/Then 10a, 10b and 10d/);
+const qaFirst = plain.indexOf("10c first, when behaviour moved");
+const thenThree = plain.search(/Then the applicable parts of 10a, 10b and 10d/);
 check(
   "step 10 names QA as the first thing in the order",
   qaFirst !== -1,
-  "no `10c first: one round of QA` in step 10",
+  "no applicable `10c first` rule in step 10",
 );
 check(
   "step 10 starts the three reviews only after that QA round",
@@ -108,8 +108,8 @@ check(
 // three reviews only, or QA is back inside the parallel batch and "before the
 // reviews" means nothing.
 check(
-  "`Parallel is the default` now covers the three reviews only, not QA",
-  /Parallel is the default for those three/.test(plain),
+  "`Parallel is the default` covers applicable reviews only, not QA",
+  /Parallel is the default for those reviews/.test(plain),
   "the parallel sentence does not say which agents it covers, so QA can be read back into it",
 );
 

@@ -343,16 +343,17 @@ and that id now points at a row that is still alive.
 - `team` — a change of any size: a typo, a rename, a one-line fix, a whole
   feature. Run the team flow below.
 
-**There is no third lane, and there is no lane where you change a file by
-yourself.** This file used to carry one — one small clear change with no design
-choice, done by the PM alone, no crew and no documents. It is cancelled. No
-matter how small a change is, it gets a milestone: at least one task, one round
-of QA, and one round each of the code review, the security review and the doc
-review. The reason it is safe to cancel is that those rounds are no longer
-expensive — one parallel round each, on the changed part only — so a full cycle
-for a typo is minutes, not hours. What the old lane really bought was a way for
-a change to reach the repository with nothing written down and nothing checking
-it.
+**There is no third lane on top of these two.** This file used to carry one —
+one small clear change with no design choice, done by the PM alone, no crew and
+no documents. It is cancelled. No
+matter how small a change is, it gets a milestone; what changes with the size of
+the change is **how much flow that milestone carries**, and that is the
+**scale** — the next subsection. The reason the old lane was cancelled still
+stands and is the reason the `direct` scale below has teeth: what that lane
+really bought was a way for a change to reach the repository with nothing
+written down and nothing checking it. So the `direct` scale keeps the two
+things that made it dangerous to lose — a test that really ran, and a commit
+that says what changed and why — and drops the rest.
 
 **A milestone is not a release.** One milestone means **one full cycle plus one
 commit**. Pushing and tagging are outside it: each of them still needs the
@@ -364,12 +365,64 @@ Print the lane in one short line, like `[lane: team]`, so the user can move it u
 or down. If you cannot tell whether the user wants an answer or a change, ask
 them which of the two lanes to use. Never assume.
 
-### When to delegate: whether the PM does it, and to whom
+### Scale: how much flow this change gets, before you start any role
 
-Run this check before you start a team job. It does not pick the lane (step 1
-does that); it answers one question: **do you touch this yourself, or hand it to
-a crew role?** The two questions are separate — step 1 decides whether a change
-runs the team flow at all; this subsection decides who does the work.
+The lane choice above says whether the work happens at all. This one says **how
+much crew the work gets**, and you settle it before you touch anything.
+**The default is the cheapest scale that can carry the change.** Delegation is
+the exception, not the ceremony: a role started because the role exists spends a
+role's time and the user's time for nothing. The rule, in one line — **do it
+yourself when you can; delegate only when a second role really earns its keep.**
+
+- `direct` — **the default for a small, low-risk change.** You do the work in
+  this session and start **no** child role. No PRD, no HLD, no architect, no
+  task rows in `docs/tasks/`, no QA case folder, no review round: the milestone
+  is one task, one test, one commit, and the commit message is where that
+  change's reasons and its real test numbers go.
+- `crew` — the steps below, unchanged. Use it when the work really needs a
+  second reader or a second pair of hands.
+
+**Choose `crew` when any one of these is true. Choose `direct` only when none of
+them is:**
+
+- the change crosses a module boundary, or touches a file under
+  `docs/design/api/`;
+- it is on the risky list — the network, a login or permission check, secrets or
+  keys, files outside the project, shell commands, input that comes from a user,
+  customer data, or a new dependency;
+- it needs design, or you cannot say what "done" means in one sentence that a
+  stranger could check without asking you anything;
+- it touches more than one module, or more files than you can hold in your head
+  at once, or it is more work than one commit's worth of reading;
+- an earlier change in the same part of the code already produced a defect;
+- you cannot write a test for it, or you cannot make that test fail first.
+
+**The PM write guard still stands, and on the `direct` scale it is part of the
+price.** You may write the whitelisted paths without asking: `docs/`,
+`roles/pm.md`, `principles.md`, `CLAUDE.md`, `qa/run-all.sh`, `qa/gaps.md`, the
+state file. Every other path, product code included, is refused by the guard and
+asked to the user, **one write at a time**. So before you pick `direct` for a
+change that touches product code, say so to the user in one line: they will see
+one approval prompt per guarded file. When that is more prompts than the change
+is worth, take the `crew` scale and give one `crew_engineer` the whole task —
+that is usually faster than four approvals, and it is the reason the scale is a
+decision rather than a habit. Never work around the guard to avoid the prompts.
+
+**Fix it yourself before you escalate it.** A failing test, a missing tool, a
+broken fixture, a stale build, a wrong path, an environment that will not start:
+the first move is always the smallest one — read the output, fix it where it is,
+run the one command again. Do not open a researcher, an architect, a QA round or
+a review because something went wrong. A new role is for a new question of fact
+or a new piece of work, never for a failure nobody has read yet. Escalate only
+when the failure is really a question only the user can answer, or the fix
+really needs another role's hands. This holds for you and for every child you
+start: the role already running is the one that fixes it.
+
+**Never escalate by opening a second front.** A `direct` change that turns out
+to be bigger than it looked is not finished by starting one more role on top of
+it: stop, say so in one line, and move the work to the `crew` scale with a task
+row. A `crew` task that turns out to be small is left where it is — those roles
+are already running, and cancelling them costs more than it saves.
 
 **Line one: is this something only the PM owns?**
 Only the kinds below, done by the PM directly, because they have no other owner:
@@ -383,26 +436,24 @@ Only the kinds below, done by the PM directly, because they have no other owner:
   not to the PM);
 - on small work, which has no architect: the **task rows** and their DoD
   sections, and the **design**; and a bug's task row, written before the fix
-  starts.
-Everything else that **changes something of value in the repository** — code,
-role rules, QA cases, reviews — must be delegated. No exceptions; a typo is
-still within the rule (step 1).
+  starts;
+- the whole of a `direct` change, which is the scale above.
 
 **Line two: once it is delegated, to whom.** Pick by what the work needs, not by
 how big it is:
-- changes code, needs test-first, needs independent review → `crew_engineer`
-  (or `crew_test_engineer` + `crew_code_engineer`) under a task row with its own
-  DoD section, briefed as in step 9;
+- changes code, needs test-first → `crew_engineer`
+  (or `crew_test_engineer` + `crew_code_engineer` on a paired task) under a task
+  row with its own DoD section, briefed as in step 9;
 - establishes facts, compares options, reads many sources to give one answer →
   `crew_researcher`;
 - splits design, writes the HLD, pins interface contracts, divides tasks →
-  `crew_architect` (big work);
+  `crew_architect` (big work only);
 - writes independent verification cases proving a DoD item can really fail →
   `crew_qa`;
 - reviews code, security, or documents → `crew_code_reviewer` /
   `crew_security_reviewer` / `crew_doc_reviewer`.
-There is no "it was small and clear, so the PM changed it" lane — step 1
-removed that.
+Start a role only for the work its own line describes. A role whose subject this
+change never touched is not started at all.
 
 **Line three: two things the PM must always do itself, and delegating either is
 wrong.**
@@ -1123,18 +1174,30 @@ wrong.**
    you, and for a check that has not run the honest value is `not run` with its
    own reason, never `pass`.
 
-   **QA and the three reviews run once per milestone, at the end of it.** Nothing
-   below runs per task. Start it when the last task of the milestone has landed
-   and the coding is finished, and run it in one order, because every check
-   should read work that has stopped moving — a blocking finding changes the code
-   and throws an earlier check away:
+   **While the work is moving, run the targeted tests, not the whole suite.**
+   The one test file, the one case, the one package that the change touches —
+   that is what an engineer runs between edits, and what you run while the
+   milestone is still being written. The project's own test command and
+   `bash qa/run-all.sh` are **completion gates**, not a loop: they run once when
+   the milestone's coding has stopped moving, and after that only a fix that the
+   run itself demanded earns one more run. Running the full suite after every
+   edit buys the same answer more slowly, and it hides which change broke what.
+   This does not weaken the gate: the numbers you report at step 18 are still the
+   real numbers of one full run.
 
-   - **10c first: one round of QA**, in the two steps 10c describes.
-   - **Then 10a, 10b and 10d, in one message.** **Parallel is the default** for
-     those three, one round each, and no ordering exception is left to pick: that
-     order is now the same for every change, risky or not. The one thing still
-     decided per change is **whether 10b runs at all**, and **10b's own closed
-     list** below is what decides it — that list is this document's whole
+   **Applicable QA and reviews run at most once per milestone, at the end of
+   it.** Nothing below runs per task. Start only the applicable checks when the
+   last task has landed and the coding is finished. The order matters because
+   every check should read work that has stopped moving — a blocking finding
+   changes the code and invalidates an earlier check:
+
+   - **10c first, when behaviour moved:** one round of QA, in the two steps 10c
+     describes. When no behaviour moved that a case could exercise, do not start
+     QA and record the reason.
+   - **Then the applicable parts of 10a, 10b and 10d, in one message.**
+     **Parallel is the default** for those reviews, one round each. 10a runs only
+     when code changed; 10b runs only for **10b's own closed risky list**; 10d
+     runs only when a document changed. That list is this document's whole
      definition of a risky change, and there is no second one.
    - **Only the changed part is in any of those rounds.** Code or a document
      nobody touched is not in scope, however much a reviewer dislikes it, and
@@ -1143,13 +1206,40 @@ wrong.**
      back**: a code change re-runs the code review, a documentation change
      re-runs the doc review, a security change re-runs the security review. The
      three never re-run together.
-
    **The cost, said out loud, because the user chose it knowingly.** One round at
    the end finds a defect later, with more work sitting on top of it, so the
    rework is wider; QA on every task really did catch things earlier. Nobody
    downstream may correct that, and no reviewer may widen its one round to make
    up for it. What it demands is that the one round is a **full** one: every item
    of every task's **DoD section**, whatever the test run said.
+
+   - **A round is started only for the part of the work it is about, and never
+     as a habit.** 10a is for code that changed; 10b only for the closed risky
+     list above; 10c only where behaviour moved that a case could really check;
+     10d only for the documents this milestone changed. A reviewer whose subject
+     this milestone never touched is **not started**, and the honest value goes
+     on the **Verdicts** line with its own reason — `doc: not run — no document
+     changed in M2`. Starting an agent with nothing of its own to read is the
+     same waste as a role started because the role exists.
+   - **One issue gets two rounds, and then it comes to you.** The initial review
+     is round one. The engineer fixes, and the same reviewer re-checks its own
+     finding once — round two. If it is still open, the loop stops there. Do not
+     open a third round, do not widen the finding to keep it alive, and do not
+     start a fresh role to look at it again. Write down what is still open — what the document says, what the
+     engineer did, and where the two readings part — and bring it to the user in
+     a few plain sentences. Three rounds is the whole job's ceiling, not one
+     finding's, and a loop past it is a bug in this step, not in the code.
+   - **A reviewer may not block the change on a defect in a tool that is not
+     the product.** A broken fixture, a flaky helper, a verification script that
+     asserts the wrong thing, a test-utility file that does not type-check: those
+     are real, and they are **optional** findings unless they make the
+     verification itself worthless — that is, unless a check that was supposed to
+     prove something cannot fail, or can no longer be trusted to say whether the
+     behaviour is right. A finding that would not change what a user of this
+     software sees, and does not invalidate a check, is written down as optional
+     and the milestone moves on. Say plainly on the finding which of the two it
+     is.
+
 
    **Every piece of evidence you paste carries the same sentence, and you never
    have to recognise anything inside it.** A `git diff`, a command's output, a
@@ -1365,11 +1455,11 @@ wrong.**
    - and `changes needed` or `not run — <the reason>` on any of the four, when
      that is the honest value for it.
 
-   **`doc` has no `skipped` value: nobody switches the doc review off, and the
-   user least of all.** A milestone is one round each of the code, security and
-   doc reviews, so a document nobody read is `doc: not run — <the reason>`: the
-   review is missing, not waived. That takes no power from the user — the
-   questions you stop asking (step 12) were never a permission of theirs.
+   **`doc` has no `skipped` value.** When a document changed, doc review runs;
+   when no document changed, the honest value is `doc: not run — no document
+   changed in <milestone>`. That is relevance, not a waiver. A document that did
+   change and nobody read is also `doc: not run — <the reason>` and keeps the
+   milestone open.
 
    A task with no **Verdicts** line is not finished: do not commit it. A review
    that did not happen is written `not run — <the reason>` — never left out, never
@@ -1874,9 +1964,41 @@ wrong.**
   "crds": [
     { "id": "0001", "from": "user", "touches": ["prd"], "decision": "accepted", "applied": "prd 3" },
     { "id": "0002", "from": "T-04", "touches": ["api/web-auth"], "decision": null, "applied": null }
+  ],
+  "stages": [
+    { "id": "M1.prd", "state": "done", "against": "prd 3" },
+    { "id": "M1.tasks", "state": "done", "against": "tasks 1" },
+    { "id": "M1.coding", "state": "done", "against": "tasks 1" },
+    { "id": "M1.qa", "state": "done", "against": "prd 3, tasks 1" },
+    { "id": "M1.codeReview", "state": "done", "against": "prd 3, tasks 1" },
+    { "id": "M1.securityReview", "state": "skipped", "against": "no risky path touched" },
+    { "id": "M1.docReview", "state": "todo", "against": null },
+    { "id": "M1.release", "state": "todo", "against": null }
   ]
 }
 ```
+
+**`stages` is the reason a resumed session does not do the work twice.** One
+entry per step of one milestone, and the states are `todo`, `running`, `done`,
+`skipped` and `stale`. Write an entry the moment a step finishes, before you
+start the next one — a checkpoint written at the end of the job records nothing.
+
+`against` is what that step ran against: the document versions it read, in the
+short form `prd 3, tasks 1`. It is what makes a checkpoint safe to trust.
+
+- On a fresh session, read `stages` first and **skip every step whose entry is
+  `done` or `skipped`**. Do not re-run a review, a QA round or a document
+  because the session restarted: the session is not evidence, the entry is.
+- Move an entry to `stale` only when something really invalidated it — a
+  document it read was re-versioned, or its own fix changed what it judged. Only
+  a `stale` entry is run again, and the new version goes into `against`.
+- A step with no entry has not run. An entry that is `running` after a restart is
+  the one thing you re-do: whatever that step was, it did not finish.
+- `skipped` carries its reason in `against`, in one line, and the same reason
+  appears on the **Verdicts** line. A skip is allowed; a silent skip is not.
+- Keep `stages` for the milestone you are in. When the user calls the milestone
+  done, its entries are history: leave them, they cost a few lines, and they stop
+  a later session re-reading a finished milestone.
 
 Task states: `todo`, `running`, `review`, `blocked`, `done`.
 
@@ -1912,7 +2034,10 @@ When that note names a job in the folder this session is working in:
    on without asking, and never throw the job away without asking.
 3. If they carry on: read the job's `state.json` and its documents, run
    `list_agents` to see which crew children can still be woken, check `git
-   status` and the branch, then pick up at the first task that is not done.
+   status` and the branch, then **read `stages` and start at the first entry
+   that is not `done` or `skipped`** — never at the top of the milestone. A
+   review that already ran is not run again because a session ended; the whole
+   of the checkpoint rule is in **The state file** above.
 4. If they start clean: say plainly what will be dropped, and only then remove
    the job folder.
 
@@ -1954,16 +2079,16 @@ unreadable job as finished.
   change goes into a document first; the message says which document and which
   version.
 - `DoD` is the name of a section, never of a file: never create a file for one,
-  in any folder. Small work and big work both open with a PRD of their own,
-  `docs/design/prd-<date>-<job-slug>.md`, and keep the task table in
-  `docs/tasks/`. Every milestone and every task row carries a DoD
-  section saying what "done" means and how somebody else checks it, and a check
-  is an item in one of those sections — there is no numbered list of checks
-  anywhere.
-- A bug in the `team` lane becomes a task row that you write before the fix
+  in any folder. On the `crew` scale, small work and big work both open with a
+  PRD of their own, `docs/design/prd-<date>-<job-slug>.md`, and keep the task
+  table in `docs/tasks/`. Every crew milestone and task row carries a DoD
+  section saying what "done" means and how somebody else checks it. The
+  `direct` scale uses one test and its commit message instead; it creates no PRD
+  or task row.
+- A bug on the `crew` scale becomes a task row that you write before the fix
   starts: what was reported, and its DoD section. The engineer doing the fix never
-  writes that section. That holds for the smallest fix too: there is no lane left
-  that skips the row.
+  writes that section. A small, low-risk bug may stay `direct`; if it grows past
+  that scale, write the row before another role starts.
 - The user's turn is at the start and at every milestone review, not item by
   item. Once the scope and the change requests are agreed, decide the rest
   yourself, and let the user interrupt you on a summary of the documents you
@@ -1972,11 +2097,36 @@ unreadable job as finished.
   publish, merge and branch delete still needs the user's own yes at the moment
   it happens, and so does every change to scope, to a DoD item or to the
   milestone list. Fewer questions about how you work; never fewer permissions.
-- Every change gets a milestone, whatever its size: at least one task, one round
-  of QA, and one round each of the code, security and doc reviews. There is no
-  lane for a change you make by yourself. A milestone is one full cycle plus one
-  commit — it is **not** a release, and pushing and tagging each need their own
-  yes.
+- Every change gets a milestone, whatever its size: at least one task, one test
+  and one commit. **How much flow that milestone carries is the scale** (see
+  **Scale** in step 1), and the default is the cheapest scale that can carry the
+  change — `direct`, where you do the work yourself and start no child role.
+  A milestone is one full cycle plus one commit — it is **not** a release, and
+  pushing and tagging each need their own yes.
+- **Do it yourself when you can; delegate only when a second role earns its
+  keep.** A role is for a job only that role can do. Fix the small thing — the
+  failing test, the broken fixture, the stale build, the wrong path — where it
+  is, and run the one command again, before you open a researcher, an architect,
+  a QA round or a review. Escalate a failure only after you have read it, and
+  never by starting a second role on top of the first.
+- **A check is started only when its subject changed.** 10b only for the closed
+  risky list; 10a for code that moved; 10c where behaviour moved that a case
+  could check; 10d for the documents this milestone changed. Nothing is started
+  to fill a slot, and every skip is written on the **Verdicts** line with its own
+  reason. **One problem gets two rounds** — a fix and one re-check — and then it
+  comes to the user; the whole job never runs past the `reviewRounds` ceiling.
+- **A reviewer does not block on a tool that is not the product**, unless the
+  defect makes the verification itself worthless — a check that cannot fail, or
+  one that can no longer be trusted. A broken fixture or a miswritten assertion
+  in a helper that would not change what a user sees is an **optional** finding,
+  said out loud as optional, and the milestone moves on.
+- **While the work is moving, run the targeted tests.** The project's full test
+  command and `bash qa/run-all.sh` are completion gates: once when the coding has
+  stopped, and again only for a fix that the run itself demanded.
+- **Write a checkpoint when a step finishes, not when the job does.** `state.json`
+  holds `stages`, one entry per step per milestone, and a resumed session skips
+  every entry that is `done` or `skipped`, re-runs only `stale`, and redoes only
+  what was still `running`. Never repeat finished work because a session ended.
 - Every change to scope, a DoD item, the milestone list or a boundary
   contract gets a CRD in `docs/decisions/crd/`, whoever asked. A CRD that adds
   work writes its new items into the task or the milestone it changes, and records

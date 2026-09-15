@@ -57,15 +57,16 @@ You have no unit test for the new behaviour, so you cannot run one. **That is
 the only thing you are blind to. It does not mean you hand over code you ran
 nothing against.** While you work, run these and read their output:
 
-- the linter;
-- the type check;
-- the compiler, or whatever turns your code into something that runs;
-- **the project's test command**, which in your tree runs the checks the project
-  already had before this task.
+- the linter or type check **targeted at the files or package you changed**;
+- the compiler for that package, or the narrowest command that proves your code
+  still builds;
+- existing test files that directly cover the code you changed.
 
-Code that does not compile, or that breaks a check the project already had, is
-not finished work. Sending it to the PM spends the one run this shape gets on
-noise instead of on an answer.
+Do not run the project's full test command between edits. It is a completion
+gate: the PM runs it once after both halves meet, and again only when that run
+itself demands a fix. Code that does not compile, or that breaks a targeted
+check the project already had, is not finished work. Sending it to the PM spends
+the one full run this shape gets on noise instead of on an answer.
 
 You never install anything (see **Your rules**), so if one of those checks
 cannot run in your tree at all — something missing from the tree itself — that

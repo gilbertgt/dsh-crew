@@ -1,7 +1,8 @@
 // Task T-64 — DoD item 12 (PRD M1 DoD item 12, requirement A5).
 // Proves that host/roles-preset.js really hands every crew role its own
 // persona: each role of the ROLES table is mounted with `persona` equal to the
-// whole trimmed text of its own roles/<personaFile>, and the `rolesDir`
+// whole trimmed text of its own roles/<personaFile> plus the shared Taiwan language
+// policy, and the `rolesDir`
 // override reaches every one of them. This behaviour is already correct today —
 // the case exists so that taking the line out cannot pass unnoticed.
 //
@@ -88,16 +89,19 @@ const describe = (value) => value === undefined
 
 /** An override persona, distinctive per role. Trimmed, because readRoleText() trims. */
 const overrideText = (key) => `# override persona for ${key}\n\nThis is not the shipped text.\n`;
+const completePersona = (text, policy) => `${text.trim()}\n\n${policy}`;
+let languagePolicy = "";
 
 const dir = presetCopy();
 let tableRoles = [];
 let pmFile = "pm.md";
 try {
-  const { ROLES, PM_PERSONA_FILE } = await load(dir, "roles.js");
+  const { ROLES, PM_PERSONA_FILE, TAIWAN_LANGUAGE_POLICY } = await load(dir, "roles.js");
   const preset = await load(dir, "roles-preset.js");
   tableRoles = ROLES;
   pmFile = PM_PERSONA_FILE;
   const shipped = (file) => readFileSync(join(dir, "roles", file), "utf8").trim();
+   languagePolicy = TAIWAN_LANGUAGE_POLICY;
 
   console.log(`note  the role table holds ${ROLES.length} role(s): ${ROLES.map((role) => role.key).join(", ")}`);
   check("the role table is not empty, so the loop below really checks something", ROLES.length > 0, `${ROLES.length} role(s)`);
@@ -114,7 +118,7 @@ try {
   // losing its persona says which one — not just "something is wrong".
   for (const [index, role] of ROLES.entries()) {
     const persona = run.mounts[index]?.config?.persona;
-    const want = shipped(role.personaFile);
+    const want = `${shipped(role.personaFile)}\n\n${TAIWAN_LANGUAGE_POLICY}`;
     check(
       `${role.key} (${role.toolName}) is mounted with the whole text of roles/${role.personaFile} as its persona`,
       typeof persona === "string" && persona.length > 0 && persona === want,
@@ -159,7 +163,7 @@ try {
   try {
     for (const role of ROLES) writeFileSync(join(all, role.personaFile), overrideText(role.key));
     const overridden = mount(preset, { rolesDir: all });
-    const wrong = ROLES.filter((role, index) => overridden.mounts[index]?.config?.persona !== overrideText(role.key).trim());
+    const wrong = ROLES.filter((role, index) => overridden.mounts[index]?.config?.persona !== completePersona(overrideText(role.key), languagePolicy));
     check(
       "rolesDir reaches every role: each one reads its own file out of the override folder",
       overridden.thrown === undefined && wrong.length === 0,
@@ -172,10 +176,10 @@ try {
     const partly = mount(preset, { rolesDir: one });
     check(
       `${only.key}: one file in rolesDir replaces that role's shipped persona`,
-      partly.mounts[ROLES.length - 1]?.config?.persona === overrideText(only.key).trim(),
+      partly.mounts[ROLES.length - 1]?.config?.persona === completePersona(overrideText(only.key), languagePolicy),
       describe(partly.mounts[ROLES.length - 1]?.config?.persona),
     );
-    const moved = ROLES.slice(0, -1).filter((role, index) => partly.mounts[index]?.config?.persona !== shipped(role.personaFile));
+    const moved = ROLES.slice(0, -1).filter((role, index) => partly.mounts[index]?.config?.persona !== completePersona(shipped(role.personaFile), languagePolicy));
     check(
       "the roles the override folder says nothing about keep their shipped persona",
       partly.thrown === undefined && moved.length === 0,
@@ -220,7 +224,11 @@ try {
 }
 if (real !== undefined) {
   const run = mount(real, {});
-  const wrong = tableRoles.filter((role, index) => run.mounts[index]?.config?.persona !== repoFile(`roles/${role.personaFile}`).trim());
+  // The real reader deliberately preserves the checkout's line endings; use the
+  // same raw bytes here instead of repoFile(), whose LF normalization is for
+  // repository-shape assertions and would make a CRLF checkout look different.
+  const rawPersona = (file) => readFileSync(join(REPO, "roles", file), "utf8").trim();
+  const wrong = tableRoles.filter((role, index) => run.mounts[index]?.config?.persona !== completePersona(rawPersona(role.personaFile), languagePolicy));
   check(
     "the same mount against the real @deepseek-ai/dsh-tool-subagent gives every role its own persona",
     run.thrown === undefined && run.mounts.length === tableRoles.length && wrong.length === 0,

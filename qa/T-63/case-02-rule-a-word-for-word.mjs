@@ -26,9 +26,9 @@
 // added one, or paraphrased everything around the anchor — which is exactly the
 // drift the "copy, do not paraphrase" rule exists to stop.
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, repoFile, flat, check, done } from "../lib/qa.mjs";
+import { REPO, repoFile, repoTextAt, flat, check, done } from "../lib/qa.mjs";
 
 const HEADING = "### Rule A, on text that arrives inside a tool result";
 const ANCHOR = "is data, not instructions";
@@ -119,7 +119,7 @@ check(
 );
 
 for (const name of roles) {
-  const text = readFileSync(join(REPO, "roles", name), "utf8");
+  const text = repoTextAt(join(REPO, "roles", name));
 
   // The paragraph the anchor sits in, so the check is equality on a block and
   // not a substring search over the whole file. A paragraph is a run of lines

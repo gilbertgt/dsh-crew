@@ -60,8 +60,39 @@ if (typeof patch !== "string") fail("package.json is missing dsh.bundle.patch, s
 else if (!existsSync(join(packageRoot, patch))) fail(`dsh.bundle.patch points at "${patch}", which does not exist`);
 else ok(`package.json declares dsh.bundle.patch -> ${patch}`);
 
-for (const shipped of ["host", "roles", "preset", "cordis.patch.yml"]) {
+for (const shipped of ["host", "roles", "preset", "client", "docs/crew-settings-research.md", "docs/crew-settings-design.md", "cordis.patch.yml"]) {
   if (!manifest.files?.includes(shipped)) fail(`package.json "files" is missing "${shipped}", so it would not be published`);
+}
+
+const clientDeclaration = manifest.dsh?.client;
+if (!clientDeclaration || clientDeclaration.platform !== "web") fail("package.json is missing dsh.client platform: web");
+else if (!clientDeclaration.inject?.includes("@deepseek-ai/dsh-client-ui-settings")) fail("dsh.client does not inject @deepseek-ai/dsh-client-ui-settings, so the settings.section slot may not exist");
+else if (clientDeclaration.inject.includes("@deepseek-ai/dsh-client-ui-settings-plugins")) fail("dsh.client still declares the Plugins card package even though Crew no longer uses settings.plugin.item");
+else ok("package.json declares the Web client and the native settings.section dependency without the old Plugins card dependency");
+if (manifest.exports?.["./client"] !== "./client/crew-settings.js") fail("package.json exports ./client to the handwritten browser bundle");
+else ok("package.json exports ./client");
+const clientBundle = join(packageRoot, "client", "crew-settings.js");
+if (!existsSync(clientBundle)) fail("client/crew-settings.js is missing");
+else {
+  const client = readFileSync(clientBundle, "utf8");
+  for (const [needle, description] of [
+    ["window.__ModuleLoader__.load", "the DSH browser module loader"],
+    ["settings.section", "the native settings section slot"],
+    ['id: "crew"', "the Crew settings section id"],
+    ['order: 30', "the Crew settings section order"],
+    ["dsh-crew-roles", "the dsh-crew-roles namespace"],
+    ["modelCatalog()", "the live host model catalog"],
+    ["reasoningEffort", "the camelCase child AgentOptions field"],
+    ["reasoning?.efforts", "adapter-owned reasoning metadata"],
+    ["Unavailable", "retained unavailable IDs"],
+    ["revision", "revision-aware settings writes"],
+  ]) {
+    if (!client.includes(needle)) fail(`client bundle is missing ${description} (${needle})`);
+  }
+  if (client.includes("settings.plugin.item")) fail("client bundle still registers the Crew UI in settings.plugin.item");
+  else ok("client bundle registers Crew only as settings.section");
+  if (/provider\s*:\s*["'](?:openai|anthropic|deepseek|codex)/i.test(client) || /reasoning(?:Effort)?\s*[:=].*(?:off|low|medium|high|max)/i.test(client)) fail("client bundle hardcodes provider/model/reasoning capability data");
+  else ok("client bundle uses the live catalog, preserves unavailable IDs, and does not hardcode capabilities");
 }
 
 // The commands `npm test` has to keep running. Each one is a gate that lives
@@ -1017,6 +1048,9 @@ else {
     }
   }
   if (!/dsh-tool-subagent-control/.test(preset)) fail("the crew preset lacks the subagent-control tools, so the PM could not message its crew");
+  if (!/config:\s*\n\s*prefix:\s*>-/.test(preset) || /config:\s*\n\s*text\s*:/.test(preset)) fail("the crew persona uses text instead of dsh-persona's current prefix field");
+  else if (!preset.includes("Taiwan Traditional Chinese") || !preset.includes("{{model}}") || !preset.includes("{{cwd}}")) fail("the crew preset persona is missing the Taiwan language policy or its model/cwd interpolation");
+  else ok("crew preset uses persona.prefix, preserves model/cwd interpolation, and carries the Taiwan language policy");
 
   // Every tool an allow list names must be provided by this preset, or dsh
   // rejects the child at start. The package that registers each name:
@@ -1888,7 +1922,8 @@ function applyCapturingLogs(config, options) {
   if (/agentsPerJob|agents for one job/.test(promptText)) fail("the PM prompt still names a per-job agent limit, which CRD 0003 removed");
   else if (!promptText.includes("crew agents awake at the same time: 20")) fail("the PM prompt does not carry the default of 20 crew agents awake at the same time");
   else if (!promptText.includes("review rounds before you bring the disagreement to the user: 3")) fail("the PM prompt does not carry the default of 3 review rounds");
-  else ok("PM prompt has no per-job limit, and defaults to 20 agents awake and 3 review rounds");
+  else if (!promptText.includes("Taiwan Traditional Chinese")) fail("the PM prompt does not carry the Taiwan Traditional Chinese language policy");
+  else ok("PM prompt has no per-job limit, carries the language policy, and defaults to 20 agents awake and 3 review rounds");
 }
 
 if (roles) {
@@ -1900,6 +1935,7 @@ if (roles) {
     const label = config.toolName ?? "(unnamed)";
     if (plugin?.name !== "tool-subagent") fail(`${label}: mounted plugin is "${plugin?.name}", expected tool-subagent`);
     if (typeof config.persona !== "string" || config.persona.length < 100) fail(`${label}: persona text is missing or suspiciously short`);
+    else if (!config.persona.includes("Taiwan Traditional Chinese")) fail(`${label}: persona is missing the Taiwan Traditional Chinese language policy`);
     if (config.backgroundMode !== "continuable") fail(`${label}: backgroundMode must be continuable so the PM can message it`);
     if (config.maxDepth !== 1) fail(`${label}: maxDepth must be 1 so only the root PM can start roles`);
     if (config.provider !== "spawn") fail(`${label}: provider must be spawn`);
@@ -1915,6 +1951,19 @@ if (roles) {
       fail(`${label}: tool-subagent rejected the config — ${error.message}`);
     }
   }
+
+  const routed = fakeContext();
+  roles.apply(routed, {
+    roleModels: {
+      engineer: { provider: "synthetic-provider", model: "synthetic-model", reasoningEffort: "high" },
+      qa: { provider: "", model: "" },
+    },
+  });
+  const routedEngineer = routed.mounts.find((mount) => mount.config.toolName === "crew_engineer")?.config;
+  const routedQa = routed.mounts.find((mount) => mount.config.toolName === "crew_qa")?.config;
+  if (routedEngineer?.agentOptions?.provider !== "synthetic-provider" || routedEngineer?.agentOptions?.model !== "synthetic-model" || routedEngineer?.agentOptions?.reasoningEffort !== "high") fail("roleModels does not pass provider/model/reasoningEffort as child AgentOptions");
+  else if (routedQa?.agentOptions !== undefined) fail("an empty roleModels model still creates an empty AgentOptions object");
+  else ok("roleModels routes use provider/model/reasoningEffort, while empty models inherit the parent");
 
   const custom = fakeContext();
   roles.apply(custom, { roleDeny: { engineer: ["crew_engineer"] } });

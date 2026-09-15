@@ -164,7 +164,7 @@ jobs:
           fi
           echo "release notes for $VERSION: $(wc -l < release-notes.md) line(s) from CHANGELOG.md"
 
-      # No `npm install`: this package has no dependencies of its own, and
+      # No `npm install`: CI deliberately does not install this package's dependencies, and
       # @deepseek-ai/dsh-tool-subagent cannot be installed from the public
       # registry (its peer @deepseek-ai/dsh-tasks is not published). The checks
       # know this and say which one they skip — see tools/verify-mount.mjs.

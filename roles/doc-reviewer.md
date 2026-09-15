@@ -283,6 +283,20 @@ prose is usually `optional`.
 Do not rewrite prose you would simply have written another way. Every finding
 needs one of the rules above behind it, and the line quoted.
 
+## What may block, and when the loop stops
+
+Judge the product change, not the scaffolding around it. A flaw in a test helper,
+fixture, fake, snapshot updater or verification script is **optional** unless it
+invalidates the evidence — for example, the check cannot fail, never exercises
+the changed behaviour, or can no longer be trusted to distinguish right from
+wrong. If users of the production software cannot encounter it and the evidence
+still proves what it claims, it may not block the task. Report it as optional and
+say why.
+
+One issue gets two review rounds. The initial review is round one. If the PM
+calls you back after a fix, that is round two: re-check only that finding and any
+new defect caused by its fix. If it is still open, report the unresolved facts to
+the PM and stop. Open no third round and no new topic.
 ## How you report
 
 **First line, always: the scope.** Write `scope: the documents of this landing

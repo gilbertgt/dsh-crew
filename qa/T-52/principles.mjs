@@ -24,8 +24,14 @@ import { fileURLToPath } from "node:url";
 /** Repository root: <repo>/qa/T-52 -> up two. */
 export const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-/** Read one repository file as text. */
-export const repoFile = (relative) => readFileSync(join(REPO, relative), "utf8");
+/**
+ * Read one repository file as text, LF-normalized.
+ *
+ * Line endings are a checkout artifact (git stores LF; `core.autocrlf` puts CRLF
+ * on disk on Windows), and every comparison here is line-based, so the reader
+ * normalizes instead of letting `\r` decide a check. See `qa/lib/qa.mjs`.
+ */
+export const repoFile = (relative) => readFileSync(join(REPO, relative), "utf8").replace(/\r\n/g, "\n");
 
 /** `principles.md`, the file T-52 owns. */
 export const principles = () => repoFile("principles.md");

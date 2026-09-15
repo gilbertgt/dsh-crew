@@ -1,12 +1,46 @@
 # Changelog
 
-What changed in each released version of `dsh-crew`, newest first. The top
-section is marked `unreleased`: it is the next version, written as the work
-lands, and it has no date until the release goes out.
+What changed in each version of `dsh-crew`, newest first. The top section is marked
+`unreleased`: it is the next version, written as the work lands, and it has no date until
+the release goes out.
 
 Every version bump rewrites `$DSH_HOME/.agent-presets/crew`. Files you edited
-there are kept as `<name>.bak` and named in the boot log, but your settings do
-**not** come back on their own. Copy them into the new file after an upgrade.
+there are kept as `<name>.bak` and named in the boot log, but tool-filter and legacy
+`roleModels` settings do **not** come back on their own. Copy them into the new file
+after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder.
+
+## 0.11.0 — unreleased
+
+### Added
+
+- **Crew Settings is now a standalone DSH Web Settings → Crew section.** It no longer
+  appears under Plugins → Plugin configuration. The page shows the PM/root model catalog
+  default and gives each child role its own Provider, Model and Reasoning Effort selection.
+  Provider and model choices come from DSH's live model catalog; missing saved routes stay
+  visible as unavailable instead of being deleted.
+- **Role model settings now have a stable `dsh-crew-roles` namespace.** The Web settings
+  layer is authoritative when available, while legacy `roleModels` in the crew preset
+  remains a fallback for older profiles and non-Web compositions. When the host provides
+  durable settings storage, the user layer survives restart; process-local or unavailable
+  scopes do not promise that. Settings writes use revision fences and role tools reload
+  through their existing fibers.
+- **Crew communication now carries a Taiwan Traditional Chinese policy.** Code, paths,
+  identifiers, commands and exact logs/errors remain unchanged. The crew preset now uses
+  the current DSH persona field, `prefix`, while retaining `{{model}}` and `{{cwd}}`.
+
+### Changed
+
+- **The next release is 0.11.0.** The source package remains on released version 0.10.0
+  until release day, while a shipped-preset revision stamp refreshes changed preset content
+  during development. The installer keeps differing user-edited files as `.bak`, carries
+  earlier backups forward, and — when there is anything to preserve — keeps a durable
+  pre-upgrade archive too. The settings namespace is outside the preset folder and is not
+  removed by that refresh or upgrade, but whether it survives restart still depends on the
+  host settings backend.
+- **Small, low-risk work now defaults to direct PM execution.** Full Crew is reserved for
+  large, risky or cross-module changes, and only relevant QA or reviewer roles are started.
+  Development runs targeted tests; full gates run once at completion, review issues stop
+  after two rounds, and resumed jobs skip stages already recorded as complete.
 
 ## 0.10.0 — 2026-08-23
 

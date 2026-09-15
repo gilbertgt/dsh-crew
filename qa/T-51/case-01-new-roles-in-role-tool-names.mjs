@@ -8,10 +8,9 @@
 // these two names have to be present at all, so a revert that dropped one of
 // them would leave every check in this repository green.
 
-import { check, done, REPO } from "../lib/qa.mjs";
-import { join } from "node:path";
+import { check, done, importRepoModule } from "../lib/qa.mjs";
 
-const { ROLE_TOOL_NAMES, ROLES } = await import(join(REPO, "host", "roles.js"));
+const { ROLE_TOOL_NAMES, ROLES } = await importRepoModule("host/roles.js");
 
 const expected = [
   { key: "test_engineer", toolName: "crew_test_engineer", personaFile: "test-engineer.md" },

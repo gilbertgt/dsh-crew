@@ -87,7 +87,7 @@ Rules mapped: 17 (guarded 11 · bare 6 · judgment 0)
 | **The unit tests for the behaviour you are building are not in that tree.** | code engineer | guarded: qa/T-54/case-01-worktree-has-no-tests.mjs |
 | **the lock holds until the merge, and it ends there.** | code engineer | guarded: qa/T-54/case-03-merged-tree-fix.mjs |
 | While you work, run these and read their output: | code engineer | guarded: qa/T-54/case-02-lint-and-checks-run.mjs |
-| Code that does not compile, or that breaks a check the project already had, is | code engineer | bare |
+| Code that does not compile, or that breaks a targeted | code engineer | bare |
 | **You do not run it.** | code engineer | bare |
 | **Never edit that ADR.** | code engineer | guarded: qa/T-54/case-08-interface-adr-is-read-only.mjs |
 | Touch only the files your half of the task owns. Not one file more. | code engineer | bare |

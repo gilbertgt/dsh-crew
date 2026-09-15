@@ -4,9 +4,9 @@
 // agent to create. It has to fail at mount, with an error that says how to fix
 // it. No file is read or written by this case.
 import { join } from "node:path";
-import { REPO, tempDir, cleanUp, check, done } from "../lib/qa.mjs";
+import { tempDir, cleanUp, check, done, importRepoModule } from "../lib/qa.mjs";
 
-const guard = await import(join(REPO, "host", "git-guard.js"));
+const guard = await importRepoModule("host/git-guard.js");
 const dir = tempDir("crew-qa-folder-");
 try {
   const shapes = [

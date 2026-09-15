@@ -52,9 +52,8 @@
 // The row counts are printed, so a reader can see what was sliced without
 // running anything else.
 
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, check, done, flat, pm, section } from "../lib/qa.mjs";
+import { REPO, check, done, flat, pm, repoTextAt, section } from "../lib/qa.mjs";
 
 // ------------------------------------------------------------ slicing a table
 
@@ -99,7 +98,7 @@ function tableOf(text, heading, where) {
 }
 
 const principlesTable = tableOf(
-  readFileSync(join(REPO, "principles.md"), "utf8"),
+  repoTextAt(join(REPO, "principles.md")),
   "Who writes which document",
   "principles.md",
 );

@@ -1,20 +1,23 @@
 # The `crew` agent preset, shipped by dsh-crew.
 #
-# It is dsh's own `standard` preset with ONE change: the delegation group no
-# longer offers `subagent`, `subagent_fork`, `workflow`, `ralph` or the product
-# subagents, and offers the crew roles instead. Everything else — shell, files,
-# search, skills, planning, goals, compaction, todo, web — is standard, because
-# an engineer needs the normal working set.
+# It follows dsh's `standard` preset as a baseline, with intentional crew-specific
+# differences: the delegation group replaces generic/product agent-start tools with
+# the crew roles; the persona uses dsh's current `prefix` field and carries the
+# Taiwan language policy; and the dsh-crew role bridge mounts the flat role table.
+# Everything else is kept as the copied baseline because an engineer needs the
+# normal working set.
 #
 # Copied from the dsh version noted in `preset.yml`. When dsh updates its own
-# `standard` preset, this file does not follow by itself; re-copy it and redo
-# the one change above.
+# `standard` preset, this file does not follow by itself; re-copy it and review
+# every intentional difference above.
 #
 # The original header follows.
 #
 # The `standard` agent preset: the full coding agent, mounted once per process.
 #
-# This file is an AGENT-PLANE composition. The roster mounts it ONCE under a
+# This file is an AGENT-PLANE composition. It follows dsh's standard preset
+# baseline noted in preset.yml, with the intentional crew-specific differences
+# listed in the header below. The roster mounts it ONCE under a
 # standing scope; every session naming it joins by scope parentage, so the
 # tools and prompt sections registered here cover each joined agent while a
 # session's own state stays keyed per Session/Agent inside the plugins. The
@@ -35,11 +38,16 @@
 
 # The preset's own persona, shadowing the deployment default for this agent.
 # `{{model}}` and `{{cwd}}` resolve from the agent's own route and workspace.
+# dsh-persona's current contract calls this field `prefix` (not `text`). A
+# child role supplies its own complete prefix, so roles-preset.js appends this
+# language policy there as well.
 - id: persona
   name: '@deepseek-ai/dsh-persona'
   config:
-    text: >-
+    prefix: >-
       You are a coding agent powered by the {{model}} model. Your working directory is {{cwd}}.
+
+      Language policy (mandatory): use Taiwan Traditional Chinese (繁體中文，臺灣用語) for all user-visible natural-language communication and reports. Keep code, commands, paths, identifiers, API names, package names, exact logs and error messages unchanged.
 
 - id: agent-instructions
   name: '@deepseek-ai/dsh-agent-instructions'
@@ -257,8 +265,10 @@
       #   # a shorter one and you hand that role a hole you did not mean to open.
       #   roleDeny: { engineer: ['crew_researcher', 'crew_architect', 'crew_engineer', 'crew_test_engineer', 'crew_code_engineer', 'crew_qa', 'crew_code_reviewer', 'crew_security_reviewer', 'crew_doc_reviewer'] }
       #
-      #   # Per-role provider and model. An empty value keeps the session's own
-      #   # model, so fill in names your deployment really has.
+      #   # Per-role provider and model routes. Prefer Crew Settings in the
+      #   # Web UI; values saved there are the canonical user layer. An empty
+      #   # model keeps the session's own model, so fill in names your deployment
+      #   # really has when using this compatibility field.
       #   roleModels: { engineer: { provider: '', model: '' } }
 
 # ── remaining model-facing rows ─────────────────────────────────────────────

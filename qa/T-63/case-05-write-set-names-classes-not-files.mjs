@@ -75,7 +75,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { REPO, check, cleanUp, done, edit, flat, section, tempRepo } from "../lib/qa.mjs";
+import { REPO, check, cleanUp, done, edit, flat, repoTextAt, section, tempRepo } from "../lib/qa.mjs";
 
 const HEADING = "What you may write";
 
@@ -270,7 +270,7 @@ try {
   check(
     "negative control: the copy was edited, the repository was not",
     readdirSync(join(REPO, "roles")).length === before &&
-      !readFileSync(join(REPO, "roles", "qa.md"), "utf8").includes("docs/design/prd.md"),
+      !repoTextAt(join(REPO, "roles", "qa.md")).includes("docs/design/prd.md"),
     "the real roles/qa.md now holds `docs/design/prd.md` — the mutation escaped the copy",
   );
 } finally {

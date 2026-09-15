@@ -16,18 +16,22 @@
 // What it does NOT prove: that a user reads the qualifier, or that a PM honours
 // it on a real request.
 //
-// PINNING STYLE: FLATTENED, sliced to the `### Changed` block of the top section.
-// The limit must be in the same block as the promise: a caveat under a different
-// heading is a caveat nobody reaches.
+// PINNING STYLE: FLATTENED, sliced to the `### Changed` block of the entry that
+// carries the promise. The limit must be in the same block as the promise: a
+// caveat under a different heading is a caveat nobody reaches.
 
 import { check, done, flat, repoFile } from "../lib/qa.mjs";
 
-function topSection(source) {
+/**
+ * Every `## ` version section of the change log, oldest last.
+ */
+function sectionsOf(source) {
   const lines = source.split("\n");
-  const first = lines.findIndex((line) => /^## /.test(line));
-  if (first === -1) throw new Error("CHANGELOG.md has no `## ` version section");
-  const next = lines.findIndex((line, index) => index > first && /^## /.test(line));
-  return lines.slice(first, next === -1 ? lines.length : next).join("\n");
+  const starts = lines.flatMap((line, index) => /^## /.test(line) ? [index] : []);
+  return starts.map((start, position) => {
+    const stop = position + 1 < starts.length ? starts[position + 1] : lines.length;
+    return lines.slice(start, stop).join("\n");
+  });
 }
 
 function subSection(section, name) {
@@ -38,15 +42,30 @@ function subSection(section, name) {
   return lines.slice(first, next === -1 ? lines.length : next).join("\n");
 }
 
-const changed = subSection(topSection(repoFile("CHANGELOG.md")), "Changed");
+/**
+ * The section whose `### Changed` block carries the undecided-option promise.
+ *
+ * The entry is found by its PROMISE, not by being the topmost section. It was the
+ * top one when this case was written, and a later release legitimately sits above
+ * it: pinning "the first `## `" would then check a release note that never
+ * mentioned this change, and would go red for the wrong reason — or, worse, go
+ * green because a newer entry happened to reuse the words. Locating it by the
+ * promise keeps the real question ("does the entry that grants the option also
+ * state its limit?") and fails closed when no entry grants it at all.
+ */
+const withPromise = sectionsOf(repoFile("CHANGELOG.md"))
+  .map((section) => ({ section, changed: subSection(section, "Changed") }))
+  .filter(({ changed }) => changed !== null && /leave it undecided/i.test(flat(changed)));
 
 check(
-  "the top section has a `### Changed` block to look in",
-  changed !== null,
-  "without it there is nothing to check and the promise has no home either",
+  "exactly one change-log entry carries the undecided-option promise",
+  withPromise.length === 1,
+  `${withPromise.length} entr(y/ies) carry it — the promise must be documented once, with its limit`,
 );
 
-if (changed === null) done();
+if (withPromise.length !== 1) done();
+
+const changed = withPromise[0].changed;
 
 const words = flat(changed);
 
@@ -86,18 +105,18 @@ const bullets = changed.split(/\n(?=- )/).slice(1);
 
 console.log(`### Changed holds ${bullets.length} entr(y/ies)`);
 
-const withPromise = bullets.filter((bullet) => /leave it undecided/i.test(flat(bullet)));
-const withLimit = bullets.filter((bullet) => /not loosened|is not\s+loosened/i.test(flat(bullet)));
+const bulletsWithPromise = bullets.filter((bullet) => /leave it undecided/i.test(flat(bullet)));
+const bulletsWithLimit = bullets.filter((bullet) => /not loosened|is not\s+loosened/i.test(flat(bullet)));
 
 check(
   "exactly one entry carries the undecided-option promise",
-  withPromise.length === 1,
-  `${withPromise.length} entries carry it — two accounts of one change can disagree`,
+  bulletsWithPromise.length === 1,
+  `${bulletsWithPromise.length} entries carry it — two accounts of one change can disagree`,
 );
 
 check(
   "the limit sits in that same entry",
-  withPromise.length === 1 && withLimit.length === 1 && withPromise[0] === withLimit[0],
+  bulletsWithPromise.length === 1 && bulletsWithLimit.length === 1 && bulletsWithPromise[0] === bulletsWithLimit[0],
   "the promise and its limit are in different entries; a reader who stops after the first has the wrong rule",
 );
 

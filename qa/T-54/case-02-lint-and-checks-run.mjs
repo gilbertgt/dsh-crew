@@ -34,9 +34,9 @@ check(
 );
 
 check(
-  "and the project's own test command",
-  flatText.includes("**the project's test command**"),
-  "the checks the project already had are not required",
+  "and existing tests targeted at the changed code",
+  flatText.includes("existing test files that directly cover the code you changed"),
+  "targeted existing tests are not required",
 );
 
 check(
@@ -52,8 +52,8 @@ check(
 );
 
 check(
-  "it says why: code that does not compile spends the one run this shape gets",
-  flatText.includes("spends the one run this shape gets"),
+  "it says why: code that does not compile spends the one full run this shape gets",
+  flatText.includes("spends the one full run this shape gets"),
   "the cost of sending broken code is not named",
 );
 

@@ -44,9 +44,16 @@ check(
   `only ${numbers.length} design rule(s) left — a deleted rule silently redirects every pointer to the rules after it`,
 );
 
+// The sentence tying the rules to a machine check is a floor on the PREAMBLE:
+// the rules must still name `tools/verify-mount.mjs` as the thing that watches
+// them. It was pinned word for word until the preamble also had to say which
+// halves that check cannot see (dsh's own `authorizeLineage`, the two-worktree
+// isolation, and the optional role-tool half that skips on a plain machine) —
+// a caveat that a verbatim pin would have forbidden. What is read now is the
+// tie itself, not one spelling of it.
 check(
-  "the file still says every design rule is checked by verify-mount.mjs",
-  flat(claude()).includes("Each one is checked by `tools/verify-mount.mjs`"),
+  "the file still names verify-mount.mjs as what checks the design rules",
+  /`tools\/verify-mount\.mjs` checks each one/i.test(flat(claude())),
   "the sentence tying the rules to a machine check is missing",
 );
 

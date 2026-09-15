@@ -9,10 +9,9 @@
 // does not exist. Both lists are derived from the role table here, so this case
 // keeps working when a tenth role is added instead of pinning today's nine names.
 
-import { check, done, repoFile, REPO } from "../lib/qa.mjs";
-import { join } from "node:path";
+import { check, done, importRepoModule, repoFile } from "../lib/qa.mjs";
 
-const { ROLE_TOOL_NAMES, ROLES } = await import(join(REPO, "host", "roles.js"));
+const { ROLE_TOOL_NAMES, ROLES } = await importRepoModule("host/roles.js");
 const yaml = repoFile("preset/crew/agent.cordis.yml");
 
 // --- the role-key comment: from "The key is the role key" to the next option.

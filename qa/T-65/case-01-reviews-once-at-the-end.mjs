@@ -70,8 +70,8 @@ check(
 
 // ------------------------------ DoD item 1: the round is at the end, not per task
 check(
-  "step 10 says QA and the three reviews run once per milestone, at the end of it",
-  /run once per milestone, at the end of it/i.test(flatTen),
+  "step 10 says applicable QA and reviews run at most once per milestone, at the end",
+  /Applicable QA and reviews run at most once per milestone, at the end/i.test(flatTen),
   "step 10 does not say when the round runs",
 );
 check(
@@ -81,19 +81,19 @@ check(
 );
 check(
   "step 10 names what has to be finished first: the last task landed and the coding done",
-  /last task of the milestone has landed/i.test(flatTen) && /the coding is finished/i.test(flatTen),
+  /last task has landed/i.test(flatTen) && /coding is finished/i.test(flatTen),
   "the step gives no starting condition, so 'at the end' names no moment",
 );
 
 // The order inside the step: QA (10c) first, then the three reviews together.
 // Asserted by position, because the DoD item is about the order and not about
 // two sentences existing somewhere.
-const qaFirst = flatTen.search(/10c first: one round of QA/i);
-const thenThree = flatTen.search(/Then 10a, 10b and 10d, in one message/i);
+const qaFirst = flatTen.search(/10c first, when behaviour moved/i);
+const thenThree = flatTen.search(/Then the applicable parts of 10a, 10b and 10d, in one message/i);
 check(
-  "step 10 runs QA first and the three reviews after it",
+  "step 10 runs applicable QA first and applicable reviews after it",
   qaFirst !== -1 && thenThree !== -1 && qaFirst < thenThree,
-  `"10c first" at ${qaFirst}, "Then 10a, 10b and 10d" at ${thenThree}`,
+  `"10c first" at ${qaFirst}, "Then applicable 10a, 10b and 10d" at ${thenThree}`,
 );
 // "…and before the commit" is the file's own order: committing is step 11.
 check(
@@ -104,14 +104,14 @@ check(
 
 // ------------------------------------ DoD item 1: one round each, and parallel
 check(
-  "step 10 says the three reviews are one round each",
+  "step 10 says applicable reviews are one round each",
   /one round each/i.test(flatTen),
   "no 'one round each' in step 10",
 );
 check(
-  "step 10 says the three run in parallel, in one message",
+  "step 10 says applicable reviews run in parallel, in one message",
   /Parallel is the default/i.test(flatTen) && /in one message/i.test(flatTen),
-  "step 10 does not say the three reviews start together",
+  "step 10 does not say applicable reviews start together",
 );
 
 // --------------------------------- DoD item 1: only the changed part is in scope

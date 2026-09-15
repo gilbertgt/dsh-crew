@@ -75,8 +75,8 @@ function windowAfter(flatText, anchor, width) {
 const ID = {
   section: `roles/pm.md still has a "## ${HEADING}" section`,
   gets: "step 1 says every change gets a milestone, however small",
-  contents: "that milestone holds at least one task and one round of QA",
-  reviews: "and one round each of the code review, the security review and the doc review",
+  contents: "the direct scale starts no child role and keeps one test and one commit",
+  reviews: "roles and reviews are started only when their subject changed",
   notRelease: "step 1 says a milestone is not a release",
   cycle: "a milestone is one full cycle plus one commit",
   yes: "pushing and tagging each still need the user's own yes",
@@ -118,13 +118,15 @@ function audit(text) {
   );
   add(
     ID.contents,
-    /at least one task/i.test(getsOne) && /one round of QA/i.test(getsOne),
-    `the sentence names neither one task nor one round of QA: ${JSON.stringify(getsOne.slice(0, 220))}`,
+    /`direct` — \*\*the default for a small, low-risk change\.\*\*/i.test(lane)
+      && /start \*\*no\*\* child role/i.test(lane)
+      && /one task, one test, one commit/i.test(lane),
+    `the direct scale is missing its no-child, one-test, one-commit guard: ${JSON.stringify(lane.slice(0, 500))}`,
   );
   add(
     ID.reviews,
-    /code review/i.test(getsOne) && /security review/i.test(getsOne) && /doc review/i.test(getsOne),
-    "the sentence does not name all three reviews, so a milestone could be read as needing fewer: "
+    /role whose subject this change never touched is not started/i.test(lane),
+    "the delegation rule does not say an unrelated role is not started: "
       + JSON.stringify(getsOne.slice(0, 220)),
   );
 

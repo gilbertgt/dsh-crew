@@ -1,11 +1,12 @@
 name: Crew
 description: >-
   The standard coding agent plus the dsh-crew roles: a product manager that
-  talks to you, and researcher, architect, engineer, QA, code reviewer,
-  security reviewer and doc reviewer agents it starts. The only way to start
-  an agent here is a crew role.
+  talks to you, and researcher, architect, engineer, paired test/code engineers,
+  QA, code reviewer, security reviewer and doc reviewer agents it starts. The
+  only way to start an agent here is a crew role.
 order: 4
 
 # Kept for humans, not read by dsh: which dsh preset this was copied from, so a
 # later re-copy has a starting point.
-# derivedFrom: @deepseek-ai/dsh config/agent-presets/standard (dsh 0.0.1-rc.1)
+# derivedFrom: @deepseek-ai/dsh config/agent-presets/standard (dsh 0.1.5-rc.1; inspected 2026-08-24)
+# shippedPresetRevision: 2 (increment only when the shipped preset content changes)

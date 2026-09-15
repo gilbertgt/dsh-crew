@@ -2341,3 +2341,16 @@ T-114（README Quick start 中英对）给两份 README 加 `## Quick start` / `
 
 **状态**：未关闭。与第 18、60 条同族：字节级全比是「此刻必须如此」的 moment pin，任何合法改动
 都会让它假红，所以它被收窄到 `version` 字段；收窄的代价就是整文件完好性不再有人守。
+
+---
+## 63. Review evidence 的路径与可重复核对方式未定义，DoD item 只能人工判定
+
+**谁报的**：`crew-qa-9`（T-136），2026-09-15（PM 写）。
+
+**缺口**：T-136 DoD item 7 要求 code/security/QA/doc review report 与 Verdicts，但 PRD/task 未指定 report 路径、格式或可重复命令；repository-local QA case 无法判定四种 review 是否完成。
+
+**为什么**：QA plan/job folder 是 single-use，finish 后会删除；case 若唯一读 plan 就不可重跑。若硬写 review 通过判断，则会把 manual gate 假装成 pass。
+
+**该怎么办**：PM 在 review reports 落地后人工核对 Verdicts 和四份报告；若要自动化，先定义持久 report 路径、格式与命令，再新增 case。
+
+**状态**：未关闭，按设计如此（manual gate）。

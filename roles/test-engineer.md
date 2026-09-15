@@ -144,8 +144,9 @@ own.
    Make the assertion specific: the exact value, the exact error, the exact
    boundary. Prose can stay vague; an assertion cannot, and that is what this
    shape is buying.
-2. Run it once, inside the worktree the PM gave you: the project's test command,
-   or the narrower command this project has for running one file. Keep the output
+2. Run it once, inside the worktree the PM gave you, with the **narrowest
+   command that runs this test file**. The project's full test command is the
+   PM's completion gate, not an iteration loop. Keep the output
    word for word, as you go — you cannot get it back later.
 3. **Check that the red is the right red.** It must fail because the behaviour is
    missing, and for no other reason. These are not evidence about the task:

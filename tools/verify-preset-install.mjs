@@ -6,10 +6,11 @@
 //
 // The case that matters most is the upgrade. Role tool filters and per-role
 // models are configured inside the installed preset (`agent.cordis.yml`), and a
-// version bump deletes and rewrites that folder. Losing someone's `roleAllow`
-// list without a word would be a bad way to find out.
+// package-version OR shipped-preset-revision change deletes and rewrites that
+// folder. Losing someone's `roleAllow` list without a word would be a bad way to
+// find out.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -105,8 +106,11 @@ try {
   // 1. Fresh machine: the preset lands, stamped with this version.
   const first = install(home);
   if (!existsSync(join(target, "preset.yml")) || !existsSync(preset)) fail("a fresh install did not write the preset files");
-  else if (readFileSync(stamp, "utf8").trim() !== version) fail(`stamp says "${readFileSync(stamp, "utf8").trim()}", expected ${version}`);
+  else if (readFileSync(stamp, "utf8").split(/\r?\n/)[0] !== version) fail(`stamp version says "${readFileSync(stamp, "utf8").split(/\r?\n/)[0]}", expected ${version}`);
+  else if (readFileSync(stamp, "utf8").split(/\r?\n/)[1] !== "2") fail(`stamp does not carry shipped-preset revision 2: ${JSON.stringify(readFileSync(stamp, "utf8"))}`);
   else if (!readFileSync(preset, "utf8").includes("dsh-crew/host/roles-preset.js")) fail("the installed preset does not load the role tools");
+  else if (!/config:\s*\n\s*prefix:\s*>-/.test(readFileSync(preset, "utf8")) || /config:\s*\n\s*text\s*:/.test(readFileSync(preset, "utf8"))) fail("the installed persona uses text instead of prefix");
+  else if (!readFileSync(preset, "utf8").includes("Taiwan Traditional Chinese")) fail("the installed preset does not carry the Taiwan language policy");
   else if (!first.includes(version)) fail(`the boot log does not name the version: ${first}`);
   else ok(`fresh install writes the crew preset, stamped ${version}`);
 
@@ -126,7 +130,8 @@ try {
   writeFileSync(stamp, "0.0.1\n");
   const upgrade = install(home);
 
-  if (readFileSync(stamp, "utf8").trim() !== version) fail("the upgrade did not refresh the stamp");
+  if (readFileSync(stamp, "utf8").split(/\r?\n/)[0] !== version) fail("the upgrade did not refresh the stamp");
+   else if (readFileSync(stamp, "utf8").split(/\r?\n/)[1] !== "2") fail("the upgrade did not refresh the shipped-preset revision");
   else if (readFileSync(preset, "utf8") === mine) fail("the upgrade did not replace the edited preset file");
   else if (!existsSync(`${preset}.bak`)) fail("the upgrade threw away the user's edited agent.cordis.yml");
   else if (readFileSync(`${preset}.bak`, "utf8") !== mine) fail("the kept copy is not what the user had");
@@ -135,7 +140,33 @@ try {
   else if (!/re-apply/i.test(upgrade)) fail("the boot log does not tell the user to re-apply their settings");
   else ok("upgrade keeps edited files as .bak and says so in the boot log");
 
-  // 4. An untouched install upgrades quietly: no .bak clutter for people who
+   // A later upgrade must not treat the backups made above as fresh user edits.
+   writeFileSync(stamp, "0.0.2\n2\n");
+   const laterUpgrade = install(home);
+   if (existsSync(`${preset}.bak.bak`) || existsSync(join(target, "notes.md.bak.bak"))) fail("a later upgrade recursively backed up an earlier .bak file");
+   else if (laterUpgrade.includes(".bak.bak")) fail(`a later upgrade named a recursive backup: ${laterUpgrade}`);
+   else if (readFileSync(`${preset}.bak`, "utf8") !== mine || readFileSync(join(target, "notes.md.bak"), "utf8") !== "my own file\n") fail("a later upgrade discarded an earlier .bak file");
+    else ok("later upgrades carry earlier backups forward without recursion");
+
+    const archiveRoot = join(home, ".agent-presets", "crew.backups");
+    const archives = existsSync(archiveRoot) ? readdirSync(archiveRoot) : [];
+    if (archives.length === 0) fail("an upgrade with preserved files did not create a durable backup archive");
+    else if (readFileSync(join(archiveRoot, archives[0], "agent.cordis.yml"), "utf8") !== mine) fail("the durable archive did not retain the edited preset bytes");
+    else ok("upgrades write a durable archive beside the preset folder");
+
+  // 4. Binary user files are preserved byte-for-byte rather than decoded as UTF-8.
+    const binaryHome = makeHome();
+    install(binaryHome);
+    const binaryTarget = join(binaryHome, ".agent-presets", "crew");
+    const binary = Buffer.from([0, 0xff, 0x41, 0xc3, 0x28, 0x00]);
+    writeFileSync(join(binaryTarget, "user.bin"), binary);
+    writeFileSync(join(binaryTarget, ".installed-by-dsh-crew"), "0.0.1\n");
+    install(binaryHome);
+    const keptBinary = readFileSync(join(binaryTarget, "user.bin.bak"));
+    if (!keptBinary.equals(binary)) fail("a binary edited file was not kept byte-for-byte");
+    else ok("upgrades preserve binary edited files byte-for-byte");
+
+  // 5. An untouched install upgrades quietly: no .bak clutter for people who
   //    never edited anything.
   const clean = makeHome();
   install(clean);
@@ -145,7 +176,7 @@ try {
   else if (/re-apply/i.test(quiet)) fail("an unedited upgrade warned about settings the user never made");
   else ok("an unedited install upgrades quietly");
 
-  // 5. A `crew` preset this plugin did not write is never touched.
+  // 6. A `crew` preset this plugin did not write is never touched.
   const foreign = makeHome();
   const foreignPreset = join(foreign, ".agent-presets", "crew");
   mkdirSync(foreignPreset, { recursive: true });
@@ -155,13 +186,13 @@ try {
   else if (!left.includes("left the existing")) fail(`the boot log does not report the untouched preset: ${left}`);
   else ok("a crew preset written by someone else is left alone and reported");
 
-  // 6. installPreset: false writes nothing at all.
+  // 7. installPreset: false writes nothing at all.
   const off = makeHome();
   install(off, { installPreset: false });
   if (existsSync(join(off, ".agent-presets"))) fail("installPreset: false still wrote the preset");
   else ok("installPreset: false writes nothing");
 
-  // 7. A case that throws still gets its folder removed. This runs the same
+  // 8. A case that throws still gets its folder removed. This runs the same
   //    remover through a `finally`, so the promise is tested rather than
   //    trusted, without having to break the run.
   const doomed = makeHome();
@@ -178,7 +209,7 @@ try {
   else if (existsSync(doomed)) fail("a case that threw left its throwaway DSH_HOME behind");
   else ok("a case that throws still has its temporary folder removed");
 
-  // 8. ONE note, ONE line. QA found the boot log saying every note twice: the
+  // 9. ONE note, ONE line. QA found the boot log saying every note twice: the
   //    old call site handed the note to the logger and then fell back to the
   //    console as well, because a real logger's `info()` returns undefined and
   //    `??` reads that as "nothing happened". The install and .bak notes are

@@ -59,9 +59,9 @@
 // (one PRD per job, `prd-<date>-<job slug>.md`) the names change with every job,
 // and a hardcoded name would turn this case green by looking at nothing.
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, check, done } from "../lib/qa.mjs";
+import { REPO, check, done, repoTextAt } from "../lib/qa.mjs";
 
 const DESIGN = join("docs", "design");
 
@@ -159,7 +159,7 @@ check(
 );
 
 for (const name of prds) {
-  const lines = readFileSync(join(REPO, DESIGN, name), "utf8").split("\n");
+  const lines = repoTextAt(join(REPO, DESIGN, name)).split("\n");
   const runs = versionRuns(lines);
   check(
     `${DESIGN}/${name} has no version list (no ${RUN}+ consecutive version lines)`,

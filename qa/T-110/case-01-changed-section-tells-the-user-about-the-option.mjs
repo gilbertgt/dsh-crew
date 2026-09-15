@@ -20,20 +20,25 @@
 // understand it. That is DoD item 6 and it belongs to a doc reviewer.
 //
 // PINNING STYLE: FLATTENED (the entries are wrapped prose) and sliced to the
-// `### Changed` block of the TOP section only — an entry under 0.9.0 describes a
-// version that already shipped and must not be able to answer for this one.
+// `### Changed` block of the entry that GRANTS the option — located by that
+// promise, not by position. It was the top section when this case was written and
+// a later release legitimately sits above it; pinning "the first `## `" would then
+// check a release note that never mentioned this change. An entry under 0.9.0
+// describes a version that already shipped and still cannot answer for this one,
+// because only the entry carrying the promise is read.
 
 import { check, done, flat, repoFile } from "../lib/qa.mjs";
 
 const text = repoFile("CHANGELOG.md");
 
-/** The top `## <version> — …` section, up to the next `## `. */
-function topSection(source) {
+/** Every `## <version> — …` section, in file order. */
+function sectionsOf(source) {
   const lines = source.split("\n");
-  const first = lines.findIndex((line) => /^## /.test(line));
-  if (first === -1) throw new Error("CHANGELOG.md has no `## ` version section");
-  const next = lines.findIndex((line, index) => index > first && /^## /.test(line));
-  return { heading: lines[first], text: lines.slice(first, next === -1 ? lines.length : next).join("\n") };
+  const starts = lines.flatMap((line, index) => /^## /.test(line) ? [index] : []);
+  return starts.map((start, position) => {
+    const stop = position + 1 < starts.length ? starts[position + 1] : lines.length;
+    return { heading: lines[start], text: lines.slice(start, stop).join("\n") };
+  });
 }
 
 /** One `### ` block inside a section. */
@@ -45,18 +50,21 @@ function subSection(section, name) {
   return lines.slice(first, next === -1 ? lines.length : next).join("\n");
 }
 
-const top = topSection(text);
-const changed = subSection(top.text, "Changed");
-
-console.log(`top section: ${top.heading}`);
+const top = sectionsOf(text)
+  .map((section) => ({ ...section, changed: subSection(section.text, "Changed") }))
+  .find((section) => section.changed !== null && /leave it undecided/i.test(flat(section.changed)));
 
 check(
-  "the top section has a `### Changed` block",
-  changed !== null,
-  "this job changed how the interview behaves; with no Changed block the entry has nowhere correct to live",
+  "one change-log entry carries a `### Changed` block that grants `leave it undecided`",
+  top !== undefined,
+  "this job changed how the interview behaves; with no such entry the change has nowhere correct to live",
 );
 
-if (changed === null) done();
+if (top === undefined) done();
+
+const changed = top.changed;
+
+console.log(`entry carrying the option: ${top.heading}`);
 
 const words = flat(changed);
 console.log(`### Changed: ${changed.length} characters over ${changed.split("\n").length} lines`);

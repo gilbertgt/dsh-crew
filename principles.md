@@ -183,9 +183,12 @@ written. The report shows the failing run and then the passing run. A report
 without the failing run is not accepted.
 
 **And this is what finishes a task.** A task is done when its own unit tests pass —
-not when a reviewer has read it, and not when QA has written cases for it. QA and
-the three reviews run **once each, at the end of the milestone** (principle 18), so
-nothing waits on them task by task. Two things follow, and both matter.
+not when a reviewer has read it, and not when QA has written cases for it. On the
+`crew` scale, QA and a relevant review run **at most once each, at the end of the
+milestone** (principle 18); a role whose subject did not change is not started.
+On the `direct` scale, the PM runs the targeted test and the completion gates
+without starting a child. Nothing waits on an irrelevant role. Two things follow,
+and both matter.
 
 The **Verdicts** line of a task committed before that round says the truth about it:
 `qa: not run — <the reason>`, and the same for any review that has not happened yet.
@@ -393,11 +396,13 @@ task and one `qa/run-all.sh` that finds and runs them all. Every round runs all
 of them — including cases written for tasks that finished long ago — and an old case
 that now fails is a blocking regression.
 
-**That round happens once per milestone, not once per task** (principle 18). It has
-two steps and two kinds of QA agent: one agent writes the **case list** from the DoD
-sections without reading the code, then one agent per case writes that one case, runs
-it, and reports. The PM says in the briefing which of the two a QA agent is, because
-the two produce different things and forbid different things.
+**When the change needs an independent QA round, it happens once per milestone,
+not once per task** (principle 18). It has two steps and two kinds of QA agent: one
+agent writes the **case list** from the DoD sections without reading the code, then
+one agent per case writes that one case, runs it, and reports. A change with no
+behaviour that a QA case could exercise starts no QA role. The PM says in the
+briefing which of the two a QA agent is, because the two produce different things
+and forbid different things.
 
 **Two of those files are not QA's, and the reason is a silent failure.** QA writes
 only inside `qa/<task-id>/` — its case files and the `run.sh` beside them.
@@ -752,15 +757,24 @@ exception is the one the file test already names — when several changes land i
 same file they cannot run together, so the architect lines them up as a **serial chain**
 and writes on each task row which task it shares the file with.
 
-**QA and the three reviews run once, at the end of the milestone, not per task.** A
-task is finished when its own unit tests pass; nothing waits for a reviewer to call
-a task done. When all the coding of the milestone is finished, QA runs **one** round
-— one agent writes the case list from the DoD sections without reading the code, then
-one agent per case, all of them together — and then the code review, the security
-review and the doc review each run **once**, in parallel, on the changed part only.
+**Checks run only when their subject changed, once at the end of the milestone,
+not per task.** A task is finished when its own unit tests pass; nothing waits for
+an irrelevant reviewer to call a task done. When all coding is finished, the PM
+starts only the applicable checks: QA where behaviour moved, code review where code
+moved, security review for the closed risky list, and doc review where documents
+moved. Applicable reviews run in parallel, on the changed part only. A role is never
+started to fill a slot.
+
+While work is moving, the executor runs targeted tests. The project's full test
+command and `qa/run-all.sh` run once as completion gates, and again only after a
+failure demanded a fix. One issue gets two review rounds: the initial review and one
+re-check after the fix. If it remains open, the loop stops and the facts go to the
+PM. A test-tool, fixture or verification-script flaw is blocking only when it makes
+the evidence invalid; otherwise it is an optional finding.
+
 Only one thing brings a reviewer back: a change made because of **its own** finding.
 A code change re-runs the code review, a documentation change the doc review, a
-security change the security review; the three never re-run together.
+security change the security review; the reviews never re-run together.
 
 **Why the wording had to change (ours).** The old rule was a permission:
 engineers *may* run at the same time when their files do not overlap. A
@@ -1127,19 +1141,33 @@ fix for a symptom passes: the engineer writes a test for the behaviour it decide
 to fix, and before it started, nobody else had said what "fixed" means. Two people,
 two moments: the PM says what fixed means, then the engineer proves it.
 
-**And this holds for every change, however small.** There used to be a third lane
-for the smallest work — a typo, a rename, a one-line fix — where the PM did it
-alone and wrote no document. That lane is gone. Two lanes are left: `ask`, where
+**And this holds for every change, however small.** Two lanes remain: `ask`, where
 the user wants an answer and nothing changes, and `team`, where something changes.
-**Anything that changes gets a milestone**, and a milestone holds at least one task,
-one round of QA, and one round of each of the three reviews.
+Inside `team`, the PM chooses a scale before starting any role. `direct` is the
+default for a small, low-risk, single-module change: the PM makes it without a
+child role. `crew` is for work that crosses modules, reaches a boundary contract,
+touches the closed security-risk list, needs design, cannot be tested sharply, or
+is too large to hold as one small change. **Anything that changes still gets a
+milestone**, but its scale decides whether that milestone carries one executor or
+the full crew.
 
-The old lane existed because the full loop used to cost hours: three rounds of code
-review, two of security review, and a round of QA per task. Principles 6 and 18 now
-put QA and the three reviews **once** at the end of the milestone, in parallel, on
-the changed part only — so a typo's full loop is minutes. The lane was a workaround
-for a cost that no longer exists, and it was buying that speed with the one thing
-this repository keeps losing: a change nobody else looked at.
+The earlier PM-only lane was unsafe because it dropped the record and the check at
+the same time. The `direct` scale keeps both: one test that really ran and one
+commit whose message holds the reason and real test numbers. It drops only the
+roles and documents that add no signal. If the PM write guard protects a product
+file, it still asks once per write; the scale never bypasses that guard.
+
+Principles 6 and 18 now put targeted tests inside development and the full gates at
+the end, start only the QA or reviewer whose subject changed, and stop one issue
+after two review rounds. The fastest correct route is therefore the default, while
+the full crew remains available for large, risky or cross-module work.
+
+**A finished stage stays finished across sessions.** `state.json` carries a
+`stages` checkpoint for each milestone step, with the document versions it judged.
+On resume, `done` and `skipped` are not repeated; `running` is repeated because it
+never finished; `stale` is repeated because a later change invalidated its evidence.
+A session ending is not itself a reason to mark anything stale. This keeps resume
+from buying the same evidence twice without weakening the check.
 
 **A milestone is not a release.** It is one full loop and one commit. Pushing a
 branch, pushing `main`, tagging a version and publishing a package each need the

@@ -23,6 +23,22 @@ const repoRoot = join(workdir, "repo");
 const ALLOWED = Symbol("allowed");
 
 /**
+ * Does `haystack` name the path `needle`, whichever separator this platform writes?
+ *
+ * Windows prints `C:\repo\src\foo.js` where CI on Linux prints `/repo/src/foo.js`,
+ * and a write reached through `..` or a symlink legitimately arrives in more than
+ * one spelling. Comparing the raw strings turned twelve assertions red on a
+ * Windows checkout while the guard behaved exactly as specified — a red about the
+ * separator, not about the write. The assertions are unchanged in strength: the
+ * path still has to be NAMED, and an unrelated path still fails.
+ */
+function namesPath(haystack, needle) {
+  if (typeof haystack !== "string" || typeof needle !== "string") return false;
+  return haystack.includes(needle)
+    || haystack.replaceAll("\\", "/").includes(needle.replaceAll("\\", "/"));
+}
+
+/**
  * A fake approval service that records every request and answers one scripted
  * outcome (a constant, or a function of the request).
  */
@@ -159,7 +175,7 @@ try {
       continue;
     }
     const req = rejecting2.requests[rejecting2.requests.length - 1];
-    if (req.toolName !== name || req.callId !== "call-root" || req.agent === undefined || !req.reason.includes(path)) {
+    if (req.toolName !== name || req.callId !== "call-root" || req.agent === undefined || !namesPath(req.reason, path)) {
       failures += 1;
       console.error(`FAIL  ${name} ${path}\n      the approval request does not name this write (${note}): ${JSON.stringify(req)}`);
       continue;
@@ -171,7 +187,7 @@ try {
   const blockedMessage = await runRoot(protectedHandler, "write", "src/foo.js");
   if (blockedMessage === ALLOWED
     || !blockedMessage.includes("pm-write-guard blocked")
-    || !blockedMessage.includes("src/foo.js")
+    || !namesPath(blockedMessage, "src/foo.js")
     || !/rejected|approval/i.test(blockedMessage)) {
     failures += 1;
     console.error(`FAIL  the refusal message is not actionable: ${String(blockedMessage)}`);
@@ -305,13 +321,13 @@ try {
     // The prompt and the refusal must name the file the write REALLY touches:
     // approving a harmless-looking typed name must not hide the real target.
     const req = normApproval.requests[0];
-    if (!req.reason.includes(realTarget)) {
+    if (!namesPath(req.reason, realTarget)) {
       failures += 1;
       console.error(`FAIL  the approval prompt does not name the REAL target ${realTarget}: ${req.reason}`);
-    } else if (!req.reason.includes("docs/design/CLAUDE.md")) {
+    } else if (!namesPath(req.reason, "docs/design/CLAUDE.md")) {
       failures += 1;
       console.error("FAIL  the approval prompt no longer names the typed path either");
-    } else if (!symlinkWrite.includes(realTarget)) {
+    } else if (!namesPath(symlinkWrite, realTarget)) {
       failures += 1;
       console.error(`FAIL  the refusal message does not name the REAL target ${realTarget}: ${symlinkWrite}`);
     } else {

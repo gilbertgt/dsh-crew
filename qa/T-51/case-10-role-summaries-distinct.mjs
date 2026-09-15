@@ -10,10 +10,9 @@
 // This also collects M3's DoD item 6: the summaries land in M1 and are checked
 // here.
 
-import { check, done, REPO } from "../lib/qa.mjs";
-import { join } from "node:path";
+import { check, done, importRepoModule } from "../lib/qa.mjs";
 
-const { ROLES } = await import(join(REPO, "host", "roles.js"));
+const { ROLES } = await importRepoModule("host/roles.js");
 const summary = (key) => ROLES.find((role) => role.key === key)?.summary ?? "";
 
 // --- the three lines this task rewrote, plus the solo line they are read against

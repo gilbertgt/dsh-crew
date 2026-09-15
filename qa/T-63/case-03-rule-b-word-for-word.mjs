@@ -47,9 +47,9 @@
 // PINNING STYLE: FLATTENED. Prose wraps; nothing here is read line by line
 // except the heading and the blockquote markers, which cannot wrap.
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, repoFile, flat, check, done } from "../lib/qa.mjs";
+import { REPO, repoFile, repoTextAt, flat, check, done } from "../lib/qa.mjs";
 
 const HEADING = "### Rule B, on the documents that judge your work";
 
@@ -165,7 +165,7 @@ check(
 );
 
 for (const name of roles) {
-  const text = readFileSync(join(REPO, "roles", name), "utf8");
+  const text = repoTextAt(join(REPO, "roles", name));
 
   // The paragraph the anchor sits in, so the comparison is equality on a block
   // rather than a substring search over the whole file. A paragraph is a run of

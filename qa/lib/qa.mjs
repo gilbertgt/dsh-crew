@@ -9,14 +9,41 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 
 /** Repository root: <repo>/qa/lib -> up two. */
 export const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-/** Read one repository file as text. */
-export const repoFile = (relative) => readFileSync(join(REPO, relative), "utf8");
+/**
+ * Rewrite CRLF as LF.
+ *
+ * Line endings are a CHECKOUT artifact, not repository content: git stores these
+ * files with LF, and `core.autocrlf` puts CRLF on disk on Windows. Two things go
+ * silently wrong when a case reads the raw bytes of a Windows checkout, and both
+ * make a true statement look false — a mutation anchor written `"a\nb"` never
+ * matches `"a\r\nb"`, and a line-anchored regex keeps the `\r` as a character and
+ * reports a line that IS there as missing. So every reader of repository text
+ * goes through here, exactly as `tempRepo()` normalizes its copies. Then a case
+ * behaves the same on Windows as it does in CI.
+ */
+export const asLf = (text) => text.replace(/\r\n/g, "\n");
+
+/** Read one repository file as text, LF-normalized. */
+export const repoFile = (relative) => asLf(readFileSync(join(REPO, relative), "utf8"));
+
+/** Read an absolute path inside the repository as text, LF-normalized. */
+export const repoTextAt = (absolute) => asLf(readFileSync(absolute, "utf8"));
+
+/**
+ * Import one repository module, portably.
+ *
+ * `import("C:\\…")` fails on Windows with ERR_UNSUPPORTED_ESM_URL_SCHEME — the ESM
+ * loader takes a file URL, never a drive-letter path — while the same line works
+ * in CI on Linux, so the bug only ever shows up on a contributor's machine. Every
+ * case that loads `host/` code goes through here instead.
+ */
+export const importRepoModule = (relative) => import(pathToFileURL(join(REPO, relative)).href);
 
 /** The PM prompt file, the deliverable most checks are about. */
 export const pm = () => repoFile("roles/pm.md");
@@ -76,6 +103,49 @@ export function tempDir(prefix = "crew-qa-") {
 }
 
 /**
+ * Rewrite every CRLF in a copied tree as LF, in place.
+ *
+ * Only files that really contain a CRLF are rewritten, so a copy of an
+ * already-LF checkout is byte-for-byte what `cpSync` produced and this pass
+ * costs nothing there (which is the case in CI). Bytes are compared as buffers:
+ * a file is never decoded, so a copy's bytes are never changed in any other way.
+ *
+ * @param root - the copied folder to normalize
+ */
+function normalizeToLf(root) {
+  let entries;
+  try {
+    entries = readdirSync(root, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "node_modules") continue;
+      normalizeToLf(path);
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    let bytes;
+    try {
+      bytes = readFileSync(path);
+    } catch {
+      continue; // an unreadable file is not this pass's problem
+    }
+    if (!bytes.includes(13)) continue;
+    const normalized = Buffer.alloc(bytes.length);
+    let written = 0;
+    for (let index = 0; index < bytes.length; index += 1) {
+      if (bytes[index] === 13 && bytes[index + 1] === 10) continue;
+      normalized[written] = bytes[index];
+      written += 1;
+    }
+    writeFileSync(path, normalized.subarray(0, written));
+  }
+}
+
+/**
  * Copy the parts of the repository the check scripts need into a throwaway
  * folder, so a case can break a file on purpose without touching the
  * repository. `node_modules` is symlinked, never copied: it is only read.
@@ -106,9 +176,22 @@ export function tempRepo() {
     // the copy, not about the repository. Only the task table is copied, not all
     // of `docs/`: nothing a check reads lives elsewhere under it, and `qa/`
     // holds these cases themselves, which no check in a copy ever runs.
-    for (const entry of ["package.json", "cordis.patch.yml", "host", "roles", "preset", "tools", ".github", join("docs", "tasks")]) {
+    // `client/` is the fourth such entry, and the newest: dsh loads
+    // `exports["./client"]`, so T-42's package-shape pins inside
+    // `tools/verify-mount.mjs` read it. Without the folder every copy failed on
+    // "client/crew-settings.js is missing" — a red about the copy.
+    //
+    // A copy is NORMALIZED TO LF. Git stores these files with LF and CI checks
+    // out with LF, so a Windows checkout (where `core.autocrlf` leaves CRLF on
+    // disk) would otherwise run every case against different bytes than CI. The
+    // failure that costs is silent and confusing: a mutation anchor written as
+    // `"a\nb"` never matches `"a\r\nb"`, so `edit()` throws "anchor not found"
+    // on a file the author can plainly see, and a line-anchored regex keeps the
+    // `\r` as a character and reports a line that IS there as missing.
+    for (const entry of ["package.json", "cordis.patch.yml", "host", "roles", "preset", "tools", "client", ".github", join("docs", "tasks")]) {
       cpSync(join(REPO, entry), join(dir, entry), { recursive: true });
     }
+    normalizeToLf(dir);
     const modules = join(REPO, "node_modules");
     if (existsSync(modules)) {
       try {
@@ -334,7 +417,7 @@ export function expectGreen(run, what) {
  * touches the real ~/.dsh/crew/push-ok.
  */
 export async function mountGuard(config = {}) {
-  const guard = await import(join(REPO, "host", "git-guard.js"));
+  const guard = await importRepoModule("host/git-guard.js");
   const dir = tempDir("crew-qa-guard-");
   const approvalFile = config.approvalFile ?? join(dir, "push-ok");
   const cleanRepo = join(dir, "no-ci-repo");
@@ -365,7 +448,7 @@ export const APPROVAL_RULE = "it touches the push approval file";
  * read or written.
  */
 export async function mountCrew(config = {}) {
-  const crew = await import(join(REPO, "host", "crew.js"));
+  const crew = await import(pathToFileURL(join(REPO, "host", "crew.js")).href);
   const dir = tempDir("crew-qa-crew-");
   const logs = [];
   const sections = [];

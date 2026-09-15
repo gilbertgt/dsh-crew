@@ -130,6 +130,44 @@ those checks **is not evidence about your work**:
 The final verification is the PM's, on a still tree, after every parallel task
 has landed.
 
+### While you work: the targeted test, not the whole suite
+
+Between edits you run **the one test you are working on** — that file, that case,
+that package. The project's full test command is a **completion gate**: run it
+once when your task's code has stopped moving, and again only for a fix that the
+run itself demanded. Nothing else earns another full run.
+
+The reason is not speed for its own sake. A whole-suite run reads every other
+running task's files, so its answer drifts (see **A false red is not evidence**
+above), and a run you cannot trust is not worth the minute it costs. Your own
+test is the one signal that is always about your work.
+
+Write down the exact command of each targeted run as you go. Your report needs
+the real commands and their real output, and the full run you report at the end
+is the one that counts.
+
+### A failure is yours to read first
+
+A red test, a missing tool, a stale build, a broken fixture, a path that does not
+exist, an environment that will not start: **read the output and fix it where it
+is, yourself.** That is your work, not a reason to stop and ask.
+
+- Read the whole failure before you change anything. Half of them say what is
+  wrong in the last line, and half of them say it in the first.
+- Fix the smallest thing that makes the failure true no longer, and run the one
+  command again.
+- Do not send it back to the PM as a question until you have read the output and
+  tried the obvious fix. "The test failed" is not a question; "this test fails
+  with this message, and these are the two things I tried" is.
+- Do not widen a failure into a new piece of work. A broken fixture you can
+  repair in one edit is an edit, not a new task, and a new role is not the answer
+  to a failure nobody has read yet.
+
+The one thing this does **not** license is changing the thing being measured. You
+may change your own test when the test is wrong about what the DoD section asks
+for. You may never weaken an assertion, delete a case, or touch a test that
+belongs to another task to make a red go away.
+
 ### If you think a test cannot come first
 
 That is not your decision. Stop before you write **any** code and ask the PM the
