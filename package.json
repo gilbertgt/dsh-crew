@@ -13,6 +13,14 @@
           "path": "./preset/crew"
         }
       ]
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-api-remotes"
+      ],
+      "platform": "web"
     }
   },
   "description": "DeepSeek Harness (dsh) plugin: run work as a small crew of role agents (product manager, researcher, architect, engineer, test engineer, code engineer, QA, code reviewer, security reviewer, doc reviewer) that talk through files on disk, with the PM as the only voice to the user.",
@@ -55,27 +63,36 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node tools/verify-guard.mjs && node tools/verify-pm-write-guard.mjs && node tools/verify-rule-guard-map.mjs && node tools/verify-jobs.mjs && node tools/verify-mount.mjs && node tools/verify-preset-install.mjs && bash qa/run-all.sh && node tools/verify-tasks.mjs"
+    "test": "node tools/verify-guard.mjs && node tools/verify-pm-write-guard.mjs && node tools/verify-rule-guard-map.mjs && node tools/verify-jobs.mjs && node tools/verify-role-settings.mjs && node tools/verify-client-boot-graph.mjs && node tools/verify-mount.mjs && node tools/verify-preset-install.mjs && bash qa/run-all.sh && node tools/verify-tasks.mjs"
   },
   "exports": {
+    ".": "./host/crew.js",
     "./host/crew.js": "./host/crew.js",
     "./host/roles-preset.js": "./host/roles-preset.js",
     "./host/git-guard.js": "./host/git-guard.js",
     "./host/pm-write-guard.js": "./host/pm-write-guard.js",
+    "./host/roles-settings.js": "./host/roles-settings.js",
     "./package.json": "./package.json",
-    "./host/jobs.js": "./host/jobs.js"
+    "./host/jobs.js": "./host/jobs.js",
+    "./client": "./client/crew-settings.js"
   },
   "files": [
     "principles.md",
     "host",
     "roles",
     "preset",
+    "client",
+    "docs/crew-settings-research.md",
+    "docs/crew-settings-design.md",
     "cordis.patch.yml",
     "README.md",
     "README-zh.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.2"
+  },
   "peerDependencies": {
     "@deepseek-ai/dsh-tool-subagent": "*"
   },

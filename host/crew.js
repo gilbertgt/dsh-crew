@@ -20,7 +20,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { DEFAULT_JOBS_DIR, jobsNotice } from "./jobs.js";
-import { PM_PERSONA_FILE, ROLES, expandHome, readRoleText } from "./roles.js";
+import { PM_PERSONA_FILE, ROLES, TAIWAN_LANGUAGE_POLICY, expandHome, readRoleText } from "./roles.js";
 
 export const name = "dsh-crew-core";
 export const inject = ["systemPrompt"];
@@ -98,8 +98,12 @@ function bootLog(ctx, note) {
   else console.log(note);
 }
 
-/** Stamp file recording which version of this package wrote the preset folder. */
+/** Stamp file recording which version and shipped-preset revision wrote the folder. */
 const STAMP_FILE = ".installed-by-dsh-crew";
+// The package version stays at the released value until release day. This
+// revision lets a development build refresh changed shipped files without
+// pretending that the npm version was already released.
+const PRESET_REVISION = "2";
 
 /**
  * The installed files that differ from the copy this package shipped — in other
@@ -120,38 +124,102 @@ function editedFiles(target, source, prefix = "") {
   let entries;
   try {
     entries = readdirSync(join(target, prefix), { withFileTypes: true });
-  } catch {
-    return edits; // unreadable: nothing we can save, and not worth failing boot
+  } catch (error) {
+    throw new Error(`dsh-crew: could not inspect edited preset path ${prefix || "."} before upgrade: ${error?.message ?? String(error)}`);
   }
   for (const entry of entries) {
     const rel = prefix ? join(prefix, entry.name) : entry.name;
     if (rel === STAMP_FILE) continue; // ours, and rewritten every time
+    if (entry.name.endsWith(".bak")) continue; // carried separately; never turn it into .bak.bak
     if (entry.isDirectory()) {
       edits.push(...editedFiles(target, source, rel));
       continue;
     }
-    if (!entry.isFile()) continue;
+    if (!entry.isFile()) {
+      throw new Error(`dsh-crew: cannot preserve unsupported edited preset entry ${rel} before upgrade`);
+    }
+
     let mine;
     try {
-      mine = readFileSync(join(target, rel), "utf8");
-    } catch {
-      continue; // binary or unreadable; the shipped preset holds neither
+      mine = readFileSync(join(target, rel));
+    } catch (error) {
+      throw new Error(`dsh-crew: could not read edited preset file ${rel} before upgrade: ${error?.message ?? String(error)}`);
     }
     let shipped;
     try {
-      shipped = readFileSync(join(source, rel), "utf8");
-    } catch {
+      shipped = readFileSync(join(source, rel));
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        throw new Error(`dsh-crew: could not read shipped preset file ${rel}: ${error?.message ?? String(error)}`);
+      }
       shipped = undefined; // a file the user added
     }
-    if (mine !== shipped) edits.push([rel, mine]);
+    if (shipped === undefined || !mine.equals(shipped)) edits.push([rel, mine]);
   }
   return edits;
 }
 
+/** Collect earlier .bak files so replacing the preset cannot delete recovery copies. */
+function existingBackups(target, prefix = "") {
+  const backups = [];
+  let entries;
+  try {
+    entries = readdirSync(join(target, prefix), { withFileTypes: true });
+  } catch (error) {
+    throw new Error(`dsh-crew: could not inspect existing preset backups at ${prefix || "."}: ${error?.message ?? String(error)}`);
+  }
+  for (const entry of entries) {
+    const rel = prefix ? join(prefix, entry.name) : entry.name;
+    if (rel === STAMP_FILE) continue;
+    if (entry.isDirectory()) {
+      backups.push(...existingBackups(target, rel));
+      continue;
+    }
+    if (!entry.name.endsWith(".bak")) {
+      if (!entry.isFile()) throw new Error(`dsh-crew: cannot preserve unsupported preset entry ${rel} before upgrade`);
+      continue;
+    }
+    if (!entry.isFile()) {
+      throw new Error(`dsh-crew: cannot preserve unsupported preset backup ${rel} before upgrade`);
+    }
+    try {
+      backups.push([rel, readFileSync(join(target, rel))]);
+    } catch (error) {
+      throw new Error(`dsh-crew: could not read existing preset backup ${rel}: ${error?.message ?? String(error)}`);
+    }
+  }
+  return backups;
+}
+
+/**
+ * Write a durable sibling archive before deleting the installed preset. The
+ * target's user-facing .bak copies are still recreated below, while this archive
+ * makes a failed post-delete write recoverable and retains colliding old backups.
+ */
+function writeBackupArchive(home, entries) {
+  const root = join(home, ".agent-presets", `${PRESET_ID}.backups`);
+  mkdirSync(root, { recursive: true });
+  let archive = join(root, `upgrade-${Date.now()}`);
+  let suffix = 1;
+  while (existsSync(archive)) archive = join(root, `upgrade-${Date.now()}-${suffix++}`);
+  mkdirSync(archive, { recursive: true });
+  try {
+    for (const [rel, contents] of entries) {
+      const destination = join(archive, rel);
+      mkdirSync(dirname(destination), { recursive: true });
+      writeFileSync(destination, contents);
+    }
+  } catch (error) {
+    throw new Error(`dsh-crew: could not write the durable preset backup archive ${archive}: ${error?.message ?? String(error)}`);
+  }
+  return archive;
+}
+
 /**
  * Copy the shipped `crew` preset into the harness home so dsh's preset roster
- * finds it. Idempotent: a stamp file records which version wrote the folder, so
- * an unchanged version copies nothing and an upgrade refreshes it.
+ * finds it. Idempotent: a stamp file records which package version and shipped
+ * preset revision wrote the folder, so unchanged content copies nothing and a
+ * revision or version upgrade refreshes it.
  *
  * An upgrade REPLACES the folder, so any file the user edited is first read and
  * then written back beside the new one as `<name>.bak`, and named in the boot
@@ -173,19 +241,40 @@ function installPreset(version) {
   if (!existsSync(source)) throw new Error(`dsh-crew: shipped preset missing at ${source}`);
 
   let edits = [];
+  let previousBackups = [];
+  let archive;
   if (existsSync(target)) {
     if (!existsSync(stamp)) return `dsh-crew: left the existing "${PRESET_ID}" preset alone (not written by dsh-crew)`;
-    if (readFileSync(stamp, "utf8").trim() === version) return undefined; // already current
+    const [installedVersion, installedRevision] = readFileSync(stamp, "utf8").split(/\r?\n/);
+    if (installedVersion === version && installedRevision === PRESET_REVISION) return undefined; // already current
     edits = editedFiles(target, source);
+    previousBackups = existingBackups(target);
+    const preserved = [...edits, ...previousBackups];
+    // Archive before rmSync: a permission or disk failure while recreating a
+    // target-side .bak must never turn an upgrade into silent data loss.
+    if (preserved.length > 0) archive = writeBackupArchive(home, preserved);
     rmSync(target, { recursive: true, force: true });
   }
 
   mkdirSync(dirname(target), { recursive: true });
   cpSync(source, target, { recursive: true });
-  writeFileSync(stamp, `${version}\n`);
+  writeFileSync(stamp, `${version}\n${PRESET_REVISION}\n`);
 
   const lines = [`dsh-crew: installed the "${PRESET_ID}" agent preset (${version})`];
   const kept = [];
+  const carried = [];
+  const currentBackupPaths = new Set(edits.map(([rel]) => `${rel}.bak`));
+  for (const [rel, contents] of previousBackups) {
+    if (currentBackupPaths.has(rel)) continue; // the current edit gets the user-facing .bak name
+    const backup = join(target, rel);
+    try {
+      mkdirSync(dirname(backup), { recursive: true });
+      writeFileSync(backup, contents);
+      carried.push(rel);
+    } catch {
+      lines.push(`dsh-crew: WARNING — could not carry forward the existing ${rel}; the durable archive remains at ${archive}.`);
+    }
+  }
   for (const [rel, contents] of edits) {
     const backup = join(target, `${rel}.bak`);
     try {
@@ -193,15 +282,19 @@ function installPreset(version) {
       writeFileSync(backup, contents);
       kept.push(`${rel}.bak`);
     } catch {
-      lines.push(`dsh-crew: WARNING — could not keep a copy of your edited ${rel}; the upgrade replaced it.`);
+      lines.push(`dsh-crew: WARNING — could not keep a copy of your edited ${rel}; the durable archive remains at ${archive}.`);
     }
   }
   if (kept.length > 0) {
     lines.push(
       `dsh-crew: the upgrade replaced files you had edited. Your versions are kept as ${kept.join(", ")} in ${target}.`,
-      "dsh-crew: settings there do NOT carry over by themselves — re-apply your roleAllow / roleDeny / roleModels changes to the new agent.cordis.yml.",
+      "dsh-crew: edits in agent.cordis.yml do NOT carry over by themselves — re-apply your roleAllow / roleDeny / legacy roleModels changes there. Durable dsh-crew-roles Web settings live outside this preset.",
     );
   }
+  if (carried.length > 0) {
+    lines.push(`dsh-crew: carried forward earlier backup files: ${carried.join(", ")}.`);
+  }
+  if (archive !== undefined) lines.push(`dsh-crew: durable pre-upgrade copies are also kept at ${archive}.`);
   return lines.join("\n");
 }
 
@@ -271,7 +364,7 @@ export function apply(ctx, config) {
   ctx.effect(() => ctx.systemPrompt.section({
     name: PM_SECTION_NAME,
     order: PM_SECTION_ORDER,
-    text: `${pmText}\n\n${runtimeFactsSection(limits)}`,
+    text: `${pmText}\n\n${TAIWAN_LANGUAGE_POLICY}\n\n${runtimeFactsSection(limits)}`,
   }), "dsh-crew: PM prompt section");
 
   // Unfinished work is pushed at the PM, not left for it to remember. Evaluated

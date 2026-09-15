@@ -21,7 +21,7 @@
 # starts. Configure the roles in that file; configure the PM here.
 - insert:
     - id: dsh-crew-core
-      name: 'dsh-crew/host/crew.js'
+      name: 'dsh-crew'
       # config:
       #   # Folder holding your own role markdown files. A file found here
       #   # replaces the one shipped in the package (same file name).

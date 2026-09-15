@@ -8,9 +8,10 @@
 // not to have.
 //
 // Each role becomes one `@deepseek-ai/dsh-tool-subagent` instance carrying:
-//   - its persona   -> roles/<role>.md, rendered as the child's own
-//                      `deployment:persona`, so the child cannot talk itself
-//                      into another job;
+//   - its persona   -> roles/<role>.md plus the language policy, rendered as the
+//                      child's own `deployment:persona-prefix` scope section;
+//                      it shadows the inherited prefix so the child cannot talk
+//                      itself into another job;
 //   - its filter    -> `allow` (reviewers: read only) or `deny` (makers: no
 //                      crew tools), enforced by `tools.restrict()`;
 //   - `maxDepth: 1` -> only the root PM can start a role, whatever the filter
@@ -18,9 +19,25 @@
 
 import * as toolSubagent from "@deepseek-ai/dsh-tool-subagent";
 
-import { ROLES, readRoleText } from "./roles.js";
+import {
+  CREW_SETTINGS_NAMESPACE,
+  CREW_SETTINGS_SCHEMA,
+  cloneRoleModels,
+  crewSettingsEntry,
+  roleAgentOptions,
+  roleModelFor,
+} from "./roles-settings.js";
+import { ROLES, TAIWAN_LANGUAGE_POLICY, readRoleText } from "./roles.js";
 
 export const name = "dsh-crew-roles";
+
+const hasOwn = (value, key) => value !== null
+  && (typeof value === "object" || typeof value === "function")
+  && Object.prototype.hasOwnProperty.call(value, key);
+const configValueFor = (config, field, roleKey) => {
+  const map = hasOwn(config, field) ? config[field] : undefined;
+  return hasOwn(map, roleKey) ? map[roleKey] : undefined;
+};
 
 export function apply(ctx, config) {
   const rolesDir = config?.rolesDir;
@@ -60,7 +77,7 @@ export function apply(ctx, config) {
   // halfway through somebody's job.
   for (const role of ROLES) {
     for (const field of ["roleAllow", "roleDeny"]) {
-      const configured = config?.[field]?.[role.key];
+      const configured = configValueFor(config, field, role.key);
       if (configured === undefined || configured === null) continue;
       if (Array.isArray(configured) && configured.length > 0) continue;
 
@@ -84,18 +101,42 @@ export function apply(ctx, config) {
     }
   }
 
-  for (const role of ROLES) {
+  // Read once so settings changes can reload the tool instance without
+  // re-reading user files or changing the role/filter safety boundary.
+  const personas = new Map(ROLES.map((role) => [
+    role.key,
+    `${readRoleText(role.personaFile, rolesDir)}\n\n${TAIWAN_LANGUAGE_POLICY}`,
+  ]));
+  // Read and validate the legacy fallback BEFORE anything mounts, so a broken
+  // legacy route gives NO crew rather than half a crew — the same reason the
+  // filter pass above runs first. The settings provider validates the same entry
+  // as its composition base, and a throw after the mounts would leave a partial
+  // crew with no clear message about which line to fix.
+  let roleModels;
+  try {
+    roleModels = cloneRoleModels(config?.roleModels);
+  } catch (error) {
+    throw new Error(`dsh-crew: the legacy roleModels entry in the crew preset is not usable (${error?.message ?? String(error)}). Fix that line, or delete it and configure the roles in the dsh-crew-roles Web Settings card instead. dsh-crew will not start with a partial crew.`);
+  }
+  const fibers = new Map();
+  const signatures = new Map();
+  /** Last config of each role that really went live, for rollback after a rejected update. */
+  const liveConfigs = new Map();
+  const updateTails = new Map();
+
+  /** Build one complete tool-subagent config from the current role settings. */
+  const roleConfig = (role) => {
     // A role ships either an allow list (everything else is closed) or a deny
     // list. `roleAllow` / `roleDeny` replace the shipped list for that role.
-    const allow = config?.roleAllow?.[role.key] ?? role.allow;
-    const deny = config?.roleDeny?.[role.key] ?? role.deny;
+    const allow = configValueFor(config, "roleAllow", role.key) ?? role.allow;
+    const deny = configValueFor(config, "roleDeny", role.key) ?? role.deny;
     const filter = {
       ...allow?.length > 0 ? { allow } : {},
       ...deny?.length > 0 ? { deny } : {},
     };
-    const model = config?.roleModels?.[role.key];
+    const agentOptions = roleAgentOptions(roleModelFor(roleModels, role.key));
 
-    ctx.plugin(toolSubagent, {
+    return {
       provider: "spawn",
       toolName: role.toolName,
       // Continuable children can be messaged again (`send_message`) and can
@@ -103,10 +144,116 @@ export function apply(ctx, config) {
       backgroundMode: "continuable",
       // Read at mount: a missing or broken role file must break startup with a
       // clear message, not surface halfway through a job.
-      persona: readRoleText(role.personaFile, rolesDir),
+      persona: personas.get(role.key),
       ...Object.keys(filter).length > 0 ? { toolFilter: filter } : {},
       maxDepth: 1,
-      ...model?.model ? { agentOptions: { ...model.provider ? { provider: model.provider } : {}, model: model.model } } : {},
+      ...agentOptions === undefined ? {} : { agentOptions },
+    };
+  };
+
+  /** Report a live settings reload failure without breaking the PM prompt. */
+  const reportUpdateFailure = (role, error) => {
+    const logger = typeof ctx?.logger === "function" ? ctx.logger("dsh-crew") : undefined;
+    const message = `dsh-crew: could not apply settings for ${role.toolName}: ${error?.message ?? String(error)}`;
+    if (typeof logger?.warn === "function") logger.warn(message);
+    else if (typeof logger?.info === "function") logger.info(message);
+    else console.warn(message);
+  };
+
+  /**
+   * Update one standing role tool in order; Fiber.update performs a safe reload.
+   *
+   * A live Cordis `Fiber.update` writes the new config first and then restarts
+   * the fiber, and a failed restart leaves the fiber inactive with NO rollback
+   * of its own. So this keeps the last config that really went live and puts it
+   * back when the new one is rejected: without that, one bad settings value (a
+   * provider that just went away, say) would delete a role tool that was working
+   * a moment ago, and the PM would lose a role until the next dsh restart.
+   */
+  const updateRole = (role, next) => {
+    const previous = updateTails.get(role.key) ?? Promise.resolve();
+    const tail = previous.catch(() => {}).then(async () => {
+      const fiber = fibers.get(role.key);
+      if (typeof fiber?.update !== "function") return;
+      try {
+        await fiber.update(next);
+        liveConfigs.set(role.key, next);
+        signatures.set(role.key, JSON.stringify(next));
+      } catch (error) {
+        reportUpdateFailure(role, error);
+        const lastGood = liveConfigs.get(role.key);
+        if (lastGood === undefined || lastGood === next) return;
+        try {
+          await fiber.update(lastGood);
+          signatures.set(role.key, JSON.stringify(lastGood));
+        } catch (restoreError) {
+          reportUpdateFailure(role, restoreError);
+        }
+      }
+    });
+    updateTails.set(role.key, tail);
+  };
+
+  /**
+   * Reconcile settings changes without remounting a second copy of a tool.
+   *
+   * A signature is advanced only when the new config really went live (inside
+   * `updateRole`), so a rejected change is retried by the next settings event
+   * instead of being remembered as applied.
+   */
+  const refreshRoleTools = () => {
+    for (const role of ROLES) {
+      const next = roleConfig(role);
+      const signature = JSON.stringify(next);
+      if (signatures.get(role.key) === signature) continue;
+      updateRole(role, next);
+    }
+  };
+
+  // Mount every role before attaching the optional settings provider. That
+  // preserves the old no-settings path and gives settings reloads a Fiber to
+  // update when the Web host is present.
+  for (const role of ROLES) {
+    const next = roleConfig(role);
+    signatures.set(role.key, JSON.stringify(next));
+    liveConfigs.set(role.key, next);
+    fibers.set(role.key, ctx.plugin(toolSubagent, next));
+  }
+
+  // The settings service is optional outside Web. When it is present, its
+  // resolved namespace becomes the one live source for subsequent role-tool
+  // updates; its composition base is the legacy roleModels map above.
+  if (typeof ctx?.inject === "function") {
+    ctx.inject(["settings"], (settingsCtx) => {
+      if (typeof settingsCtx?.settings?.installSection !== "function") return;
+      let source = () => ({ roleModels });
+      settingsCtx.settings.installSection(
+        ctx,
+        CREW_SETTINGS_NAMESPACE,
+        CREW_SETTINGS_SCHEMA,
+        crewSettingsEntry(config),
+        {
+          setSource: (nextSource) => {
+            source = nextSource;
+          },
+          onChange: () => {
+            // A settings provider can hand back anything. Read the resolved
+            // layer, but keep the last good map when it is not usable: throwing
+            // here would surface inside the settings host, far from the edit
+            // that caused it, and leaving the old routes in place is the safe
+            // half of the trade (the role tools never lose their filter).
+            let next;
+            try {
+              next = cloneRoleModels(source()?.roleModels);
+            } catch (error) {
+              reportUpdateFailure({ toolName: `${CREW_SETTINGS_NAMESPACE} settings` }, error);
+              return;
+            }
+            roleModels = next;
+            refreshRoleTools();
+          },
+        },
+      );
     });
   }
 }
