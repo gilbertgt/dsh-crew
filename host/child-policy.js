@@ -18,34 +18,18 @@
 //   4. The language policy — see `TAIWAN_LANGUAGE_POLICY` in `host/roles.js`.
 //
 // The order is fixed and is part of the contract: `CHILD_POLICY_ORDER` is the
-// list, and `qa/T-138` pins it. The layers are joined by one blank line, because
-// a heading from one layer must never glue itself to the paragraph above it.
-//
-// WHERE THE COMMON LAYER LANDS, AND WHY IT IS NOT SIMPLY FIRST. The shared rules
-// close the `## What you may write` section — they are the answer to "what may I
-// write", not a preface — so a role file leaves the marker `<!-- crew-common -->`
-// at the point where they belong and this module puts them there. A role file
-// with no marker gets them at the top instead, which is the safe fallback: the
-// rules still reach the child, and `qa/T-138` reports the file so the marker can
-// be added. What the marker buys is that the position of the rules inside a
-// persona is a decision, made once, instead of nine copies drifting apart.
+// list, the layers are joined in exactly that order, and `qa/T-138/case-03`
+// asserts the resulting positions in the composed text. A list that no longer
+// matched the concatenation would be a claim about the prompt that nothing checks
+// — which is the state this file was in before, when the common layer was placed
+// by a marker inside each role file.
 //
 // This module is the single source of truth for those shared rules. It is read by
 // `host/roles-preset.js` when it mounts a role tool, and by the QA cases that ask
 // what a child really has in front of it.
 
-/** The layer names. `common` is positioned by the marker; the rest follow the role text. */
+/** The layer names, in the order `composeChildPersona` concatenates them. */
 export const CHILD_POLICY_ORDER = ["common", "shape", "role", "language"];
-
-/**
- * Where a role file says the shared rules belong.
- *
- * It is an HTML comment on purpose: a role file is also read by people and by
- * `tools/verify-mount.mjs`, and a comment cannot be mistaken for prose a model
- * should follow. It never reaches the composed persona — `composeChildPersona`
- * replaces it with `COMMON_CHILD_POLICY`.
- */
-export const COMMON_MARKER = "<!-- crew-common -->";
 
 /**
  * Layer 1: what every crew role carries, whatever its job.
@@ -128,32 +112,35 @@ export function shapePolicyFor(policy) {
 }
 
 /**
- * Build one child persona out of its four layers.
+ * Build one child persona out of its four layers, **in `CHILD_POLICY_ORDER`**.
+ *
+ * The order is the contract, and it is a literal one: the layers are concatenated
+ * common, shape, role, language, so a reader can find the shared rules first, the
+ * shape rules next, the role's own text after them, and the language policy last.
+ * `qa/T-138/case-03` asserts those positions in the composed text rather than
+ * trusting this list.
  *
  * An empty layer is dropped rather than joining a blank line for nothing, so a
  * role that carries neither maker nor reviewer policy gets three layers and no
  * gap where the fourth would be.
- *
- * The role text is placed first and the shape and language layers follow it. The
- * common layer goes where the role file's marker says; without a marker it goes
- * on top, so a rule is never lost to a missing comment.
  *
  * @param layers.roleText - the shipped (or the user's own) `roles/<role>.md`
  * @param layers.policy - `"maker"`, `"reviewer"`, or anything else for none
  * @param layers.languagePolicy - the Taiwan language policy, appended last
  */
 export function composeChildPersona({ roleText, policy, languagePolicy }) {
-  const role = (roleText ?? "").trim();
-  const common = COMMON_CHILD_POLICY.trim();
-  if (role.split(COMMON_MARKER).length > 2) {
-    throw new Error(`dsh-crew: a role file carries ${COMMON_MARKER} more than once; the shared rules would be inserted twice`);
+  const byLayer = {
+    common: COMMON_CHILD_POLICY,
+    shape: shapePolicyFor(policy),
+    role: roleText,
+    language: languagePolicy,
+  };
+  const unknown = Object.keys(byLayer).filter((layer) => !CHILD_POLICY_ORDER.includes(layer));
+  if (unknown.length > 0) {
+    throw new Error(`dsh-crew: CHILD_POLICY_ORDER does not name the layer(s) ${unknown.join(", ")}, so composing a persona would silently drop them`);
   }
-  const withCommon = role.includes(COMMON_MARKER)
-    ? role.split(COMMON_MARKER).join(common)
-    : [common, role].filter((layer) => layer.length > 0).join("\n\n");
-  return [
-    withCommon,
-    shapePolicyFor(policy),
-    languagePolicy,
-  ].map((layer) => (layer ?? "").trim()).filter((layer) => layer.length > 0).join("\n\n");
+  return CHILD_POLICY_ORDER
+    .map((layer) => (byLayer[layer] ?? "").trim())
+    .filter((layer) => layer.length > 0)
+    .join("\n\n");
 }

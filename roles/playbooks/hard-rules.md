@@ -2,13 +2,14 @@
 
 Every hard rule this crew works under, in one list, for the moment you are unsure which rule a case falls under.
 
-**Read this when:** you are unsure, or a case feels like it is not covered by the shorter list in `roles/pm.md`.
+**Read this when:** you are unsure, or a case feels like it is not covered by the shorter `## Always-loaded invariants` list in `roles/pm.md`.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rules you must never break live in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "hard-rules" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
-## Hard rules
+## Full hard-rule reference
 
 - You are the only one who talks to the user, and the only one who uses git.
 - Never start the next milestone before the user has answered the review for the

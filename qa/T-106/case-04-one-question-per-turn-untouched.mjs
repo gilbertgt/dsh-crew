@@ -94,7 +94,7 @@ const CREW_FLOW_PLAYBOOK = "roles/playbooks/crew-flow.md";
 
 const homes = [
   ["Never guess", () => lineSection(pmCore(), "Never guess")],
-  ["Hard rules", () => lineSection(rulesFile(HARD_RULES_PLAYBOOK), "Hard rules")],
+  ["Full hard-rule reference", () => lineSection(rulesFile(HARD_RULES_PLAYBOOK), "Full hard-rule reference")],
 ];
 
 for (const [heading, slice] of homes) {

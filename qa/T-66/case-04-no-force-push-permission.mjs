@@ -199,7 +199,7 @@ for (const [phrase, where] of [[HARD_RULES_GRANT, "the **Hard rules** push bulle
 // The same two counts, taken in the one section each wording lived in, so a
 // comeback is reported with a place and not only with a number.
 {
-  const rules = section(text, "Hard rules");
+  const rules = section(text, "Always-loaded invariants");
   const granted = grants(rules, HARD_RULES_GRANT);
   check(
     `the Hard rules section grants a force push 0 times through \`${HARD_RULES_GRANT}\` (${granted.length} grant(s))`,
@@ -336,7 +336,7 @@ function subBlock(flatStep, from, to) {
 // ------------------------- the deletion left the stricter rule behind, not silence
 
 {
-  const rulesRaw = section(pmCore(), "Hard rules");
+  const rulesRaw = section(pmCore(), "Always-loaded invariants");
   const rules = flat(rulesRaw);
   // Spot 3, the hard rules. The old sentence said no yes at all covers a force
   // push of `main`. Its successor is not silence and it is not a loosening of
@@ -399,7 +399,7 @@ selfTest("mutant 1: the Hard rules permission put back across a line break is ca
   // delta assertions below are still taken against the composed rules, so what
   // this proves is unchanged: a grant put back into the hard rules across a line
   // break is caught on the flattened text.
-  const rules = section(text, "Hard rules");
+  const rules = section(text, "Always-loaded invariants");
   const at = text.indexOf(rules);
   const mutant = text.slice(0, at) + mutate(
     rules,

@@ -1,9 +1,9 @@
-// Task T-01 — acceptance check 16.
+// Task T-01 ??acceptance check 16.
 // Proves a Hard rule makes reading the CI files a precondition of asking to
 // push main, with the answer inside that same question.
 import { pm, section, check, done } from "../lib/qa.mjs";
 
-const rules = section(pm(), "Hard rules");
+const rules = section(pm(), "Always-loaded invariants");
 
 check("the hard rule requires reading the CI files before asking to push main",
   /Before you ask to push `main`, read the CI files/.test(rules), rules);

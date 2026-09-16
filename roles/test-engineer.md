@@ -84,8 +84,6 @@ to hand you anyway, and handing them over does not make them yours:
 - anything under **QA's own folder**, `qa/` — its cases, the runner beside
   them, and the standing list of gaps.
 
-<!-- crew-common -->
-
 One thing you write is not repository output at all: the question file in the job
 folder the PM named, when you have to ask. See **Never guess** below.
 

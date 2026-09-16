@@ -299,7 +299,9 @@ function audit(text) {
     /The `solo` flow, in full/i.test(flatLane)
       && /Read the repository first/i.test(flatLane)
       && /Ask at most one question/i.test(flatLane)
-      && /Write the task row/i.test(flatLane)
+      // V2: `solo`'s third bullet writes the TaskBrief, not a task row — the route
+      // has no task table, and its brief is the whole contract with the engineer.
+      && /Write the TaskBrief/i.test(flatLane)
       && /Start one `crew_engineer`/i.test(flatLane)
       && /never opens\s+an opening document/i.test(flatLane),
     `step 1 does not spell out the five-line \`solo\` flow and what it never does: ${JSON.stringify(flatLane.slice(0, 400))}`,
@@ -663,7 +665,7 @@ const soloAdrGone = afterBreaking((dir) => {
   edit(
     dir,
     "roles/pm.md",
-    "A choice that deserves its own\nrecord **is** `solo`'s business: you write that ADR yourself, because this route\nhas no architect, and a change to the task row's own DoD section is written up as\nthe CRD the section above describes.",
+    "A choice that\ndeserves its own record **is** `solo`'s business: you write that ADR yourself,\nbecause this route has no architect, and a change to a TaskBrief's acceptance list\nis written up as the CRD the section above describes.",
     "A decision big enough to deserve its own record moves the work up to\n`crew`, and a small implementation choice stays in the commit message.",
   );
 });
@@ -676,7 +678,7 @@ check(
 // Mutation 11: the two flows go back to saying `solo` starts no reviewer at all,
 // which is what contradicted the routing decision table's `crew_security_reviewer`.
 const soloReviewerGone = afterBreaking((dir) => {
-  edit(dir, "roles/pm.md", "plus the single\n  reviewer step 1 named if it named one, and nothing else", "and nothing else");
+  edit(dir, "roles/pm.md", "plus the single reviewer step\n  1 named if it named one, and nothing else", "and nothing else");
 });
 check(
   "mutation 11: `solo` losing its single named reviewer turns this case red",

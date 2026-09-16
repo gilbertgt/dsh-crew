@@ -158,9 +158,9 @@ check(
 );
 
 check(
-  "that step names the marker that places them",
-  words.includes("crew-common"),
-  `step ${carrier.number} does not name the marker a role file leaves, so the next person has no way to say where the shared rules belong in the new file`,
+  "that step says the shared blocks exist once rather than once per prompt",
+  /exist once/i.test(words) && words.includes("child-policy.js"),
+  `step ${carrier.number} does not say the shared blocks live in one place. Without that the step reads as if nothing were shared, and the next person writes the three blocks into the new role file — the second copy qa/T-138/case-03 goes red on.`,
 );
 
 const reasons = ["own words", "ten rules", "one home", "one place", "nobody can tell"].filter((phrase) => words.includes(phrase));

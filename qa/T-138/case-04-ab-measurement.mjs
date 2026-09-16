@@ -80,17 +80,17 @@ function printedBytes(label) {
 
 check(
   "the table's V2 core figure is the real size of roles/pm.md",
-  printedBytes("V2 roles/pm.md (every turn)") === coreBytes,
-  `the tool printed ${printedBytes("V2 roles/pm.md (every turn)")} bytes while roles/pm.md is ${coreBytes}: the `
+  printedBytes("V2 always-loaded core (roles/pm.md)") === coreBytes,
+  `the tool printed ${printedBytes("V2 always-loaded core (roles/pm.md)")} bytes while roles/pm.md is ${coreBytes}: the `
     + `table disagrees with the file, so every number under it is untrustworthy`,
 );
 check(
   "the table's playbook figure is the real size of roles/playbooks/",
-  printedBytes("V2 playbooks (read on demand)") === playbookBytes && playbookBytes === onDiskBytes,
-  `printed ${printedBytes("V2 playbooks (read on demand)")}, manifest sum ${playbookBytes}, folder sum ${onDiskBytes}`,
+  printedBytes("V2 playbooks (read on demand, NOT loaded)") === playbookBytes && playbookBytes === onDiskBytes,
+  `printed ${printedBytes("V2 playbooks (read on demand, NOT loaded)")}, manifest sum ${playbookBytes}, folder sum ${onDiskBytes}`,
 );
 
-const v1 = printedBytes("V1 roles/pm.md (every turn)");
+const v1 = printedBytes("V1 always-loaded core (roles/pm.md)");
 if (v1 === undefined) {
   console.log(
     "      the baseline revision is not in this clone (a shallow checkout, or the commit is gone), so the "
@@ -105,10 +105,10 @@ if (v1 === undefined) {
   );
   check(
     "the per-turn figure really went down",
-    first.out.includes("carried on every turn:") && first.out.includes("-"),
+    first.out.includes("always-loaded core, every turn:") && first.out.includes("-"),
     `the tool did not print a per-turn delta, so nothing about the change is measured`,
   );
-  const percent = /carried on every turn: -?\d+ bytes \((-?\d+\.\d+)%\)/.exec(first.out);
+  const percent = /always-loaded core, every turn: (-?\d+) bytes \((-?\d+\.\d+)%\)/.exec(first.out);
   check(
     "the per-turn figure is printed as a percentage of the baseline",
     percent !== null && Number(percent[1]) < 0,

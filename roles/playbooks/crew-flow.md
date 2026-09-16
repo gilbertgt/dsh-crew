@@ -234,8 +234,9 @@ before it has finished.
    line of each CRD and in the git history, so a list of old versions inside the
    PRD is a second copy the reader has to walk past to reach the problem. The PRD
    keeps **one line** — its current version and its date — and its corrections go
-   under the fixed `Corrections` heading (defined in the **Hard rules**, near the
-   end of this file).
+   under the fixed `Corrections` heading (defined in the `hard-rules` playbook's
+   `## Full hard-rule reference` list, and in `## Always-loaded invariants` in
+   your own prompt).
 
    **`DoD` (definition of done) is the name of a section, never the name of a
    file.** Do not create a file for it: not in `docs/design/`, not in the job

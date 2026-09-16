@@ -23,6 +23,14 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   They used to be copied into all nine role files. **If you keep your own
   `~/.dsh/crew/roles/<role>.md`,** it is now one layer of that persona rather than the whole of it:
   your text is kept, and the shared rules and the language policy are added around it.
+- **The PM reads its flow playbooks with a new `crew_playbook` tool.** The playbooks ship inside
+  the package, so asking for one by name — `crew_flow`, `documents`, `hard-rules`, … — works from
+  any working directory. The old `read roles/playbooks/...` path only ever resolved inside a
+  dsh-crew checkout.
+- **A `solo` job needs no task row.** Its TaskBrief is the whole contract with the one engineer:
+  the acceptance criteria, the test to write, the files to touch, and where the evidence goes. On
+  that route the PM never opens the crew flow, and an engineer that hits a blocker reports it and
+  is answered in place, rather than opening a `Q-` file. A `crew` job is unchanged.
 - **Crew Settings is now a standalone DSH Web Settings → Crew section.** It no longer
   appears under Plugins → Plugin configuration. The page shows the PM/root model catalog
   default and gives each child role its own Provider, Model and Reasoning Effort selection.

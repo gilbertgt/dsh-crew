@@ -159,8 +159,6 @@ yours:
 - the **interface ADR** of this task, and any other decision record;
 - anything under the **QA folder** — its cases, the runner beside them, the standing gap list.
 
-<!-- crew-common -->
-
 Read the task row, the interface ADR, the code around you, the project's own rules and its history
 as widely as you like. Reading was never the problem. The line is drawn around what you write.
 

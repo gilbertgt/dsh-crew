@@ -203,31 +203,66 @@ for (const relative of namedFiles) {
     writeSet = section(text, WRITE_SET_HEADING);
   } catch {
     check(
-      `${relative}: the authoritative line sits inside its "## ${WRITE_SET_HEADING}" section`,
+      `${relative}: the persona carries a "## ${WRITE_SET_HEADING}" section for the line to relate to`,
       false,
-      `${relative} has no "## ${WRITE_SET_HEADING}" section, so the line has no section to sit in (case-01 owns the heading itself)`,
+      `${relative} has no "## ${WRITE_SET_HEADING}" section, so the line has no write set to sit beside (case-01 owns the heading itself)`,
     );
     continue;
   }
 
+  if (relative === "roles/pm.md") {
+    // The PM is not a composed child persona. `rulesFile("roles/pm.md")` is the
+    // core plus the playbooks, and the core writes its own write set out in place,
+    // so this line still closes that section there — V2 left the PM's own copy
+    // exactly where it was.
+    check(
+      `${relative}: the authoritative line sits inside its "## ${WRITE_SET_HEADING}" section, exactly once`,
+      countIn(writeSet) === 1,
+      `found ${countIn(writeSet)} copy/copies inside that section, while the file holds ${countIn(text)}.`
+        + " A copy elsewhere in the file does not do this line's job: the section that lists what may be"
+        + " written is the place a reader decides whether reading is on that list too.",
+    );
+
+    const firstSubsection = writeSet.indexOf("\n### ");
+    const writeSetProse = firstSubsection === -1 ? writeSet : writeSet.slice(0, firstSubsection);
+
+    check(
+      `${relative}: the authoritative line closes the write-set statement itself, before the section's first "###" subsection`,
+      countIn(writeSetProse) === 1,
+      `found ${countIn(writeSetProse)} copy/copies before the first "###" subsection of that section,`
+        + ` and ${countIn(writeSet)} in the section as a whole.`
+        + " principles.md says the section ENDS with this line; buried inside the Rule A or Rule B"
+        + " subsection that follows, it no longer reads as part of the write set at all.",
+    );
+    continue;
+  }
+
+  // Crew V2 MOVED WHERE THE LINE SITS FOR THE NINE CHILD ROLES, and this case
+  // moved with it instead of being deleted. The sentence is no longer written out
+  // inside each role's write-set section: it is the first thing in the shared
+  // layer that `composeChildPersona()` puts at the top of every child persona, so
+  // a reader now meets it BEFORE the write set rather than as the sentence that
+  // closes it. What the original checks protected is unchanged — the line must
+  // not be buried, and it must not be duplicated — so both are asserted against
+  // the composed persona's own layout, which is the text the role really reads.
+  const lineAt = text.indexOf(SENTENCE);
+  const writeSetAt = text.indexOf(`## ${WRITE_SET_HEADING}`);
+
   check(
-    `${relative}: the authoritative line sits inside its "## ${WRITE_SET_HEADING}" section, exactly once`,
-    countIn(writeSet) === 1,
-    `found ${countIn(writeSet)} copy/copies inside that section, while the file holds ${countIn(text)}.`
-      + " A copy elsewhere in the file does not do this line's job: the section that lists what may be"
-      + " written is the place a reader decides whether reading is on that list too.",
+    `${relative}: the authoritative line comes before its write-set section`,
+    lineAt !== -1 && writeSetAt !== -1 && lineAt < writeSetAt,
+    `the line is at ${lineAt} and "## ${WRITE_SET_HEADING}" at ${writeSetAt}. The shared layer is`
+      + " concatenated first, so this line has to precede the role's own write set; a copy after it is a"
+      + " copy in the wrong place, and the write set then reads as though reading were restricted too.",
   );
 
-  const firstSubsection = writeSet.indexOf("\n### ");
-  const writeSetProse = firstSubsection === -1 ? writeSet : writeSet.slice(0, firstSubsection);
-
   check(
-    `${relative}: the authoritative line closes the write-set statement itself, before the section's first "###" subsection`,
-    countIn(writeSetProse) === 1,
-    `found ${countIn(writeSetProse)} copy/copies before the first "###" subsection of that section,`
-      + ` and ${countIn(writeSet)} in the section as a whole.`
-      + " principles.md says the section ENDS with this line; buried inside the Rule A or Rule B"
-      + " subsection that follows, it no longer reads as part of the write set at all.",
+    `${relative}: the authoritative line opens the persona, not buried under a subsection`,
+    text.trimStart().startsWith(SENTENCE),
+    `the composed persona does not start with ${JSON.stringify(SENTENCE)}`
+      + ` (it starts with ${JSON.stringify(text.trimStart().slice(0, 60))}).`
+      + " principles.md gives this line the job of closing the write-set statement; a version tucked"
+      + " under a `###` subsection below the write set no longer reads as part of it.",
   );
 
   // Count it twice. The flattened count is the one that decides; the line-based

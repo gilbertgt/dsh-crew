@@ -1,13 +1,13 @@
-// T-138 (Crew V2) — the child persona contract: four layers, one order.
+// T-138 (Crew V2) ??the child persona contract: four layers, one order.
 //
 // Before V2 a crew child's prompt was one file, and the rules every child obeys
 // were written out again inside each of the nine of them. Nine copies of a rule
 // are nine rules: reword one and nobody can tell which is real, and each persona
 // carried the same kilobyte of text its eight siblings also carried.
 //
-// V2 builds a persona from four named layers — `COMMON_CHILD_POLICY`, the shape
+// V2 builds a persona from four named layers ??`COMMON_CHILD_POLICY`, the shape
 // layer (`MAKER_POLICY` or `REVIEWER_POLICY`), the role's own `ROLE_DELTA`, and
-// the language policy — and `CHILD_POLICY_ORDER` fixes what those layers are. The
+// the language policy ??and `CHILD_POLICY_ORDER` fixes what those layers are. The
 // shared text lives once, in `host/child-policy.js`.
 //
 // What this case proves:
@@ -17,7 +17,7 @@
 //   3. the shape layer follows the role: the four makers that run and change
 //      files get the backup rule, the three reviewers get the review-round and
 //      blocking rules, and the two roles that are neither get neither;
-//   4. `host/roles-preset.js` really composes personas this way — a source pin,
+//   4. `host/roles-preset.js` really composes personas this way ??a source pin,
 //      because mounting a role tool needs `@deepseek-ai/dsh-tool-subagent`, which
 //      a public machine cannot install (see `tools/verify-mount.mjs`);
 //   5. no role file carries the common text a second time, and no composed
@@ -31,7 +31,6 @@ import { ROLES, TAIWAN_LANGUAGE_POLICY } from "../../host/roles.js";
 import {
   CHILD_POLICY_ORDER,
   COMMON_CHILD_POLICY,
-  COMMON_MARKER,
   MAKER_POLICY,
   REVIEWER_POLICY,
   composeChildPersona,
@@ -83,10 +82,10 @@ for (const role of ROLES) {
       + `nine copies drifted apart in the first place.`,
   );
   check(
-    `${role.key}: the composed persona leaks no marker`,
-    !persona.includes(COMMON_MARKER),
-    `${COMMON_MARKER} reached the prompt. The marker is how a role file says where the shared rules `
-      + `belong; a child that reads it is reading the machinery.`,
+    `${role.key}: the role file carries no leftover marker comment`,
+    !/<!--\s*crew-common\s*-->/.test(roleText),
+    `${relative} still carries a placeholder comment. The shared rules are concatenated by ` +
+      `\`composeChildPersona()\` now, so a marker left in a file only reaches the prompt as literal text.`,
   );
   check(
     `${role.key}: its language policy is the one that ships`,
@@ -101,6 +100,28 @@ for (const role of ROLES) {
       ? !persona.includes(MAKER_POLICY) && !persona.includes(REVIEWER_POLICY)
       : persona.includes(shape),
     `policy ${role.policy} but the persona ${shape === "" ? "carries" : "does not carry"} the matching layer`,
+  );
+
+  // ------------------------------------------------ the declared order is the real one
+  //
+  // `CHILD_POLICY_ORDER` is a claim about the composed text, so it is checked
+  // against the composed text: each layer is located by its own opening words and
+  // the positions have to be increasing. A list that stopped matching the
+  // concatenation would otherwise stay green for ever.
+  const anchors = {
+    common: COMMON_CHILD_POLICY,
+    shape,
+    role: roleText,
+    language: TAIWAN_LANGUAGE_POLICY,
+  };
+  const located = CHILD_POLICY_ORDER
+    .map((layer) => ({ layer, at: (anchors[layer] ?? "").trim().length === 0 ? -1 : persona.indexOf((anchors[layer] ?? "").trim().slice(0, 48)) }))
+    .filter((entry) => entry.at >= 0);
+  check(
+    `${role.key}: the layers appear in CHILD_POLICY_ORDER (${located.map((entry) => `${entry.layer}@${entry.at}`).join(" < ")})`,
+    located.length >= 3 && located.every((entry, index) => index === 0 || entry.at > located[index - 1].at),
+    `the composed persona does not lay its layers out in ${CHILD_POLICY_ORDER.join(" ??")}; ` +
+      `${JSON.stringify(located)}. Either the concatenation moved or the declared order did ??they are one contract.`,
   );
 }
 

@@ -1,9 +1,9 @@
-// Task T-01 — acceptance check 7.
+// Task T-01 ??acceptance check 7.
 // Proves the Hard rules forbid merging or deleting a branch on the PM's own
 // judgement, and name both --squash and git branch -D.
 import { pm, section, check, done } from "../lib/qa.mjs";
 
-const rules = section(pm(), "Hard rules");
+const rules = section(pm(), "Always-loaded invariants");
 
 check("a hard rule forbids merging or deleting a branch on the PM's own judgement",
   /Never merge and never delete a branch on your own judgement/.test(rules), rules);

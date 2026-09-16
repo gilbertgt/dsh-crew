@@ -34,8 +34,17 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const PM_CORE_PATH = join(PACKAGE_ROOT, "roles", "pm.md");
 /** Folder holding the on-demand playbooks. */
 export const PLAYBOOKS_DIR = join(PACKAGE_ROOT, "roles", "playbooks");
-/** The largest the always-loaded core may grow to, in bytes. */
-export const PM_CORE_MAX_BYTES = 20 * 1024;
+/**
+ * The largest the always-loaded core may grow to, in bytes.
+ *
+ * 24 KiB, not the 20 KiB V2 first shipped with. V2's own second half wrote the
+ * `solo` contract into the core deliberately — the TaskBrief, the blocker rule,
+ * the Result shape, the targeted-test rule and the commit — so that a `solo` job
+ * never has to open the ~95 KB crew flow to find them. That trades roughly 1.5 KB
+ * of always-loaded text against a playbook read on the most common route, and the
+ * budget moved with the trade instead of quietly stopping being true.
+ */
+export const PM_CORE_MAX_BYTES = 24 * 1024;
 
 /**
  * Every playbook, in the order `composePmRules` concatenates them.
@@ -93,6 +102,36 @@ export function readPlaybook(file) {
   const text = readFileSync(path, "utf8").trim();
   if (text.length === 0) throw new Error(`dsh-crew: playbook "${path}" is empty`);
   return text;
+}
+
+/**
+ * The short names a playbook is asked for by: the file name without `.md`.
+ *
+ * `crew-flow`, not `crew-flow.md`. The PM asks for a playbook by its job — the
+ * flow, the routing, the documents — and never by a path, because the path it
+ * would have to write depends on where this package happens to be installed.
+ */
+export const PLAYBOOK_NAMES = PLAYBOOKS.map((playbook) => playbook.file.replace(/\.md$/, ""));
+
+/**
+ * Read one playbook by the short name the PM uses.
+ *
+ * This is the whole reason `crew_playbook` exists as a tool: the playbooks ship
+ * INSIDE the package, so a workspace-relative `read roles/playbooks/…` is only
+ * right when the working directory happens to be a dsh-crew checkout. Resolved
+ * here, the answer does not depend on the session's working directory, on how
+ * dsh-crew was installed, or on the PM knowing any of that.
+ *
+ * @param name - e.g. `crew-flow`, or `crew-flow.md` (tolerated)
+ * @throws with the list of real names, so a typo answers with what exists
+ */
+export function readPlaybookByName(name) {
+  const key = String(name ?? "").trim().replace(/\.md$/, "");
+  const playbook = PLAYBOOKS.find((entry) => entry.file === `${key}.md`);
+  if (playbook === undefined) {
+    throw new Error(`dsh-crew: there is no playbook called "${name}". The playbooks are: ${PLAYBOOK_NAMES.join(", ")}`);
+  }
+  return readPlaybook(playbook.file);
 }
 
 /** Read the always-loaded core. */

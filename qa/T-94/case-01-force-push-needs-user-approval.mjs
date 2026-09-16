@@ -162,7 +162,7 @@ function placesIn(someText) {
 /** The same two places, as the raw blocks they are in the file. */
 function rawPlacesIn(someText) {
   return {
-    bullets: section(someText, "Hard rules")
+    bullets: section(someText, "Always-loaded invariants")
       .split(/\n- /)
       .map((bullet, index) => (index === 0 ? bullet : `- ${bullet}`))
       .filter(aboutForce),

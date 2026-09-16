@@ -273,6 +273,16 @@
 
 # ── remaining model-facing rows ─────────────────────────────────────────────
 
+# The `crew_playbook` loader: the PM reads its flow playbooks through this, not
+# through a workspace-relative `read roles/playbooks/...`.
+#
+# It belongs HERE, in the preset, for the same reason the role tools do: only the
+# model-facing half of dsh-crew is a tool, and the PM is the agent that calls it.
+# A host-plane row could not register one. It provides no service, so it needs no
+# realm — it registers into this preset's own layer of the host `tools` registry.
+- id: dsh-crew-playbook
+  name: 'dsh-crew/host/playbook-tool.js'
+
 - id: tool-ask-user
   name: '@deepseek-ai/dsh-tool-ask-user'
 

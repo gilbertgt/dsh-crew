@@ -54,7 +54,7 @@
 
 import { pm, section, flat, check, done } from "../lib/qa.mjs";
 
-const HEADING = "Hard rules";
+const HEADING = "Always-loaded invariants";
 const FIXED_HEADING = "`Corrections`";
 
 const text = pm();

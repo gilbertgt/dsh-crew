@@ -63,16 +63,16 @@ const rowOf = (label, byteCount, lineCount, tokens) =>
   `${label.padEnd(42)}${String(byteCount).padStart(9)}${String(lineCount).padStart(9)}${String(tokens).padStart(10)}`;
 const row = (label, text) => rowOf(label, bytes(text), lines(text), estTokens(text));
 
-console.log(`Crew V2 prompt budget — baseline ${BASELINE}`);
-console.log(`${"".padEnd(42)}${"bytes".padStart(9)}${"lines".padStart(9)}${"~tokens".padStart(10)}`);
+console.log(`Crew V2 — the ALWAYS-LOADED PM core, measured from two revisions (baseline ${BASELINE})`);
+console.log(`${"".padEnd(46)}${"bytes".padStart(9)}${"lines".padStart(9)}${"~tokens".padStart(10)}`);
 if (v1 === undefined) {
-  console.log(`V1 roles/pm.md${" ".repeat(30)}   (not in this clone — the baseline half is skipped)`);
+  console.log(`V1 always-loaded core (roles/pm.md)${" ".repeat(11)}   (not in this clone — the baseline half is skipped)`);
 } else {
-  console.log(row("V1 roles/pm.md (every turn)", v1));
+  console.log(rowOf("V1 always-loaded core (roles/pm.md)", bytes(v1), lines(v1), estTokens(v1)));
 }
-console.log(row("V2 roles/pm.md (every turn)", core));
+console.log(rowOf("V2 always-loaded core (roles/pm.md)", bytes(core), lines(core), estTokens(core)));
 console.log(rowOf(
-  "V2 playbooks (read on demand)",
+  "V2 playbooks (read on demand, NOT loaded)",
   playbookBytes,
   playbooks.reduce((sum, playbook) => sum + lines(playbook.text), 0),
   playbooks.reduce((sum, playbook) => sum + estTokens(playbook.text), 0),
@@ -82,16 +82,17 @@ for (const playbook of playbooks) console.log(row(`  ${playbook.file}`, playbook
 if (v1 !== undefined) {
   const delta = bytes(core) - bytes(v1);
   const percent = ((delta / bytes(v1)) * 100).toFixed(1);
-  console.log(
-    `\ncarried on every turn: ${delta} bytes (${percent}%), about ${estTokens(core) - estTokens(v1)} estimated tokens.`,
-  );
+  console.log(`\nalways-loaded core, every turn: ${delta} bytes (${percent}%).`);
 }
 console.log(
-  `moved out of the prompt and into playbooks: ${playbookBytes} bytes across ${playbooks.length} file(s).`,
+  `read on demand and NOT part of that figure: ${playbookBytes} bytes across ${playbooks.length} file(s).`,
 );
-console.log(
-  "\nWhat this table is NOT: a wall-clock, tool-call or token-usage A/B of two live jobs.",
-);
-console.log(
-  "Those need a real session and are not reproducible from a checkout, so no number for them is claimed here (qa/gaps.md).",
-);
+console.log("");
+console.log("WHAT THESE NUMBERS ARE: the size of source files, reproducible from the same two");
+console.log("revisions on any machine. The bytes and the line counts are exact. The ~tokens column is");
+console.log("an estimate at four bytes per token and nothing more — how many tokens a request really");
+console.log("carries depends on the model's tokenizer, the route, and everything else in the request.");
+console.log("");
+console.log("What this is NOT: a wall-clock, tool-call or token-usage A/B of two live jobs. Those");
+console.log("need a real session and are not reproducible from a checkout, so no number for them is");
+console.log("claimed here (qa/gaps.md item 64).");

@@ -87,7 +87,12 @@ check(
   `${files.length} file(s): ${files.map((file) => file.name).join(", ") || "none"}${missing.length ? `; missing: ${missing.join(", ")}` : ""}`,
 );
 
-const unread = files.filter((file) => file.text.length < 500 || !file.text.startsWith("# Crew role: "));
+// Crew V2: a child persona no longer STARTS with its role file — the shared layer
+// is concatenated first (see `CHILD_POLICY_ORDER`), so the role's own title sits
+// further down. The premise wants "this text really is a role prompt", not "this
+// text begins with the title", so the title is looked for on a line of its own
+// anywhere in the prompt.
+const unread = files.filter((file) => file.text.length < 500 || !/^# Crew role: /m.test(file.text));
 check(
   "every prompt was actually read",
   unread.length === 0,

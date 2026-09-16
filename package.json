@@ -72,6 +72,7 @@
     "./host/git-guard.js": "./host/git-guard.js",
     "./host/pm-write-guard.js": "./host/pm-write-guard.js",
     "./host/roles-settings.js": "./host/roles-settings.js",
+    "./host/playbook-tool.js": "./host/playbook-tool.js",
     "./package.json": "./package.json",
     "./host/jobs.js": "./host/jobs.js",
     "./client": "./client/crew-settings.js"
@@ -94,10 +95,14 @@
     "@deepseek-ai/schemastery": "^3.18.2"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-tool-subagent": "*"
+    "@deepseek-ai/dsh-tool-subagent": "*",
+    "@deepseek-ai/dsh-tools": "*"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-tool-subagent": {
+      "optional": false
+    },
+    "@deepseek-ai/dsh-tools": {
       "optional": false
     }
   }

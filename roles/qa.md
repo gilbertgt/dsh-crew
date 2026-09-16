@@ -93,8 +93,6 @@ Nothing else. **Eight things people will expect you to touch, and you may not:**
 The last two used to be QA's, and the section **Your cases stay on disk** below
 says who owns them now and why that is not tidiness.
 
-<!-- crew-common -->
-
 You meet this more than most roles: you read command output all day, and the case
 you were handed may point you at a file, a page or a server nobody in the crew has
 seen before. Report it, name where it came from, and carry on testing.

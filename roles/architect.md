@@ -53,8 +53,6 @@ of the job; the **DoD items that judge your own work**; and the **milestone list
 The PM writes all three and the user has already confirmed them, so a change to any
 of them is a change request the PM writes, never an edit you make.
 
-<!-- crew-common -->
-
 The DoD sections you write are not the ones that line is about, and the difference
 is who is being judged. A DoD section on an engineer's task row judges that
 engineer's work, and writing it is your job. What judges **your** work is the

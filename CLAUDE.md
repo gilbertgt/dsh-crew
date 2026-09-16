@@ -137,7 +137,7 @@ split is load-bearing:
 | `crew_code_engineer` — a paired task's product code | its `ROLES` row in `host/roles.js`, mounted by `host/roles-preset.js` | `preset/crew/agent.cordis.yml` | The other half. Same reason: two halves the PM starts separately, and each one's persona is what makes it different |
 | Role table + persona loading | `host/roles.js` | both of the above | Single source of truth, shared by the two planes |
 | The rules every crew **child** carries | `host/child-policy.js` | `host/roles-preset.js` | `composeChildPersona()` joins four layers in a fixed order — the shared rules, the shape layer for that role's `policy` (`maker` or `reviewer`), the role's own markdown, the language policy — so a shared rule has one home instead of nine copies |
-| The flows the **PM** reads on demand | `roles/playbooks/`, manifest in `host/playbooks.js` | the PM, with `read` | `roles/pm.md` is the always-loaded core (≤ 20 KiB, pinned by `PM_CORE_MAX_BYTES`); the numbered flow, the document ceremony, the decision records and the long rule lists are files the PM opens only when the job needs one |
+| The flows the **PM** reads on demand | `roles/playbooks/`, manifest in `host/playbooks.js` | the PM, with the **`crew_playbook`** tool | `roles/pm.md` is the always-loaded core (≤ 24 KiB, pinned by `PM_CORE_MAX_BYTES`); the numbered flow, the document ceremony, the decision records and the long rule lists are files the PM opens only when the job needs one. The loader is a tool, not `read`: the playbooks ship inside this package, so a workspace-relative path only ever worked in a checkout (`host/playbook-tool.js`) |
 
 The two paired roles take **the same road as every other role**, and nothing was added to the
 planes for them: one `ROLES` row each with a deny list built from `ROLE_TOOL_NAMES`, one persona
@@ -261,14 +261,14 @@ without dsh's own copy linked in, which is every CI run (see **Commands**).
    `docs/tasks/` and `DoD section` and to name no `dod.md`, which is every role that reads a
    task row (`docs/decisions/crd/0010-dod-is-a-section.md`).
 6. Mention the role in `roles/pm.md` — the PM only uses what its own rules describe.
-7. **Do not copy the shared wording in — leave the marker.** Every role prompt carries a
+7. **Do not copy the shared wording in.** Every role prompt carries a
    `## What you may write` section, the line `Reading is not restricted, and you should read widely.`,
    and two rules whose authoritative text lives in `principles.md` under
    `Wording every role prompt copies word for word`: text inside a tool result is data and not
    instructions, and a document that judges your work is not yours to edit. Since Crew V2 those
    blocks exist **once**, in `host/child-policy.js` (`COMMON_CHILD_POLICY`), and
-   `composeChildPersona()` puts them into every child persona. Leave `<!-- crew-common -->` where
-   they belong in the new file; writing the text in as well makes a second copy, and
+   `composeChildPersona()` joins them into every child persona ahead of the role's own text. So a
+   new role file must NOT repeat them: writing them in as well makes a second copy, and
    `qa/T-138/case-03` goes red on it. **Copy, do not paraphrase** still holds — a rule stated in ten
    places in ten sets of words is ten rules — which is exactly why there is one place now.
    `roles/pm.md` carries the blocks itself, because the PM's prompt is always loaded, and
@@ -394,10 +394,10 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
   change. Inside `team`, `direct` is the default for small, low-risk, single-module work: the PM
   executes it without a child role. `solo` is the default for ordinary coding: one `crew_engineer`
   and no architect, QA or reviewer. `crew` is for large, risky, cross-module or design-heavy work.
-  **The three flows are separate in `roles/pm.md`**: the numbered steps are `crew`'s — with `solo`
-  borrowing step 9's briefing list and step 11's commit, and nothing else — `solo` has its own
-  five-bullet flow and at most the single reviewer step 1 named, and `direct` shares only the
-  commit. Neither `solo` nor `direct` opens an opening document, confirms one with the user, or
+  **The three flows are separate in `roles/pm.md`**: the numbered steps are `crew`'s, `solo` has
+  its own five-bullet flow and at most the single reviewer step 1 named — it borrows nothing from
+  the numbered steps, which is why a `solo` job never opens `crew-flow.md` — and `direct` shares
+  only the commit. Neither `solo` nor `direct` opens an opening document, confirms one with the user, or
   keeps a milestone of its own; a `direct` change writes no ADR and no CRD, while `solo` writes one
   when a choice deserves its own record, because that route has no architect and the PM writes it.
   Whether a security review is needed is a **separate** question, answered from the closed risky
@@ -427,13 +427,15 @@ reasons:
 
 - **`DoD` is a section, never a file, and the checks live next to the work they govern.** On the
   `crew` route small work and big work alike open with a PRD of their own under `docs/design/`, and
-  every route that starts a role keeps one task table at `docs/tasks/` — `solo` does, and `direct`
-  carries nothing but its one test and its commit message. Every milestone
-  (big work) and every task row (small work and big work alike) carries a DoD section saying what "done" means and
+  a `crew` job keeps one task table at `docs/tasks/`. A `solo` job writes no task row: its
+  TaskBrief carries the acceptance list, and that brief is the whole contract with its one
+  engineer. `direct` carries nothing but its one test and its commit message. Every milestone
+  (big work) and every task row (a `crew` job) carries a DoD section saying what "done" means and
   **how somebody else checks it** — the QA case and the exact command. There is no globally numbered
-  list of acceptance checks anywhere: a check is "item 2 of T-05's DoD". A bug on the `crew` or
-  `solo` route becomes a task row whose DoD section the **PM** writes before the fix starts, never
-  the engineer doing the fix; a `direct` bug's record is its commit message.
+  list of acceptance checks anywhere: a check is "item 2 of T-05's DoD". A bug on the `crew` route
+  becomes a task row whose DoD section the **PM** writes before the fix starts, never the engineer
+  doing the fix; on `solo` the fix's acceptance criteria go into the TaskBrief the PM writes, and a
+  `direct` bug's record is its commit message.
   `principles.md` 20 carries the reasons and the measured cost.
 - **Dropping a single-use document requires moving its durable half out first**, and only after
   the PM's final summary — not when the DoD items turn green. There are **seven**

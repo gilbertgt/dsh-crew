@@ -54,10 +54,11 @@ function audit(raw) {
       + "the user was never asked.",
   );
   add(
-    "solo: its only document is one task row in docs/tasks/",
-    has("a single task row in `docs/tasks/` with its own DoD section"),
-    "the task row is what `solo`'s engineer reads. Without it the engineer works from a message, and "
-      + "nothing in the repository says what the work was.",
+    "solo: the TaskBrief is its whole contract, with no other document behind it",
+    has("On `solo` the TaskBrief is the whole contract."),
+    "the TaskBrief is what `solo`'s engineer reads instead of a PRD and a task row. Without this "
+      + "sentence the route reads as if the engineer had something else to go on, and a briefing then "
+      + "sends it looking for documents that do not exist.",
   );
   add(
     "solo: it runs no interview and opens no PRD",
