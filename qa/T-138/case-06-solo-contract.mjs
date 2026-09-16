@@ -176,6 +176,67 @@ check(
   "one of those rules is not in the core, so a solo job would have to open the crew flow to find it",
 );
 
+// ------------------- 4. the ReviewBrief: the PM produces it, the reviewer consumes it
+//
+// The gap this closes: the reviewer's own contract demands a `goal` and an
+// `acceptance` list, and the PM's solo flow used to hand it a diff and a test
+// result and nothing else. A reviewer is a NEW child — it inherits nothing from
+// the engineer's briefing — so a producer that names two fields and a consumer
+// that needs four is a route that breaks in a way no single-file check sees.
+
+const reviewBriefPassage = () => flat(passage(core, "**The `ReviewBrief`", "**Which roles a `solo` job may start"));
+const reviewBrief = fieldsIn(reviewBriefPassage());
+const REVIEW_FIELDS = ["goal", "acceptance", "diff", "tests"];
+
+check(
+  "the PM's core defines the ReviewBrief the named reviewer is given",
+  reviewBrief.includes("route") && REVIEW_FIELDS.every((field) => reviewBrief.includes(field)),
+  `the core's ReviewBrief names ${JSON.stringify(reviewBrief)} — a briefing missing one of ${JSON.stringify(REVIEW_FIELDS)} is a reviewer that cannot do its job`,
+);
+check(
+  "the ReviewBrief's goal and acceptance come from the TaskBrief, not from nowhere",
+  /`goal` \(one sentence, from the TaskBrief\)/i.test(reviewBriefPassage())
+    && /`acceptance` \(the same\s+runnable list the engineer worked from/i.test(reviewBriefPassage()),
+  "the ReviewBrief does not say where its two document-like fields come from, so the PM can invent them",
+);
+check(
+  "the security reviewer's solo branch asks for the same four fields the PM promises",
+  REVIEW_FIELDS.every((field) => new RegExp(`\`${field}\``).test(securitySolo)),
+  `the reviewer's solo branch names ${JSON.stringify(REVIEW_FIELDS.filter((field) => !new RegExp(`\`${field}\``).test(securitySolo)))} less than the PM's ReviewBrief does: ${JSON.stringify(securitySolo)}`,
+);
+check(
+  "the reviewer is told what to do when the acceptance list is missing",
+  /no `acceptance` list, say so/i.test(securitySolo),
+  "a solo reviewer handed no acceptance list has nothing to judge against and no instruction to ask for one",
+);
+
+// ------------------- 5. the engineer's Result is compact on solo
+//
+// The output contract, one route at a time: `solo` has no task row, so it has no
+// task id, and the red/green output that used to be pasted into the report is
+// what V2 moved into an artifact.
+
+const engineerDone = flat(passage(engineer, "Within that:", "On either route"));
+check(
+  "the engineer's solo report is the five fields and no task id",
+  /On `solo` that is the whole report, and it stays short/i.test(engineerDone)
+    && /no task id on\s+this route/i.test(engineerDone)
+    && /one line\*\* of\s+red→green evidence/i.test(engineerDone),
+  `the engineer is still asked for a crew-shaped report on the route that has no task row: ${JSON.stringify(engineerDone.slice(0, 400))}`,
+);
+check(
+  "the richer evidence is asked for on `crew`, and only there",
+  /On `crew` the task row exists, so more is asked, and only there/i.test(engineerDone)
+    && /the task id, and one sentence on what you did/i.test(engineerDone)
+    && /failing output you saw \*\*before\*\* the code existed/i.test(engineerDone),
+  "the crew half lost the evidence its task row is measured against",
+);
+check(
+  "long red/green output goes to the artifact the briefing named, not into the report",
+  /long output goes to the \*\*artifact path the\s+briefing named\*\*/i.test(engineerDone),
+  "the report is where the evidence goes again, which is the token cost V2 removed",
+);
+
 // --------------------------------------------- 3. one mutation, in one file
 
 const dir = tempRepo();

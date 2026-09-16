@@ -2380,3 +2380,24 @@ session，而且会随模型、路由与任务不同而变。
 它不是 wall-clock / token 的 A/B。
 
 **状态**：未关闭，而且不会由用例关闭。
+
+## 65. 角色设置热重载的用例用的是合成 Fiber，真实 Cordis 的重启行为没有用例
+
+**缺口**（crew-v2，2026-09-16）：`host/roles-preset.js` 的 settings 热重载路径现在有
+`tools/verify-role-settings.mjs` 的三个用例守着——「同一轮内先改 B 再改回 A 仍以 A 落地」、
+「每个目标只排一次更新」，以及「被 host 拒绝的更新会立刻把最后一份可用 config 套回去」。
+但这三个用例用的都是**合成 Fiber**：`update()` 什么时候 resolve、什么时候 throw，由用例
+自己决定。真实宿主里那两件事实——「`Fiber.update()` 被拒绝后 fiber 会停在 inactive 且不会
+自己 rollback」、「把旧 config 再 update 一次能把它救回来」——没有用例能判，仓库里也不装
+`@deepseek-ai/dsh-tool-subagent`（CI 更没有），所以那条路径只被静态 pin 与合成对象覆盖。
+
+**为什么**：真实 `Fiber.update()` 的语义属于 dsh，不属于这个 package。要判它就得在一个
+挂得起真 preset 的宿主机上跑，而那正是 CI 的「普通机器」做不到的事（`verify-mount.mjs`
+的 role-tool 半套会在那里明说 SKIP）。
+
+**该怎么办**：要一个真实宿主的证据，就在连结过 dsh 自身 node_modules 的机器上跑一次
+「把一个角色的 provider 改成不存在的值、再改回来」，看 boot log 与该 child 的 route，并把
+结果贴进该轮的报告；在拿到那份证据之前，这一段的结论只能说到「逻辑在合成 Fiber 上是
+正确的」。
+
+**状态**：未关闭。逻辑已被覆盖，真实宿主行为未被覆盖。

@@ -379,19 +379,26 @@ Reading git is fine and useful: `git status`, `git diff`, `git log`.
 or `failed`), `changed files`, `tests` (the command and its real exit status),
 `blocker` (one sentence, when blocked) and `remaining risk` (what you did not
 cover). Those five fields ARE the report: they carry the tests, their real result
-and what you did not cover. Put long output at the **artifact path the briefing
-named** only when it named one — a `solo` briefing usually names none, and then
-the report in the message is the whole record. Within that:
+and what you did not cover. Within that:
 
-- the task id and one sentence on what you did;
-- the files you changed, with a one-line reason each;
-- your test-first proof, for each piece of behaviour: the test name, the command,
-  the failing output you saw **before** the code existed, then the passing output
-  after. Both, in that order. A report without the failing output is not done;
-- the exact test or check commands you ran, and their real result — if something
-  failed, say so and paste the important lines;
-- for a boundary task: the contract test you wrote, which file it comes from,
-  and what you stubbed;
-- anything you noticed but did not touch, because it was not your task.
+- **On `solo` that is the whole report, and it stays short.** `tests` carries four
+  things and no more: the targeted command you ran while you worked, the project's
+  test command you ran at the end, their real exit status, and **one line** of
+  red→green evidence naming the test you saw fail first. Do not paste the failing
+  and passing output into the report — long output goes to the **artifact path the
+  briefing named**, and a `solo` briefing usually names none. There is no task id on
+  this route (the TaskBrief carries none) and no per-file essay: `changed files` is
+  the list.
+- **On `crew` the task row exists, so more is asked, and only there:**
+  - the task id, and one sentence on what you did;
+  - the files you changed, with a one-line reason each;
+  - your test-first proof, for each piece of behaviour: the test name, the command,
+    the failing output you saw **before** the code existed, then the passing output
+    after. Both, in that order. A report without the failing output is not done;
+  - the exact test or check commands you ran, and their real result — if something
+    failed, say so and paste the important lines;
+  - for a boundary task: the contract test you wrote, which file it comes from,
+    and what you stubbed;
+  - anything you noticed but did not touch, because it was not your task.
 
-Do not say a task is done when a test fails. Say what failed.
+On either route, do not say a task is done when a test fails. Say what failed.

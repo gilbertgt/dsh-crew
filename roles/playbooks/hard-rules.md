@@ -86,9 +86,12 @@ front of you.
   scale** (see
   **Scale** in `roles/pm.md`), and the default is the cheapest scale that can carry the
   change — `direct` for a small low-risk change, `solo` (one `crew_engineer`) for
-  ordinary coding, and `crew` only when the work is big, cross-module or risky.
+  ordinary coding, and `crew` only when the work meets one of the escalation
+  conditions (see **Pick a lane and route** in `roles/pm.md`) — a security question is
+  not one of them.
   Whether a security review is needed is a second question, answered from the closed
-  risky list in the `crew-routing` playbook, and it never moves the route by itself.
+  risky list in the `crew-routing` playbook, and it **never forces the `crew` route by
+  itself**: a `yes` raises a `direct` change to `solo`, and stops there.
   A milestone is one full cycle plus one commit — it is **not** a release, and
   pushing and tagging each need their own yes.
 - **Do it yourself when you can; delegate only when a second role earns its

@@ -22,9 +22,20 @@
 // demands the table audit go red on that row: without it, this case would still
 // pass on a table whose `Route` column had been rewritten to `crew` everywhere.
 //
-// Reads `roles/pm.md`; writes only inside one throwaway copy, which it removes.
+// The routing table has a SECOND copy, in the `crew-routing` playbook the PM opens
+// when the short rules are not enough. That copy is read here too and compared cell
+// by cell with this one: it is the file a PM actually reads while placing a hard
+// job, and it used to answer the security column in words of its own — "the core's
+// own security list decides", pointing at a core section that holds no such list —
+// while nothing read it. Both tables are cut down to their own table block first,
+// because this rule file's body is followed by the playbooks, and a scan that ran
+// on past the table's last row would be judging the playbook copies as if they were
+// this table.
+//
+// Reads `roles/pm.md` and `roles/playbooks/crew-routing.md`; writes only inside one
+// throwaway copy, which it removes.
 
-import { check, cleanUp, copyFile, done, edit, section, step, tempRepo, pm } from "../lib/qa.mjs";
+import { check, cleanUp, copyFile, done, edit, repoFile, section, step, tempRepo, pm } from "../lib/qa.mjs";
 
 const HEADING = "Pick a lane and route";
 const ROUTES = ["direct", "solo", "crew"];
@@ -96,14 +107,15 @@ function audit(text) {
   let lane = null;
   let sectionError = "";
   try {
-    lane = section(text, HEADING);
+    lane = tableBlock(section(text, HEADING), HEADER[0]);
   } catch (error) {
     sectionError = String(error?.message ?? error);
   }
   add(
     ID.section,
-    lane !== null,
-    `${sectionError} — step 1 moved or was renamed, so the routing table could not be judged where it lives`,
+    lane !== null && lane.length > 0,
+    `${sectionError} — step 1 moved or was renamed, or its table is gone, so the routing table `
+      + "could not be judged where it lives",
   );
 
   const rows = tableRows(lane ?? "");
@@ -235,23 +247,89 @@ function audit(text) {
   return results;
 }
 
-// ------------------------------------------------------------- the real file
+// cells, not the file body: this rule file is followed by the playbooks, and a
+// needle match that ran past the table's last row would find the playbook copies.
+
+function tableBlock(text, headerFirstCell) {
+  const lines = text.split("\n");
+  const start = lines.findIndex((line) => lower(line).includes(`| ${headerFirstCell} `));
+  if (start < 0) return "";
+  const block = [];
+  for (const line of lines.slice(start)) {
+    if (!line.trim().startsWith("|")) break;
+    block.push(line);
+  }
+  return block.join("\n");
+}
+
+// ------------------------------------------------------------- the real files
 
 const text = pm();
-const rows = tableRows(section(text, HEADING));
+const rows = tableRows(tableBlock(section(text, HEADING), HEADER[0]));
 console.log(`      the routing table: ${rows.length} row(s), routes ${JSON.stringify([...new Set(rows.map((row) => routeOf(row.cells[1])))])}`);
 
 for (const result of audit(text)) check(result.id, result.ok, result.detail);
 
-// -------------------------------------------------------------- the mutation
+// --------------------------------------------- the playbook's copy of the table
 //
-// One breakage in its own copy of the repository, judged by the same audit
-// function: the ordinary settings UI is raised to the whole crew, which is exactly
-// the rule this task removed. Without this the case would pass on a table whose
-// Route column had been rewritten to `crew` everywhere but was still a table.
+// Same subject, same route, same security answer, said the same way. The scan is
+// deliberately narrower than the audit above: it compares the two tables row by row
+// on the columns that decide, and leaves the playbook's own extra prose alone.
+
+const PLAYBOOK = "roles/playbooks/crew-routing.md";
+
+/** Compare the core's table with one copy of it. `read(relative)` reads a repository file. */
+function tableDrift(coreText, read) {
+  const coreRows = tableRows(tableBlock(section(coreText, HEADING), HEADER[0]));
+  const playbookRows = tableRows(tableBlock(read(PLAYBOOK), HEADER[0]));
+  const subjectKey = (cell) => lower(clean(cell)).replace(/[’']/g, "'");
+  const bySubject = (rows) => new Map(rows.map((row) => [subjectKey(row.cells[0]), row]));
+  const coreIndex = bySubject(coreRows);
+  const playbookIndex = bySubject(playbookRows);
+  const drift = [];
+  for (const [subject, core] of coreIndex) {
+    const copy = playbookIndex.get(subject);
+    if (copy === undefined) { drift.push([subject, "missing from the playbook"]); continue; }
+    if (routeOf(copy.cells[1]) !== routeOf(core.cells[1])) drift.push([subject, "route", core.cells[1], copy.cells[1]]);
+    if (securityKind(copy.cells[2]) !== securityKind(core.cells[2])) drift.push([subject, "security", core.cells[2], copy.cells[2]]);
+  }
+  return { drift, coreRows, playbookRows };
+}
+
+{
+  const { drift, coreRows, playbookRows } = tableDrift(text, repoFile);
+  check(
+    `the ${PLAYBOOK} copy of the routing table is there (${playbookRows.length} row(s))`,
+    playbookRows.length > 0 && coreRows.length > 0,
+    `${PLAYBOOK} no longer holds a four-column table under "${HEADER[0]}", so the PM reads the routing `
+      + "table from one file and cannot compare it with anything",
+  );
+  check(
+    `the ${PLAYBOOK} copy answers every row the way ${HEADING} does`,
+    drift.length === 0 && coreRows.length > 0,
+    "the two copies of the routing table have drifted apart — a route must not be `direct` in one file and "
+      + "`crew` in the other, and a security answer the core accepts must not be words the core's own "
+      + `vocabulary cannot read: ${JSON.stringify(drift)}`,
+  );
+  check(
+    `the ${PLAYBOOK} copy spells the security answer the way the core does`,
+    playbookRows.length > 0 && playbookRows.every((row) => securityKind(row.cells[2]) !== "other"),
+    "a security cell in the playbook uses words the core's own table does not: "
+      + JSON.stringify(playbookRows.filter((row) => securityKind(row.cells[2]) === "other").map((row) => [row.cells[0], row.cells[2]])),
+  );
+}
+
+// -------------------------------------------------------------- the mutations
+//
+// Two breakages, each in its own copy of the repository and each judged by the same
+// function the checks above use: the ordinary settings UI is raised to the whole
+// crew (which is the rule this task removed), and the playbook's security cell is
+// reworded away from the core's answer. Without the second one, this case would
+// still pass on a playbook table that had stopped meaning the same thing.
 
 const dir = tempRepo();
 let brokenRows;
+let driftedCopy;
 try {
   edit(
     dir,
@@ -260,6 +338,9 @@ try {
     "An ordinary settings UI: a form, a dropdown, a page that takes user input | `crew`",
   );
   brokenRows = audit(copyFile(dir, "roles/pm.md"));
+  const readMutatedCore = copyFile(dir, "roles/pm.md");
+  edit(dir, PLAYBOOK, "| the closed risky list decides |", "| the core's own security list decides |");
+  driftedCopy = tableDrift(readMutatedCore, (relative) => copyFile(dir, relative));
 } finally {
   cleanUp(dir);
 }
@@ -270,6 +351,12 @@ check(
   failed.includes(rowId(EXPECTED[3])),
   `failed checks were ${JSON.stringify(failed)} — the row was raised to \`crew\` in the copy and this case `
     + "still passed on it",
+);
+check(
+  "mutation: rewording the playbook's security cell turns the two-table comparison red",
+  driftedCopy.drift.length > 0,
+  `the playbook's security cell was reworded and the comparison found ${JSON.stringify(driftedCopy.drift)} — `
+    + "a comparison that cannot see this is not reading the playbook's table at all",
 );
 
 done();

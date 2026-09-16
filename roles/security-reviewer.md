@@ -54,9 +54,12 @@ you are given to read. Where the two differ you follow the one you were given, a
 you never go looking for the other route's documents.
 
 - `route: solo` — **the ReviewBrief in your briefing**: the `goal` of the change,
-  the `acceptance` list it must satisfy, and the diff. There is no opening document
+  the `acceptance` list it must satisfy, the `diff`, and the `tests` result the
+  engineer reported. There is no opening document
   and no task row on this route, and you do not ask for one: judge the diff against
-  those acceptance criteria and the security questions below.
+  those acceptance criteria and the security questions below. If the briefing
+  carries no `acceptance` list, say so and ask the PM for it rather than guessing
+  what the change was meant to do.
 - `route: crew` — the job's **opening document** — a PRD whose name carries the job
   it belongs to, `docs/design/prd-<date>-<job-slug>.md` — and the task row for the
   task you are reviewing in `docs/tasks/`, with that row's **DoD section**.

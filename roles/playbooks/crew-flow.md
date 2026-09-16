@@ -861,7 +861,7 @@ before it has finished.
    fixes caused, and opens no new topic. If the two sides still do not agree,
    stop: tell the user both sides in a few plain sentences and ask them to decide.
 
-   **10b. Security review — only when the change is risky, and this list is the
+   **10b. Security review — only when the change is a security risk, and this list is the
    whole test of that word.** Start a `crew_security_reviewer`, in the same
    message as 10a, when the work touches any of these: the network, a
    login or permission check, secrets or keys, files outside the project, shell

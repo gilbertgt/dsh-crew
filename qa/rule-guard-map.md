@@ -269,7 +269,7 @@ Rules mapped: 59 (guarded 28 · bare 31 · judgment 0)
 | may never **weaken** an assertion to | PM | guarded: qa/T-62/case-07-weaken-only-the-pm.mjs |
 | When a disagreement improves the wording of a DoD section | PM | guarded: qa/T-62/case-08-two-destinations-for-wording.mjs |
 | **Applicable QA and reviews run at most once per milestone, at the end of | PM | guarded: qa/T-65/case-02-qa-round-two-steps.mjs |
-| **10b. Security review — only when the change is risky | PM | bare |
+| **10b. Security review — only when the change is a security risk | PM | bare |
 | **Run every verification command in those DoD sections yourself first, and | PM | bare |
 | `qa/run-all.sh` and `qa/gaps.md` are **yours, not QA's**. | PM | guarded: qa/T-72/case-02-shared-files-belong-to-the-pm.mjs |
 | the one config line** that lets the runner see the folder | PM | guarded: qa/T-42/case-01-scripts-test-runs-qa-cases.mjs |

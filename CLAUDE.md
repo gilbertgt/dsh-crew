@@ -395,7 +395,8 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
   executes it without a child role. `solo` is the default for ordinary coding: one `crew_engineer`,
   and at most the single named reviewer the routing decision names — never a `crew_qa`, a
   `crew_researcher`, an architect or a second
-  engineer. `crew` is for large, risky, cross-module or design-heavy work.
+  engineer. `crew` is for work that crosses a module boundary, changes the architecture, or is a
+  migration, a release or a new dependency.
   **The three flows are separate in `roles/pm.md`**: the numbered steps are `crew`'s, `solo` has
   its own five-bullet flow and at most the single named reviewer — it borrows nothing from
   the numbered steps, which is why a `solo` job never opens `crew-flow.md` — and `direct` shares
@@ -403,8 +404,9 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
   keeps a milestone of its own; `direct` and `solo` write no ADR and no CRD. A choice that deserves
   its own record re-routes the work to `crew`, where the record has a crew document to attach to.
   Whether a security review is needed is a **separate** question, answered from the closed risky
-  list below; it adds one reviewer to whatever route was chosen and never moves the route by
-  itself, so an ordinary settings form or dropdown is not a crew because it takes input.
+  list below; it adds one reviewer to whatever route was chosen and **never forces the `crew` route
+  by itself** — a `yes` raises a `direct` change to `solo` with that reviewer, and stops there — so
+  an ordinary settings form or dropdown is not a crew because it takes input.
   The PM write guard remains active, so protected product files still require one approval per PM
   write. A milestone is not a release; push, tag and publish still need separate user permission.
 - **Delegate only when the role adds relevant skill or independent evidence.** A small test,

@@ -19,9 +19,12 @@ role's time and the user's time for nothing. The rule, in one line — **do it
 yourself when you can; hand it to one engineer when you cannot; open the whole
 crew only when the work really earns it.**
 
-**Choose `crew` when the work is** large, crosses the core modules, is
-high-risk, changes the architecture, or clearly benefits from several roles
-working at once.
+**Choose `crew` when the work is** large, crossing a core module boundary, changing the
+architecture, a migration or a release, adding a dependency, undoable or data-loss-sensitive,
+or genuinely parallel — work several roles really have to hold at once. **A security
+question is not on that list, and "high-risk" is not a condition here either**: a change that
+checks who the user is, or that touches a secret or a trust boundary, is `solo` plus one
+security review, and only the conditions above open the full crew.
 
 
 **This `solo` is a route, and it is not the `**Shape**: solo` field of a `crew`
@@ -40,7 +43,8 @@ list, and it is this one**: the network, a login or permission check, secrets or
 keys, files outside the project, shell commands, **input that reaches a trust
 boundary** — a query, a shell command, a file path, a parser, a rendered page —
 customer data, or a new dependency. **Taking input is not on that list by
-itself**, and the list decides the review only: it never decides the route.
+itself**, and the list decides the review only: it never forces the `crew` route. It can
+raise a `direct` change to `solo`, because a reviewer is a child and `direct` starts none.
 `solo` plus one security review is a normal outcome and a good one: it is cheaper
 than a whole crew, and it still gets the second reader the auth part earns.
 
@@ -54,13 +58,13 @@ columns are answered separately, and neither one forces the other.
 | A change to three ordinary product files | `solo` | no | when they stop being one small change |
 | An ordinary settings UI: a form, a dropdown, a page that takes user input | `solo` | no | when it also spans core modules or changes the architecture |
 | A UI change that also touches a login or a permission check | `solo` | yes — one `crew_security_reviewer` | when it also spans core modules or changes the architecture |
-| A contract change between two core modules | `crew` | the core's own security list decides | already `crew` |
+| A contract change between two core modules | `crew` | the closed risky list decides | already `crew` |
 | A migration plus a login change plus the network | `crew` | yes | already `crew` |
 
 The table is the rule, not an illustration. Taking input alone never appears in
-the `Route` column, and no row's `Route` is decided by its `Security review`
+the `Route` column, and no row's `Route` is turned into `crew` by its `Security review`
 column — the two `solo` rows above prove it, one with a security review and one
-without.
+without. A `yes` there raises a `direct` change to `solo`, and stops there.
 
 **The PM write guard still stands, and on the `direct` scale it is part of the
 price.** You may write the whitelisted paths without asking: `docs/`,

@@ -58,7 +58,10 @@ window.__ModuleLoader__.load({
       invalidRoute: "此 route 不完整；請選擇 Provider 與 Model。",
       inheritedProvider: "繼承 parent Provider",
       presetFallback: "目前使用 preset legacy fallback；捨棄 user override 後會回到它。",
+      presetFallbackInherit: "這個角色仍在使用 preset 的 legacy route，所以「繼承」目前不會改變實際路由。",
+      presetFallbackFix: "實際路由要真正回到 PM / Session，請把 preset 裡的 roleModels 那一行刪掉。",
       reset: "重設此角色的 user override",
+      undoDraft: "放棄這個角色的草稿變更",
       roleResearcher: "Researcher",
       roleArchitect: "Architect",
       roleEngineer: "Engineer",
@@ -106,7 +109,10 @@ window.__ModuleLoader__.load({
       invalidRoute: "This route is incomplete; choose a provider and model.",
       inheritedProvider: "Inherit parent provider",
       presetFallback: "Using the preset legacy fallback; discarding the user override returns to it.",
+      presetFallbackInherit: "This role still runs on the preset's legacy route, so \"Inherit\" does not change the effective route yet.",
+      presetFallbackFix: "To really return to PM / Session, delete that roleModels line from the preset.",
       reset: "Reset this role's user override",
+      undoDraft: "Undo this role's draft change",
       roleResearcher: "Researcher",
       roleArchitect: "Architect",
       roleEngineer: "Engineer",
@@ -138,6 +144,8 @@ window.__ModuleLoader__.load({
       .dshCrewSettingsBadge{display:inline-flex;align-items:center;border-radius:999px;padding:2px 7px;background:var(--dsw-alias-fill-t2);color:var(--dsw-alias-label-secondary)}
       .dshCrewSettingsBadgeWarning{color:var(--dsw-alias-label-tertiary)}
       .dshCrewSettingsBadgeError{color:var(--dsw-alias-label-error)}
+      .dshCrewSettingsBadgeInfo{color:var(--dsw-alias-label-secondary)}
+      .dshCrewSettingsBadgeWarn{color:var(--dsw-alias-label-warning)}
       .dshCrewSettingsReset{align-self:flex-start;padding:0;border:0;background:transparent;color:var(--dsw-alias-label-tertiary);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
       .dshCrewSettingsReset:disabled{opacity:.5;cursor:not-allowed}
       .dshCrewSettingsFooter{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-top:2px}
@@ -184,6 +192,9 @@ window.__ModuleLoader__.load({
     function routeWithModel(route) {
       return isObject(route) && hasOwn(route, "model") && typeof route.model === "string" && route.model.length > 0;
     }
+
+    /** Whether a stored route would really reach a child: `roleAgentOptions()` needs a model. */
+    const routeHasModel = routeWithModel;
 
     function createStore(initial) {
       let snapshot = initial;
@@ -362,11 +373,28 @@ window.__ModuleLoader__.load({
         const reasoningAvailable = modelInfo?.reasoning !== undefined;
         const reasoningInvalid = reasoningAvailable && reasoningEffort.length > 0 && !advertisedEfforts.some((effort) => effort.id === reasoningEffort);
         const invalidRoute = source === "settings" && hasRoute && (!isObject(route) || model.length === 0);
+        // THE preset's own fallback route, which no settings write can reach.
+        //
+        // The namespace composes the user layer ON TOP of the preset's legacy
+        // `roleModels`. Unsetting the user key therefore does not fall back to the
+        // session route while that line is still in the preset: it falls back to
+        // the legacy route, and `roleAgentOptions()` keeps handing it to the child.
+        // Showing "Inherit" here used to promise something the write cannot do, and
+        // the very next render then reported the legacy route as an unavailable
+        // provider — a warning about a route the user never chose and cannot remove
+        // from this page.
+        const storedHasUserRoute = hasOwn(user, roleKey) && routeHasModel(user[roleKey]);
+        // The user's OWN route stops the legacy route from being what runs, so the
+        // fallback is only in force when they have none — or when a draft that owns
+        // this role has just taken theirs away, which is the half-clicked "Inherit".
+        const userRouteReachesTheChild = draftOwnsRole ? hasRoute && model.length > 0 : storedHasUserRoute;
+        const legacyFallback = source === "legacy" && !userRouteReachesTheChild && routeHasModel(base?.[roleKey]);
         let status = source === "inherit" || !hasEffectiveRoute && !invalidRoute ? "inherit" : "custom";
         if (hasEffectiveRoute && !providerAvailable) status = "unavailable-provider";
         else if (hasEffectiveRoute && providerAvailable && !modelAvailable) status = "unavailable-model";
         else if (hasEffectiveRoute && reasoningInvalid) status = "unavailable-reasoning";
         else if (invalidRoute) status = "invalid";
+        else if (legacyFallback) status = "legacy-fallback";
         return {
           key: roleKey,
           route: isObject(route) ? { ...route } : route,
@@ -382,6 +410,7 @@ window.__ModuleLoader__.load({
           reasoningAvailable,
           reasoningInvalid,
           invalidRoute,
+          legacyFallback,
           // Only an incomplete route blocks Save. A route whose provider, model
           // or Reasoning Effort is merely absent from the live catalog is KEPT
           // and shown as a warning: this namespace deliberately does not freeze
@@ -389,7 +418,9 @@ window.__ModuleLoader__.load({
           // preflight's call at child start.
           invalid: invalidRoute,
           status,
-          hasUserOverride: hasOwn(user, roleKey),
+          /** Whether the USER wrote this role's route, as opposed to the preset's legacy one. */
+          hasStoredUserRoute: storedHasUserRoute,
+          hasUserOverride: hasOwn(user, roleKey) || storedHasUserRoute || draftOwnsRole,
         };
       }
 
@@ -564,7 +595,8 @@ window.__ModuleLoader__.load({
         case "unavailable-model": return [t("unavailableModel"), "Warning"];
         case "unavailable-reasoning": return [t("unavailableReasoning"), "Warning"];
         case "invalid": return [t("invalid"), "Error"];
-        case "custom": return [t("custom"), ""];
+        case "legacy-fallback": return [t("presetFallback"), "Warn"];
+        case "custom": return [t("custom"), "Info"];
         default: return [t("inherit"), ""];
       }
     }
@@ -581,14 +613,17 @@ window.__ModuleLoader__.load({
       const reasoningOptions = [{ value: "", label: t("defaultEffort") }, ...(role.modelInfo?.reasoning?.efforts ?? []).map((effort) => ({ value: effort.id, label: effort.name ? `${effort.name} (${effort.id})` : effort.id }))];
       if (role.reasoningEffort && (!role.reasoningAvailable || role.reasoningInvalid)) reasoningOptions.push({ value: role.reasoningEffort, label: `${role.reasoningEffort} — ${t("unavailable")}`, disabled: true });
       const [statusText, tone] = roleStatus(role, t);
+      // A legacy fallback route is either inherited in the store or drafted towards
+      // "Inherit" by the user. Either way the mode control belongs on `inherit`:
+      // that is the state the settings hold, and it is the state the user asked for.
       const customActive = role.hasEffectiveRoute || role.source === "settings" && role.hasRoute;
-      const mode = customActive ? "custom" : "inherit";
+      const mode = role.legacyFallback ? "inherit" : customActive ? "custom" : "inherit";
       return h("div", { className: "dshCrewSettingsRole" },
         h("div", { className: "dshCrewSettingsRoleTitle" },
           h("span", null, t(role.labelKey)),
           h("div", { className: "dshCrewSettingsStatus" },
             h(Badge, { tone }, statusText),
-            role.source === "legacy" ? h("span", { className: "dshCrewSettingsMuted" }, t("presetFallback")) : null,
+            role.legacyFallback ? null : role.source === "legacy" ? h("span", { className: "dshCrewSettingsMuted" }, t("presetFallback")) : null,
           ),
         ),
         h("div", { className: "dshCrewSettingsFields" },
@@ -635,12 +670,21 @@ window.__ModuleLoader__.load({
           )
           : null,
         role.invalidRoute ? h("p", { className: "dshCrewSettingsError" }, t("invalidRoute")) : null,
+        // Said out loud, because the alternative is a control that looks like it
+        // worked. `unset` cannot reach a route that lives in the preset, so the
+        // page has to name where the fallback comes from and what removes it.
+        role.legacyFallback
+          ? h(React.Fragment, null,
+            h("p", { className: "dshCrewSettingsHint" }, t("presetFallbackInherit")),
+            h("p", { className: "dshCrewSettingsHint" }, t("presetFallbackFix")),
+          )
+          : null,
         role.hasUserOverride ? h("button", {
           type: "button",
           className: "dshCrewSettingsReset",
           disabled,
           onClick: () => resetRole(role.key),
-        }, t("reset")) : null,
+        }, t(role.hasStoredUserRoute ? "reset" : "undoDraft")) : null,
       );
     }
 

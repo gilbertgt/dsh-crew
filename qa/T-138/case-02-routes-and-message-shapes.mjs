@@ -83,10 +83,13 @@ function audit(raw) {
       + "route that has no step to look up.",
   );
   add(
-    "the security review is a second question and never moves the route by itself",
-    has("Is a security review needed? That is the second question, and it never moves the route by itself."),
-    "V2 keeps the two judgements apart on purpose: `solo` plus one security review is a normal outcome, "
-      + "and a route that changes because a form takes input is a crew nobody asked for.",
+    "the security review is a second question and never forces the crew route by itself",
+    has("Is a security review needed? That is the second question, and it never forces the `crew` route by itself.")
+      && has("**a `direct` change whose answer is yes is a `solo` change.**"),
+    "V2 keeps the two judgements apart: `solo` plus one security review is a normal outcome, and a route that "
+      + "changes because a form takes input is a crew nobody asked for. But the state space has to be closed: "
+      + "`direct` starts no child at all, so a `direct` change that needs a reviewer is a `solo` change — and the "
+      + "security answer never reaches `crew`.",
   );
   add(
     "TaskBrief carries its fields, and its artifact path is optional",
@@ -145,8 +148,8 @@ check(
 
 const directStartsAChild = afterBreaking(
   "roles/pm.md",
-  "You do the work in\n  this session and start **no** child role.",
-  "You do the work in\n  this session and start **one** child role.",
+  "this session and start **no** child role — and that is why",
+  "this session and start **one** child role — and that is why",
 );
 check(
   "mutation 2: a direct that starts a child turns this case red",

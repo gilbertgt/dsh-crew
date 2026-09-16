@@ -435,6 +435,60 @@ check(
   "the crew route lost either the researcher or the flow that is its own",
 );
 
+// --------------- 2f. the three routes are a closed state space
+//
+// `direct` starts no child, and a security review is a child — so `direct` with a
+// `yes` is not a state the crew can be in. Before this round the core said the
+// security answer "adds one reviewer to whichever route you chose" and, three lines
+// earlier, that `direct` starts no child: two rules that cannot both hold. The
+// closure is: `direct` only when the answer is no, `solo` plus one
+// `crew_security_reviewer` otherwise, and the security answer never reaches `crew`.
+//
+// The second half is the vocabulary split T-137 opened and this round finished: the
+// crew triggers may not name a security risk, an input, or the vague word
+// "high-risk", because that word is what let a login change be read as crew-scale.
+
+const securityPassage = flat(core.slice(core.indexOf("**Is a security review needed?"), core.indexOf("**A screen that merely TAKES")));
+check(
+  "the security answer can raise `direct` to `solo` and never reaches `crew`",
+  /never forces the `crew` route by itself/i.test(securityPassage)
+    && /a `direct` change whose\s+answer is yes is a `solo` change/i.test(securityPassage),
+  `the core no longer closes the state space around a security review: ${JSON.stringify(securityPassage.slice(0, 400))}`,
+);
+
+const tableRows = core.split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter((line) => line.startsWith("|") && line.endsWith("|"))
+  .map((line) => line.slice(1, -1).split("|").map((cell) => cell.trim()))
+  .filter((cells) => cells.length === 4 && !cells.every((cell) => /^:?-{2,}:?$/.test(cell)) && cells[0] !== "The work");
+const directRows = tableRows.filter((cells) => /^`?direct`?$/.test(cells[1]));
+const soloSecurityRows = tableRows.filter((cells) => /^`?solo`?$/.test(cells[1]) && !/^no$/i.test(cells[2]));
+check(
+  "the routing table keeps every `direct` row at `security: no`, and answers a security question with `solo`",
+  tableRows.length >= 6
+    && directRows.length > 0
+    && directRows.every((cells) => /^no$/i.test(cells[2]))
+    && soloSecurityRows.length > 0,
+  `a direct row that carries a security review is a state with no legal behaviour. Rows read: ${JSON.stringify(tableRows.map((cells) => [cells[1], cells[2]]))}`,
+);
+
+const escalationPassage = flat(core.slice(
+  core.indexOf("**Choose `crew` when any one of these is true"),
+  core.indexOf("**Is a security review needed?"),
+));
+check(
+  "the crew triggers name no security question, no input, and no vague `high-risk`",
+  escalationPassage !== ""
+    && !/\b(security|auth|permission|login|secret|input|risky|high-risk)\b/i.test(escalationPassage),
+  `a crew trigger that names a security question is how "takes input" and "high-risk" escalated ordinary forms into the full crew: ${JSON.stringify(escalationPassage.slice(0, 400))}`,
+);
+check(
+  "the shipped crew triggers dropped the vague words too",
+  !/\bhigh-risk\b|\brisky\b/i.test(flat(readPlaybook("crew-routing.md")).slice(0, 1400))
+    && !/cross-module or risky/i.test(flat(readPlaybook("hard-rules.md"))),
+  "`high-risk` / `risky` is a crew trigger again in the routing playbook or the rule list",
+);
+
 // ----------------------------- 3. a `solo` state file is never unfinished crew work
 
 const dir = tempDir("crew-qa-solo-state-");

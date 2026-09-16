@@ -50,8 +50,8 @@ across a few files, a normal screen — and its flow is five lines: read the
 repository, ask at most one question, write the TaskBrief, start one engineer (plus
 the single named reviewer, if there is one), run the targeted test and the
 completion gates, commit. `crew` is for work that is
-really large, crosses the core modules, is high-risk, or changes the
-architecture, and only `crew` runs the numbered steps — `solo` keeps its own
+really large, crosses the core modules, changes the architecture, or is a migration,
+a release or a new dependency, and only `crew` runs the numbered steps — `solo` keeps its own
 five-line flow and borrows none of them, and `direct` shares only the commit. A milestone is one unit of
 work with one commit, whatever the route; `solo` and `direct` keep no milestone
 record of their own.
@@ -229,7 +229,7 @@ round each, on the changed part only.
   shell command, a file path, a parser, a rendered page), customer data, or a
   new dependency. Taking input by itself is not on that list: an ordinary form
   or settings page is not a security change. This list decides the review only —
-  it never decides how many roles the change gets.
+  it never forces the `crew` route — a `yes` raises a `direct` change to `solo`, and stops there.
 - **Doc review** — one agent per document the milestone changed.
 
 Reviewers use an allow list (`read`, `glob`, `grep`) and cannot write files.

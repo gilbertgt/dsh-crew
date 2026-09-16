@@ -65,6 +65,17 @@ runtime cache。Settings save 後，role plugin 的 Fiber 以 `update()` reload�
 `roleModels.<role>` 的 user key；若使用者尚未移除舊 preset line，reset 後自然回到
 legacy base。這讓升級不會遺失舊設定，也不會偷偷改寫使用者的 preset。
 
+**但「回到 legacy base」不是「繼承 PM / Session」，所以繼承控制項不能假裝它做得到。**
+只要那條 preset line 還在，`unset` 之後實際生效的路由仍是 legacy route，而
+`roleAgentOptions()` 會繼續把它交給 child。因此該 role 的 route 來自 base（`source:
+"legacy"`）且使用者自己沒有同名的 user route 時，頁面把該列標成 legacy fallback，並在
+畫面上寫明：目前跑的是 preset 的 legacy route、按「繼承」不會改變實際路由、要真正回到
+session route 就得刪掉 preset 裡那一行（`presetFallbackInherit`／`presetFallbackFix`）。
+沒有這段說明時，使用者按下「繼承」會先看到選項成立、下一輪 render 再把同一條路由報成
+provider 不可用——一個他既沒有選、也不能從此頁移除的路由。所列的 legacy provider 若不在
+live catalog 內，狀態徽章仍會是 catalog 的 unavailability；辨識 fallback 的是上面那段
+說明，不是徽章。
+
 ## Host/agent runtime
 
 `host/roles-settings.js` 集中管理 namespace、Schemastery schema、route map clone
@@ -93,6 +104,16 @@ legacy `roleModels` 在**任何 mount 之前**驗證，壞值會讓整個 crew �
 crew。settings 變更後若新 config 被 host 拒絕，`updateRole()` 會把最後一次真正生效的
 config 重新套回該 Fiber：Cordis 的 `Fiber.update()` 先寫入新 config 再 restart，失敗時
 自己不會 rollback，少了這一步，一個暫時失效的 provider 會讓那個 role tool 消失到下次重啟。
+
+這條 reload 路徑上有兩個必須分開記帳的狀態，混在一起就會掉更新。`signatures` 是**真正
+生效**的值，`pending` 是**最後排入佇列**的目標：`refreshRoleTools()` 拿新 config 比對的
+是前者，若只比 `signatures`，同一輪內「先改 B、再改回 A」的第二次事件會因為 A 仍等於
+`signatures` 而被判成「已經正確」、什麼都不排，Fiber 最後停在 B 且再也沒有事件會修正它。
+因此每個 role 的佇列排空後會執行一次 `reconcileRole()`，把 Fiber 收斂到 settings 真正的
+值。`updateRole()` 另外記下最後一次被 host 拒絕的簽章（`rejected`）：被拒絕的值重試一定會
+再被拒絕，從 rollback 內部自我排程就是無窮迴圈，所以收斂只為**新**目標排程，同一個被拒絕的
+值要等下一次 settings 事件（`refreshRoleTools()` 會清掉該 role 的拒絕記錄）才重試。
+`tools/verify-role-settings.mjs` 對這三件事各有一個檢查，包括那個 burst 情境。
 
 Settings provider 的 attach/detach 不會改變 role filters、persona 或 max depth。若
 沒有 `settings` service，`ctx.inject` 不會阻擋既有 role mount。

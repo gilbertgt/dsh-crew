@@ -93,6 +93,24 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   and branch deletion are written out where they apply, the core's routing section is called
   **Pick a lane and route** instead of "Step 1", and the `step 10b` / `step 16` / `step 17` pointers
   a `direct` or `solo` job could have followed are gone. `crew` still reads its own numbered steps.
+- **`direct` plus a security review is now a defined state.** `direct` starts no child at all, and
+  a security reviewer is a child, so the two could not both hold: the rule said one reviewer is
+  added to *whichever* route was chosen, and the route said it starts nobody. A `direct` change is
+  now one whose security answer is `no`; when the answer is `yes` the work is `solo` with one
+  `crew_security_reviewer`, and the security question never reaches `crew` by itself.
+- **The named reviewer gets a `ReviewBrief`, built by the PM.** It is a new child and inherits
+  nothing from the engineer's briefing, so the PM writes down `route`, `goal` and `acceptance`
+  (from the TaskBrief) plus `diff` and `tests` (from the Result). Without it a `solo` security
+  reviewer was handed a diff with nothing to judge it against.
+- **Crew triggers no longer share a word with the security question.** `high-risk` and `risky` are
+  gone from the crew triggers, which now name what they mean: a module boundary, an architecture
+  change, a migration, a release, a new dependency, work that cannot be undone. `auth`,
+  `permission`, `secret` and a trust boundary are the security list's own words, and a change that
+  touches them is `solo` plus one review.
+- **An engineer's `solo` report is the five `Result` fields and nothing else.** It no longer asks
+  for a task id that route never receives, and the red/green output stays out of the message — one
+  line of red→green evidence, with the long output at the artifact path the briefing named. `crew`
+  keeps the richer report its task row is measured against.
 - **Every shipped rule file now tells the same `solo` story.** The full rule list the PM reads on
   demand, the reasons in `principles.md`, and the repository's own two maps still described the V1
   `solo`, which kept a task row and wrote its own ADR and CRD. They now say what the always-loaded
@@ -100,6 +118,27 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   decision records belong to `crew`, and a choice that deserves one re-routes the work. A check now
   reads every playbook header and every one of those files against the manifest, so the three
   cannot drift apart again.
+
+### Fixed
+
+- **A role model change made in two quick edits no longer lands on the first one.** Changing a
+  role's Provider or Model, then changing it straight back, could leave that role running on the
+  value in the middle: the second change was read as "already correct" while the first was still
+  being applied, so nothing was written, and every later edit agreed with the stale reading. The
+  role kept using the route you had moved away from until dsh restarted. The reload now converges
+  on what the settings really say once the queue for that role is empty, and a route the host
+  refuses is retried once per settings change instead of in a loop.
+- **The Crew settings page no longer offers "Inherit PM / Session" as if it could clear a route
+  that lives in the preset.** If your `agent.cordis.yml` still carries a legacy
+  `roleModels: { <role>: … }` line, that route is composed underneath the settings layer, and no
+  settings write can reach it — unsetting the role key falls back to it. The page said "Inherit"
+  and then reported that same route as an unavailable provider. It now says what is really
+  running, that the preset is where it comes from, and that deleting that line is what returns the
+  role to the session route.
+- **The routing table is checked in both of the places it ships.** The `crew-routing` playbook
+  carries its own copy for the jobs the short rules cannot place, and its "Security review" column
+  had drifted into wording of its own that pointed at a core section holding no such list. Both
+  copies now answer every row the same way, and a check compares them row by row.
 
 ## 0.10.0 — 2026-08-23
 

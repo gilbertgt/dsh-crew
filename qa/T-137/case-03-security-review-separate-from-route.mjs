@@ -126,8 +126,12 @@ function audit(text) {
     ID.order,
     /the route\b/i.test(order)
       && /the security review\b/i.test(order)
-      && /never moves the route by itself|never moves the route/i.test(order),
-    `the passage that orders the two questions is missing or does not tie them up: ${JSON.stringify(order.slice(0, 400))}`,
+      // V2 tightened this: security never forces the CREW route, but it does raise
+      // a `direct` change to `solo`, because a reviewer is a child and `direct`
+      // starts none. The assertion moved with the rule and gained that half.
+      && /never forces the `crew` route by itself/i.test(order)
+      && /`direct` change whose\s+answer is yes is a `solo` change/i.test(order),
+    `the passage that orders the two questions is missing, or it no longer says how far the security answer can move the route: ${JSON.stringify(order.slice(0, 400))}`,
   );
   add(
     ID.tableColumn,

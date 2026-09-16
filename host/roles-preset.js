@@ -149,6 +149,30 @@ export function apply(ctx, config) {
   /** Last config of each role that really went live, for rollback after a rejected update. */
   const liveConfigs = new Map();
   const updateTails = new Map();
+  /**
+   * The signature each role's LAST QUEUED update is trying to reach.
+   *
+   * `signatures` is what really went live and `updateTails` is what is still on
+   * its way, and the gap between them is not academic. A settings event computes
+   * each role's new config and compares it against `signatures`, so without a
+   * record of the queued target a second event that asks for the value the FIRST
+   * event is still moving away from reads as "already correct" and queues
+   * nothing — the fiber then lands on the superseded value and stays there,
+   * because every later event sees the same matching signature. Two opposite
+   * edits inside one host round reproduce it.
+   */
+  const pending = new Map();
+  /**
+   * The signature of the last attempt the host REFUSED, per role.
+   *
+   * A rejected `Fiber.update` is rolled back and the target is refused every time
+   * it is tried, so a retry that fires from inside the rollback is an endless loop
+   * that never leaves the process: the same value, the same error, forever. This is
+   * what makes the convergence below run once. A fresh `onChange` still retries —
+   * that is a new settings event, and by then the reason for the refusal (a provider
+   * that went away, say) may be gone — but nothing self-schedules.
+   */
+  const rejected = new Map();
 
   /** Build one complete tool-subagent config from the current role settings. */
   const roleConfig = (role) => {
@@ -205,6 +229,8 @@ export function apply(ctx, config) {
    * a moment ago, and the PM would lose a role until the next dsh restart.
    */
   const updateRole = (role, next) => {
+    const signature = JSON.stringify(next);
+    pending.set(role.key, signature);
     const previous = updateTails.get(role.key) ?? Promise.resolve();
     const tail = previous.catch(() => {}).then(async () => {
       const fiber = fibers.get(role.key);
@@ -212,9 +238,10 @@ export function apply(ctx, config) {
       try {
         await fiber.update(next);
         liveConfigs.set(role.key, next);
-        signatures.set(role.key, JSON.stringify(next));
+        signatures.set(role.key, signature);
       } catch (error) {
         reportUpdateFailure(role, error);
+        rejected.set(role.key, signature);
         const lastGood = liveConfigs.get(role.key);
         if (lastGood === undefined || lastGood === next) return;
         try {
@@ -226,20 +253,55 @@ export function apply(ctx, config) {
       }
     });
     updateTails.set(role.key, tail);
+    // One `then` per update while a burst is running, and each one does nothing
+    // until it is the tail. The last one to land converges the fiber.
+    tail.then(() => {
+      if (updateTails.get(role.key) === tail) reconcileRole(role);
+    });
+  };
+
+  /**
+   * Put one role's fiber on the value the settings really hold, once the queue
+   * for that role is empty.
+   *
+   * `refreshRoleTools` deliberately does not queue the update whose signature the
+   * role is already moving towards, so the queue can end with the fiber on a
+   * superseded value. This is what closes that gap.
+   *
+   * What is NOT covered anywhere: that a real Cordis `Fiber.update` really leaves
+   * the fiber inactive when it is rejected, and that updating it again with the old
+   * config really brings it back. `tools/verify-role-settings.mjs` drives these
+   * paths with a synthetic fiber whose `update` resolves or throws when the test
+   * says so, and this repository has no real `Fiber` to drive — the same optional
+   * peer whose absence `verify-mount.mjs` reports as a SKIP. So the statement here
+   * is "this is the right order of events", not "a live host was observed".
+   */
+  const reconcileRole = (role) => {
+    const next = roleConfig(role);
+    const signature = JSON.stringify(next);
+    if (signature === (signatures.get(role.key) ?? "")) return;
+    // Only for a target that is really new. The same value coming back out of a
+    // refusal would be re-queued by every rollback, and it would be refused again.
+    if (rejected.get(role.key) === signature) return;
+    updateRole(role, next);
   };
 
   /**
    * Reconcile settings changes without remounting a second copy of a tool.
    *
    * A signature is advanced only when the new config really went live (inside
-   * `updateRole`), so a rejected change is retried by the next settings event
-   * instead of being remembered as applied.
+   * `updateRole`), so a rejected change is retried instead of being remembered as
+   * applied. A settings event always means a fresh attempt: the refusal recorded
+   * for that role is cleared here, so asking for the same route again after a fix
+   * is not mistaken for the very attempt that already failed.
    */
   const refreshRoleTools = () => {
     for (const role of ROLES) {
       const next = roleConfig(role);
       const signature = JSON.stringify(next);
+      if (signature === (rejected.get(role.key) ?? "")) rejected.delete(role.key);
       if (signatures.get(role.key) === signature) continue;
+      if (pending.get(role.key) === signature) continue;
       updateRole(role, next);
     }
   };

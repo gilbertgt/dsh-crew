@@ -19,13 +19,14 @@ Two lanes, then a route:
 - `team` — you want a change. Inside it the PM picks the cheapest route that can
   carry the work: `direct` for a small, low-risk change, done by the PM with no
   child role; `solo` for ordinary coding, which is one engineer and nobody else;
-  and `crew` only for work that is large, cross-module, high-risk or
-  architecture-changing, where the relevant roles are started and no others.
+  and `crew` only for work that is large, cross-module, architecture-changing or a
+  migration, where the relevant roles are started and no others.
 
 Whether a security review is needed is a separate question, answered from a
 closed list. A settings page, form or dropdown is `solo` even though it takes
 input; a change that also touches a login or a permission check stays `solo` and
-adds one security reviewer.
+adds one security reviewer. A security review never forces the full crew: a
+`direct` change that needs one becomes `solo` with that reviewer, and no more.
 
 Development runs targeted tests. The full project and QA gates run once when the
 change is ready, then again only after a failure requires a fix. Completed stages

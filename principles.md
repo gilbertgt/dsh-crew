@@ -1194,7 +1194,8 @@ Principles 6 and 18 now put targeted tests inside development and the full gates
 the end, start only the QA or reviewer whose subject changed, and stop one issue
 after two review rounds — which is why `limits.reviewRounds` defaults to 2. The
 fastest correct route is therefore the default, while the full crew remains
-available for large, risky or cross-module work.
+available for work that crosses a module boundary, changes the architecture, or is a
+migration or a release.
 
 **A finished stage stays finished across sessions.** `state.json` — the `crew`
 route's ledger, the only route that has one — carries a

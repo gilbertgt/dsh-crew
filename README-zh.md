@@ -17,12 +17,13 @@ child role。九個角色、model routing、Git guard、PM write guard、權限�
 - `ask` — 你要一個答案。PM 回答，不修改任何內容。
 - `team` — 你要一項變更。PM 會選最省、又足以承載該工作的路線：小型低風險變更走
   `direct`，由 PM 自己完成、不啟動 child role；一般 coding 走 `solo`，只啟動一位
-  engineer、其他角色都不啟動；只有大型、跨模組、高風險或動到架構的工作才走
+  engineer、其他角色都不啟動；只有大型、跨模組、動到架構或是 migration 的工作才走
   `crew`，而且只啟動與該變更相關的角色。
 
 是否需要 security review 是另一個問題，依固定清單單獨判斷。設定頁面、表單或下拉
 選單雖然接受使用者輸入，仍然是 `solo`；若該變更同時動到登入或權限檢查，也維持
-`solo`，另外加一位 security reviewer。
+`solo`，另外加一位 security reviewer。security review 永遠不會把工作升成完整
+`crew`：需要它的 `direct` 變更會變成 `solo` 加那一位 reviewer，不會再往上。
 
 開發期間只跑 targeted tests。完整專案測試與 QA gate 在準備完成時跑一次；只有測試
 失敗並修正後才重跑。已完成的階段會寫入 checkpoint，resume 後不會重做。Push 與
