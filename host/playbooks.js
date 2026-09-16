@@ -57,12 +57,12 @@ export const PM_CORE_MAX_BYTES = 24 * 1024;
 export const PLAYBOOKS = [
   {
     file: "crew-flow.md",
-    when: "the route is `crew` — a `solo` job never opens it",
+    when: "the route is `crew`",
     holds: "the numbered flow: interview, PRD, task table, design, task runs, checks, commit, milestone review, release plans, reader-facing files, push, merge, finish",
   },
   {
     file: "crew-routing.md",
-    when: "the short routing rules in the core are not enough to place the work",
+    when: "the short routing rules in the core are not enough to place the work, or the role that would own it is not obvious",
     holds: "the long form of the routing judgement: what the scale decides, the two questions kept apart, and the three lines that say who owns which piece of work",
   },
   {
@@ -82,7 +82,7 @@ export const PLAYBOOKS = [
   },
   {
     file: "worktrees.md",
-    when: "a task runs on the paired shape",
+    when: "a task runs on the paired shape in a job that has an architect",
     holds: "two engineers, two git worktrees, one pinned interface, one first meeting",
   },
   {

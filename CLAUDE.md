@@ -374,7 +374,7 @@ is**, never who made it:
 | --- | --- |
 | `docs/design/` | `prd-<date>-<job-slug>.md` — the opening document, **one per job**, holding a **DoD section** per milestone on big work; `hld-<date>-<job-slug>.md`, one per job; and one module boundary contract per pair of modules that talk (`docs/design/api/<caller>-<callee>.md`) |
 | `docs/tasks/` | the task table — one `T-<n>.md` per task row, holding a **DoD section** per row, plus `README.md` for the non-task content |
-| `docs/decisions/` | `adr/NNNN-<short-name>.md` (how it was done — on the `solo` and `crew` routes only: a `direct` change keeps a small implementation choice in its commit message) and `crd/NNNN-<short-name>.md` (one change request per scope-or-contract change, and no `direct` change has one) |
+| `docs/decisions/` | `adr/NNNN-<short-name>.md` (how it was done — on the `crew` route only: a `direct` or `solo` change keeps a small implementation choice in its commit message) and `crd/NNNN-<short-name>.md` (one change request per scope-or-contract change, and no `direct` or `solo` change has one) |
 | `qa/` | QA's **runnable** cases — `<task-id>/case-*`, a `run.sh` per task and one `qa/run-all.sh` that finds them all — plus `gaps.md`, the standing list of what no case can check |
 | `docs/release/` | a release and an upgrade plan for each milestone the user ships: `<milestone>-release.md` and `<milestone>-upgrade.md`; plus `<milestone>-gaps.md`, the **shipping gap list**, for a milestone that does not ship (not to be confused with `qa/gaps.md`) |
 
@@ -392,8 +392,9 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
 
 - **Two lanes, then a route.** `ask` answers a question and changes nothing; `team` handles a
   change. Inside `team`, `direct` is the default for small, low-risk, single-module work: the PM
-  executes it without a child role. `solo` is the default for ordinary coding: one `crew_engineer`
-  and no architect, QA or reviewer. `crew` is for large, risky, cross-module or design-heavy work.
+  executes it without a child role. `solo` is the default for ordinary coding: one `crew_engineer`,
+  and at most the single named reviewer step 1 named — never a `crew_qa`, an architect or a second
+  engineer. `crew` is for large, risky, cross-module or design-heavy work.
   **The three flows are separate in `roles/pm.md`**: the numbered steps are `crew`'s, `solo` has
   its own five-bullet flow and at most the single reviewer step 1 named — it borrows nothing from
   the numbered steps, which is why a `solo` job never opens `crew-flow.md` — and `direct` shares

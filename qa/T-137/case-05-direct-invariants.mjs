@@ -429,11 +429,16 @@ function auditContributing(text) {
   const decisionsParagraph = units(text).find((block) => /goes into an ADR/i.test(block)) ?? "";
   add(
     CONTRIB.decisions,
-    /`solo` and `crew` routes, a decision about \*\*how\*\*/i.test(whole)
-      && /`direct`\s+change writes neither/i.test(whole),
+    // Crew V2 moved the two decision records to `crew` alone, so this assertion
+    // moved with the rule instead of being widened: the guide must still name the
+    // route the records belong to — now the `crew` route — and must still exempt
+    // BOTH lighter routes. Before V2 the two were named together ("`solo` and
+    // `crew` routes"), which is exactly what made a `solo` job owe an ADR.
+    /`crew` route, a decision about \*\*how\*\*/i.test(whole)
+      && /`direct`\s+or `solo` change writes neither/i.test(whole),
     decisionsParagraph === ""
       ? `${CONTRIBUTING} no longer says where an ADR goes`
-      : `the ADR/CRD paragraph does not scope the two records and exempt \`direct\`: ${JSON.stringify(decisionsParagraph.slice(0, 300))}`,
+      : `the ADR/CRD paragraph does not scope the two records to \`crew\` and exempt both \`direct\` and \`solo\`: ${JSON.stringify(decisionsParagraph.slice(0, 300))}`,
   );
 
   add(

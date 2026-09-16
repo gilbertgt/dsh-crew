@@ -2,7 +2,7 @@
 
 The write set by document class, the channel rule, the two rules every role prompt copies word for word, the opening document (PRD), the task table and its rows, a bug's row, and how a single-use document is dropped.
 
-**Read this when:** the route is `crew`, and the job is about to write an opening document, a task table or a task row.
+**Read this when:** the route is `crew`, and the job must write an opening document, a task table or a task row.
 
 This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
 `crew_playbook({ name: "documents" })` — at the moment the job needs it, and only

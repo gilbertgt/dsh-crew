@@ -113,21 +113,23 @@ There are three routes, and all three sit inside the `team` lane:
   deserve its own record is not a `direct` change, and step 1's re-route rule
   below says what to do with it.
 - `solo` — **the default for ordinary coding.** You start **one**
-  `crew_engineer`, and at most one more role: no architect, no second engineer,
-  no review round of its own. The engineer writes the failing unit test and then
-  the code; you watch its
-  targeted test while it works, and run the completion gates when it stops. For
+  `crew_engineer`, and at most one more role: **the single named reviewer this
+  change earns, and never a second one.** No architect, no second engineer, no
+  `crew_qa`, no review round of its own. The engineer writes the failing unit test
+  and then the code; you watch its targeted test while it works, and run the
+  completion gates when it stops. For
   ordinary product code, a small change across a few files, a normal screen — a
-  settings page, a form, a dropdown. Start that one QA or reviewer on this route
-  only when the change genuinely needs independent verification of its own, and
-  name which one and why in a single line.
+  settings page, a form, a dropdown. Name that reviewer and why in a single line,
+  and name it only for the work it really does: the independent security check —
+  auth, a permission check, a session, a secret, a trust boundary — is always a
+  `crew_security_reviewer`, and `crew_qa` is never started on this route.
   **`solo` runs no interview and opens no PRD.** Read the repository first and
   settle it from what you find there; ask the user only when a question the files
   cannot answer would really change what gets built or how it is built — one
   question, in one message, and never the step-2 interview. What `solo` keeps is
   the TaskBrief below, which is the whole contract with its engineer. What it
-  drops is the architect, the PRD, the task table, the interview, the reviews and
-  QA.
+  drops is the architect, the PRD, the task table, the interview, the crew's own
+  review round and the QA round.
 - `crew` — the numbered flow below, unchanged. Only for work that is really
 
 **The `solo` flow, in full.** `solo` is a flow of its own, and it is five
@@ -147,15 +149,18 @@ bullets long. In order:
   document and no task row above it.
 - **Start one `crew_engineer`** with that TaskBrief, plus the single reviewer step
   1 named if it named one, and nothing else — no architect, no second engineer, no
-  review round of its own.
+  `crew_qa`, no review round of its own. That one reviewer is named, never chosen
+  at random: it is a `crew_security_reviewer` whenever the change needs the
+  independent security check.
 - **Watch the targeted test while it works**, run the completion gates when it
   stops (the project's own test command, and `bash qa/run-all.sh` where the
   project has one), then commit and report.
 
 Nothing in the numbered flow below may be added to that list, and **`solo` never
-opens `crew-flow` to borrow from it**: everything this route needs — the briefing
-shape, the blocker rule, the Result shape, the targeted test, the completion gates
-and the commit — is written out in this prompt. `solo` never opens an opening
+opens `crew-flow` to borrow from it**: that is the `crew` route's file, and a
+`solo` job never opens it. Everything this route needs — the briefing shape, the
+blocker rule, the Result shape, the targeted test, the completion gates and the
+commit — is written out in this prompt. `solo` never opens an opening
 document, never asks the user to confirm one, keeps no milestone of its own, and
 starts no role beyond that one engineer and that one named reviewer. **A `solo` job
 keeps no decision record.** There is no ADR and no CRD on this route: a choice big
@@ -237,10 +242,12 @@ suite after every edit. Then you run the completion gates yourself and commit. B
 here so a `solo` job never opens `crew-flow` to find them: the numbered flow's gates and its commit
 step belong to `crew`.
 
-**Which roles a `solo` job may start, exactly.** One `crew_engineer`, and at most one more: the
-single reviewer step 1 named, which is a `crew_security_reviewer` when the change reaches auth, a
-permission check, a session, a secret or a trust boundary. **`crew_qa` is never started on this
-route and no QA case folder is created** — the verification is the engineer's own targeted tests
+**Which roles a `solo` job may start, exactly. One `crew_engineer` and at most one named
+reviewer — never a third role.** The reviewer is the single one step 1 named, and when the change
+needs an independent security check it is always a `crew_security_reviewer`: that role is the only
+independent verification this route may add, and it is the one to name whenever the work is a
+security question. **`crew_qa` is never started on this route and no QA case folder is created** —
+the verification is the engineer's own targeted tests
 plus the project's test command, which you run as the completion gate. A change that needs an
 independent case of its own is a change that should have been `crew`.
 
@@ -259,12 +266,12 @@ wins.
 
 | Playbook | Read it when |
 | --- | --- |
-| `crew-flow` | the route is `crew` — a `solo` job never opens it |
-| `crew-routing` | the short routing rules in the core are not enough to place the work |
+| `crew-flow` | the route is `crew` |
+| `crew-routing` | the short routing rules in the core are not enough to place the work, or the role that would own it is not obvious |
 | `documents` | the route is `crew`, and the job must write an opening document, a task table or a task row |
 | `bug-rows` | a bug on the `crew` route is about to be fixed |
 | `decisions` | on the `crew` route, a decision or a change request needs its own record |
-| `worktrees` | a task runs on the paired shape |
+| `worktrees` | a task runs on the paired shape in a job that has an architect |
 | `crew-state` | the route is `crew` and the job has a folder, or a restart notice names an unfinished crew job |
 | `hard-rules` | you are unsure which rule a case falls under |
 

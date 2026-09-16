@@ -47,12 +47,12 @@ edit or one small bug goes: the commit message is its record — a small
 implementation choice included — and nothing later
 in this file adds work to it. `solo` is for ordinary coding — a small change
 across a few files, a normal screen — and its flow is five lines: read the
-repository, ask at most one question, write the task row, start one engineer (plus
+repository, ask at most one question, write the TaskBrief, start one engineer (plus
 the single reviewer step 1 named, if it named one), run the targeted test and the
 completion gates, commit. `crew` is for work that is
 really large, crosses the core modules, is high-risk, or changes the
-architecture, and only `crew` runs the numbered steps — `solo` borrows step 9's
-briefing list and step 11's commit, and nothing else. A milestone is one unit of
+architecture, and only `crew` runs the numbered steps — `solo` keeps its own
+five-line flow and borrows none of them, and `direct` shares only the commit. A milestone is one unit of
 work with one commit, whatever the route; `solo` and `direct` keep no milestone
 record of their own.
 
@@ -60,9 +60,10 @@ record of their own.
 
 On the `crew` route each job opens with a PRD of its own:
 `docs/design/prd-<date>-<job-slug>.md`. `solo` opens no PRD — the PM starts one
-engineer from a task row instead — and `direct` writes no document at all. The one
-task table of the whole repository is `docs/tasks/`. On the routes that have one,
-every task section holds:
+engineer from a TaskBrief instead, and that brief is the whole contract with its
+engineer — and `direct` writes no document at all. The one
+task table of the whole repository is `docs/tasks/`, and only `crew` keeps it: a
+`solo` change writes no task row. Every task section holds:
 
 - an id (`T-01`);
 - one sentence of work;
@@ -74,32 +75,37 @@ checks it** — the QA case and the exact command. **DoD is a section, never a
 file.** There is no `dod.md` anywhere: a file of its own is a file that gets
 dropped. A check is "item 2 of T-05's DoD", never a numbered list.
 
-A bug on the `crew` or `solo` route becomes a task row whose DoD section the PM
-writes before the fix starts — never the engineer doing the fix. A `direct` bug
-gets no row at all; its record is the commit message. The files a task owns live
+A bug on the `crew` route becomes a task row whose DoD section the PM
+writes before the fix starts — never the engineer doing the fix. On `solo` the same
+two things go into the TaskBrief, because a `solo` job keeps no task row. A `direct`
+bug gets no row at all; its record is the commit message. The files a task owns live
 in its row, and two tasks never own the same file.
 
 ## How code changes move
 
-On the `crew` and `solo` routes:
+On the routes that start an engineer — `solo` and `crew`:
 
-1. The PM starts one engineer per task. The default shape is `solo`: one
+1. The PM starts one engineer per unit of work: one task row's worth on `crew`, one
+   TaskBrief's worth on `solo`. The default shape is `solo`: one
    engineer writes the failing unit test, then the code that makes it pass.
 2. The engineer works **test first**, one behaviour per test: write the test,
    run it, see it fail for the right reason, then write the smallest code that
    passes. The report shows the failing run and then the passing run.
-3. Every test is a real file in the project's own test suite, named in the task
-   row and committed with the code — never a command run once in a shell.
-4. The engineer touches only the files its task owns. Engineers never use git
-   for writing; the PM commits, staging exactly the files the task owns.
+3. Every test is a real file in the project's own test suite, named in the
+   briefing — the task row on `crew`, the TaskBrief on `solo` — and committed with
+   the code, never a command run once in a shell.
+4. The engineer touches only the files its briefing owns. Engineers never use git
+   for writing; the PM commits, staging exactly those files.
 5. A task is finished when its own unit tests pass. QA and the reviews have not
-   run yet, so neither calls a task done. The task row still records all four
-   verdicts, with `not run` plus its reason where a check has not run.
-6. A task in a job that has an architect may use the **paired shape**:
+   run yet, so neither calls a task done. On `crew` the task row still records all
+   four verdicts, with `not run` plus its reason where a check has not run; a
+   `solo` job has no row, and reports the same four things in its `Result`.
+6. A task in a `crew` job that has an architect may use the **paired shape**:
    `crew_test_engineer` writes only the unit tests, `crew_code_engineer` writes
    only the product code, each in its own git worktree. The PM merges the two
    halves and runs the project's test command once. Small work has no
-   architect, so every row of a small job is `solo`.
+   architect, so every row of a small `crew` job is `solo` — the shape, not the
+   route.
 
 A code change must not break the design rules that `tools/verify-mount.mjs`
 checks (`CLAUDE.md`, "Design rules a change must not break"). The ones a
@@ -138,12 +144,12 @@ Where a document lives depends on how long it lives:
   files — and the folder is dropped when the job ends. DoD sections and file
   ownership are never single-use; they live in `docs/tasks/`.
 
-On the `solo` and `crew` routes, a decision about **how** something is done goes
-into an ADR under `docs/decisions/adr/`, whatever the size of the job. A change to
-scope or to a contract goes into a CRD under `docs/decisions/crd/`. **A `direct`
-change writes neither**: a small implementation choice stays in the code and the
-commit message, and a decision big enough to deserve its own record moves the work
-to `solo` or `crew`.
+On the `crew` route, a decision about **how** something is done goes
+into an ADR under `docs/decisions/adr/`, whatever the size of the job, and a change
+to scope or to a contract goes into a CRD under `docs/decisions/crd/`. **A `direct`
+or `solo` change writes neither**: a small implementation choice stays in the code
+and the commit message, and a decision big enough to deserve its own record
+re-routes the work to `crew`, where the record has a document to attach to.
 
 The reader-facing files follow their own rules:
 

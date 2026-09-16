@@ -82,6 +82,13 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   and the written rule used to disagree.
 - Development runs targeted tests; full gates run once at completion, review issues stop
   after two rounds, and resumed jobs skip stages already recorded as complete.
+- **Every shipped rule file now tells the same `solo` story.** The full rule list the PM reads on
+  demand, the reasons in `principles.md`, and the repository's own two maps still described the V1
+  `solo`, which kept a task row and wrote its own ADR and CRD. They now say what the always-loaded
+  core says: the TaskBrief is the route's only record and holds the acceptance list, the two
+  decision records belong to `crew`, and a choice that deserves one re-routes the work. A check now
+  reads every playbook header and every one of those files against the manifest, so the three
+  cannot drift apart again.
 
 ## 0.10.0 — 2026-08-23
 

@@ -8,9 +8,21 @@
 //      is what the PM reads, the manifest is what the tool offers, and a route
 //      condition that differs between them is how a `solo` job gets sent to a
 //      crew-only file;
+//   1b. each playbook's OWN `**Read this when:**` line must state that same
+//      condition word for word. The index and the manifest agreeing is not enough:
+//      V2 shipped the header of `crew-flow.md` offering itself to "a `solo` job
+//      that turned out to need a role beyond its one engineer" while the manifest
+//      and the core both said `crew`, and nothing read the header;
 //   2. `crew-routing.md` may not bind `solo` to a task row, a DoD row, step 9 or
 //      the crew flow: that route has none of them, and its briefing is the
-//      TaskBrief;
+//      TaskBrief. It is the routing playbook, so it carries route selection, the
+//      security question, role ownership and escalation — and no crew ceremony;
+//   2b. `crew-flow.md` may never offer itself to a `solo` job in its own words
+//      either, which is the same contradiction seen from the file's side;
+//   2c. no shipped text — the core, the playbooks, `principles.md`,
+//      `CONTRIBUTING.md`, `CLAUDE.md`, `README.md` — may hand a `solo` job a crew
+//      document. V1's `solo` kept a task row and wrote its own ADR and CRD, and
+//      three of those files still said so after V2 moved the contract;
 //   3. `jobsNotice()` must never read a state file that says `solo` as unfinished
 //      crew work — not when its task list is empty, and not when it holds open
 //      tasks somebody wrote by hand.
@@ -22,7 +34,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { check, cleanUp, done, flat, pmCore, tempDir } from "../lib/qa.mjs";
+import { check, cleanUp, done, flat, pmCore, repoFile, tempDir } from "../lib/qa.mjs";
 import { PLAYBOOKS, readPlaybook } from "../../host/playbooks.js";
 import { jobsNotice } from "../../host/jobs.js";
 
@@ -64,6 +76,40 @@ for (const row of rows) {
   );
 }
 
+// ------------------- 1b. every playbook's own header says the manifest's words
+//
+// One comparison per file, not one for the collection: the header is what a
+// reader sees once the file is open, and a file whose header invites a route the
+// manifest excludes is a contradiction that survives every index check.
+// `**Read this when:**` is the marker `tools/verify-mount.mjs` uses for the core's
+// copy of these rules, and every playbook opens with it.
+
+for (const playbook of PLAYBOOKS) {
+  const name = playbook.file.replace(/\.md$/, "");
+  const text = readPlaybook(playbook.file);
+  const header = text.split(/\r?\n/).find((line) => line.startsWith("**Read this when:**"));
+  const when = header === undefined
+    ? null
+    : header.replace("**Read this when:**", "").trim().replace(/\.$/, "");
+  check(
+    `${name}'s own \`Read this when:\` line is the manifest's condition, word for word`,
+    when === playbook.when,
+    header === undefined
+      ? `${playbook.file} has no \`**Read this when:**\` line, so the file never states the condition it is read under`
+      : `header: ${JSON.stringify(when)}\n      manifest: ${JSON.stringify(playbook.when)}`,
+  );
+}
+
+for (const playbook of PLAYBOOKS) {
+  const name = playbook.file.replace(/\.md$/, "");
+  check(
+    `${name} names its own condition exactly once`,
+    readPlaybook(playbook.file).split(/\r?\n/)
+      .filter((line) => line.startsWith("**Read this when:**")).length === 1,
+    `a second header would let one line contradict the other: ${playbook.file}`,
+  );
+}
+
 // ------------------------------- 2. crew-routing does not bind solo to crew work
 
 const routing = flat(readPlaybook("crew-routing.md"));
@@ -88,6 +134,166 @@ check(
   /crew/.test(routing),
   "the playbook no longer mentions the crew route at all",
 );
+
+// ---------------------- 2b. the crew flow never offers itself to a solo job
+
+// The same contradiction from the other side. The header check above reads the
+// `Read this when:` line alone; this one reads the body, because the sentence
+// that sent a `solo` job into the crew flow lived in the flow's own words as well
+// as in its header.
+//
+// Read LINE by line, not sentence by sentence: V2's own header sentence sat in a
+// paragraph whose neighbouring clause carried the word "never", and a scan that
+// split on sentence boundaries read the two as one and waved it through. A line is
+// the unit a reader sees, and it is the unit an invitation is written in.
+const flow = flat(readPlaybook("crew-flow.md"));
+const SOLO_READS = /\b(read|reads|reading|open|opens|opening|load|loads)\b/i;
+const FLOW_ANCHOR = /this file|crew-flow|numbered (flow|steps)|the flow below/i;
+const NEGATED = /\bno\b|\bnot\b|\bnever\b|\bnone\b|\bnothing\b|\bborrows none\b/i;
+const selfOffers = readPlaybook("crew-flow.md").split(/\r?\n/)
+  .map((line, index) => ({ line: line.trim(), number: index + 1 }))
+  .filter((entry) => /`solo`|\bsolo\b/i.test(entry.line)
+    && SOLO_READS.test(entry.line)
+    && FLOW_ANCHOR.test(entry.line)
+    && !NEGATED.test(entry.line));
+
+check(
+  "crew-flow.md never offers itself to a `solo` job in its own words",
+  selfOffers.length === 0,
+  `these lines send a solo job into the crew flow: ${JSON.stringify(selfOffers)}`,
+);
+check(
+  "crew-flow.md does say, out loud, that solo never opens it",
+  /`solo` borrows none\s+of them and never opens this file/i.test(flow),
+  "without that sentence the flow reads as the route's shared flow again",
+);
+
+// --------------- 2c. no shipped text hands a crew document to a `solo` job
+//
+// The contract is one sentence: a `solo` job keeps **no** task table and **no**
+// task row, writes **no** ADR and **no** CRD, opens **no** PRD, and keeps no job
+// folder — its acceptance list is the TaskBrief, and a choice that deserves a
+// record re-routes the work to `crew`.
+//
+// V1 said the opposite, and the leftovers outlived the migration in three places
+// the index check cannot see: `hard-rules.md` (the full list the PM reads when it
+// is unsure), `principles.md` (the reasons), and `CONTRIBUTING.md` (the guide a
+// contributor reads first). Every one of them looked right on its own, and the
+// files that carried the new contract — the core, `CLAUDE.md`, `bug-rows.md`,
+// `decisions.md`, `documents.md` — were never read against them.
+//
+// The judgement, per file, is two patterns, and each one is the shape the defect
+// actually took in V1:
+//
+//   A. `solo` as the SUBJECT of a grant: "A `solo` change keeps the task table too",
+//      "write the task row with its DoD section", "`solo` has a task row of its
+//      own". A positive determiner ("the", "a", "its") right after the verb is what
+//      makes it a grant, so "keeps no task row" and "keeps neither" never match.
+//   B. a crew document whose route scope names `solo`: "gets a CRD in
+//      `docs/decisions/crd/`, whoever asked — **on the `solo` and `crew` routes.**"
+//      The V1 rule was scoped to both routes with no denial anywhere in it.
+//
+// Both patterns carry a guard for the two ways a correct sentence looks like a
+// defect: a negation immediately in front of the `solo` subject ("Neither `solo`
+// nor `direct` opens an opening document") and a denial immediately in front of the
+// document ("no task row", "never opens a document that a CRD could change").
+//
+// What this does NOT prove: that a denial binds to the right noun two clauses away,
+// and it reads English word order, so a grant written in a shape nobody has used
+// yet can slip through. It is a wording pin, like every other check of a prompt —
+// it stops the rule being deleted quietly, and it does not prove the behaviour.
+const SOLO_CONTRACT_FILES = [
+  "roles/pm.md",
+  "roles/playbooks/hard-rules.md",
+  "roles/playbooks/crew-flow.md",
+  "roles/playbooks/crew-routing.md",
+  "roles/playbooks/documents.md",
+  "roles/playbooks/bug-rows.md",
+  "roles/playbooks/decisions.md",
+  "roles/playbooks/crew-state.md",
+  "roles/playbooks/worktrees.md",
+  "principles.md",
+  "CONTRIBUTING.md",
+  "CLAUDE.md",
+  "README.md",
+];
+const CREW_DOCUMENT = "task table|task rows?|ADR|CRD|opening document";
+const GRANT_VERB = "keeps?|has|have|gets?|carries|carry|writes?|opens?|becomes?|adds?|takes?|is|are";
+const DENIAL = "\\b(no|not|never|none|neither|nor|without|nothing)\\b";
+// A. `solo` (the subject) + a grant verb + a positive determiner + a document.
+//    The subject-to-verb span is captured, because a denial inside it ("`solo` never
+//    opens an opening document") denies the grant this pattern is looking for. That
+//    span is up to 24 words: V1's `solo` flow announced itself and then granted the
+//    task row 17 words later ("… five lines long: read the repository, ask at most
+//    one question, write the task row with its DoD section"). The possessive is
+//    allowed, because that flow was announced as "`solo`'s own flow".
+const GRANT_TO_SOLO = new RegExp(
+  `\`solo\`(?:'s)?((?:\\s+\\S+){0,24})\\s+(?:${GRANT_VERB})\\s+(?:the|a|an|its|their|one|two)\\s+(?:\\S+\\s+){0,2}(?:${CREW_DOCUMENT})`,
+  "gi",
+);
+// B. a document, then a route scope that names `solo`, within one clause's reach.
+//    `\*{0,2}` is there because V1 wrote that scope in bold: "whoever asked —
+//    **on the `solo` and `crew` routes.**"
+const DOCUMENT_SCOPED_TO_SOLO = new RegExp(
+  `(?:${CREW_DOCUMENT})(?:\\s+\\S+){0,14}\\s+\\*{0,2}on the \`solo\``,
+  "gi",
+);
+
+for (const file of SOLO_CONTRACT_FILES) {
+  const text = flat(repoFile(file));
+  const grants = [];
+  const add = (label, match) => {
+    const before = text.slice(Math.max(0, match.index - 24), match.index);
+    if (new RegExp(`${DENIAL}\\s*$`, "i").test(before)) return;
+    grants.push(`${label}: …${text.slice(Math.max(0, match.index - 90), match.index + 70).trim()}…`);
+  };
+  for (const match of text.matchAll(GRANT_TO_SOLO)) {
+    // "Neither `solo` nor `direct` opens an opening document" is a denial, and the
+    // negation sits in front of the subject this pattern is anchored on.
+    const before = text.slice(Math.max(0, match.index - 12), match.index);
+    if (/\b(neither|nor|no|not)\s+$/i.test(before)) continue;
+    // "`solo` never opens an opening document": the denial governs the verb, so it
+    // is the last word of the subject-to-verb span or the one before it. Anything
+    // further back denies some other verb in the same sentence — which is exactly
+    // how "A `solo` change keeps the task table too but opens no PRD" survived a
+    // read-through, and why this is judged word by word instead of by sentence.
+    const words = match[1].trim().split(/\s+/).filter((word) => word !== "");
+    const governs = (word) => word !== undefined && /^(no|not|never|none|neither|nor|without|nothing)\b/i.test(word);
+    if (governs(words.at(-1)) || governs(words.at(-2))) continue;
+    add("solo as the subject of a grant", match);
+  }
+  for (const match of text.matchAll(DOCUMENT_SCOPED_TO_SOLO)) add("a document scoped to solo", match);
+  check(
+    `${file} hands a \`solo\` job no crew document`,
+    grants.length === 0,
+    `these places grant a crew document to \`solo\` without denying it: ${JSON.stringify([...new Set(grants)])}`,
+  );
+}
+
+check(
+  "hard-rules.md says out loud what a `solo` job keeps instead of a task row",
+  /`solo`\s+change opens no PRD and keeps no task table and no task row/i.test(flat(readPlaybook("hard-rules.md")))
+    && /acceptance\s+list is the TaskBrief/i.test(flat(readPlaybook("hard-rules.md"))),
+  "the rule list no longer says a solo job's acceptance list is its TaskBrief, so the crew documents it must NOT keep are unreadable there",
+);
+
+// The two shapes the patterns above cannot see by structure, pinned by wording
+// instead — the same lower bound `qa/T-64/case-03` and `qa/T-137/case-05` use for
+// wordings that have to stay gone. Both are V1 sentences whose subject is not
+// `solo`: the engineer is started "from a task row instead", and `solo` "borrows
+// step 9" of a flow the route may not open at all.
+const BANNED_SOLO_WORDINGS = [
+  "from a task row instead",
+  "borrowing step 9",
+];
+for (const phrase of BANNED_SOLO_WORDINGS) {
+  const offenders = SOLO_CONTRACT_FILES.filter((file) => flat(repoFile(file)).toLowerCase().includes(phrase.toLowerCase()));
+  check(
+    `the V1 wording ${JSON.stringify(phrase)} is gone from every shipped rule file`,
+    offenders.length === 0,
+    `these files carry it again: ${JSON.stringify(offenders)} — it reads as a task row on a route that keeps none`,
+  );
+}
 
 // ----------------------------- 3. a `solo` state file is never unfinished crew work
 

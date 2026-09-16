@@ -951,9 +951,12 @@ record is in the repository.** The job folder is not a record. It is progress, a
 it is dropped when the job ends.
 
 So `DoD` is the name of a **section**, never the name of a file. There is no
-`dod.md`, in any folder, including `docs/design/`. Small work and big work open with the same
+`dod.md`, in any folder, including `docs/design/`. On the `crew` route small work
+and big work open with the same
 document, and both keep one task table,
-`docs/tasks/`. Every milestone carries a DoD section (big work) and every
+`docs/tasks/`; `solo` and `direct` keep neither — a `solo` change's acceptance list
+is its TaskBrief, and a `direct` change's record is its commit message. Every
+milestone carries a DoD section (big work) and every
 task row carries one (small work and big work alike), and a DoD section says two things
 at least:
 what "done" means for that one thing, and **how somebody else checks it** — which
@@ -965,7 +968,10 @@ globally numbered list of checks anywhere.
 flow (what that step produces, where it lives, whether it survives) are columns of
 the same table, never two tables. The `Lane` column says which of the three lanes
 the row belongs to — `big`, `small`, `bug` — so each lane is covered without
-repeating a row that all three share.
+repeating a row that all three share. **Every row below is the `crew` route's,
+unless the row's own words say otherwise**: `direct` and `solo` keep no PRD, no
+task table and no job folder, so a row that produces one of those is `crew`'s — and
+a bug on `solo` is described in its TaskBrief, not in a task row.
 
 | Lane | Step, by name | Who does it | What it produces | Where that lives | Survives the job? |
 | --- | --- | --- | --- | --- | --- |
@@ -1150,20 +1156,24 @@ two moments: the PM says what fixed means, then the engineer proves it.
 the user wants an answer and nothing changes, and `team`, where something changes.
 Inside `team`, the PM chooses a route before starting any role. `direct` is the
 default for a small, low-risk, single-module change: the PM makes it without a
-child role. `solo` is the default for ordinary coding: one `crew_engineer` and
-nothing else — no architect, no QA, no reviewer. `crew` is for work that crosses
+child role. `solo` is the default for ordinary coding: one `crew_engineer`, and at
+most one more role — the single named reviewer the change earns, which is a
+`crew_security_reviewer` when the change needs an independent security check, and
+never `crew_qa`, an architect or a second engineer. `crew` is for work that crosses
 modules, reaches a boundary contract, needs design, cannot be tested sharply, or
 is too large to hold as one small change. **Anything that changes still gets a
 milestone**, but its route decides whether that milestone carries one executor or
 several roles — and only `crew` runs the numbered flow of `roles/pm.md` around
-it, with `solo` borrowing step 9's briefing list and step 11's commit and nothing
-else. `solo` has a flow of its own, five lines long: read the repository, ask at
-most one question, write the task row with its DoD section, start one engineer —
-plus the single reviewer step 1 named, if it named one — run the targeted test
-and the completion gates, commit. `direct` shares only the
-commit. Neither of them opens an opening document, waits for the user to confirm
-one, or keeps a milestone of its own; a `direct` change writes no ADR and no CRD
-either, while `solo` writes one when a choice deserves its own record.
+it: `solo` has a flow of its own and borrows none of those steps, and `direct`
+shares only the commit. `solo`'s own flow is five lines long: read the repository,
+ask at most one question, write the TaskBrief — the route's only document, and the
+whole contract with its engineer — start one engineer plus the single named
+reviewer step 1 named, if it named one, run the targeted test and the completion
+gates, commit.
+Neither of them opens an opening document, waits for the user to confirm
+one, or keeps a milestone of its own; `direct` and `solo` write no ADR and no CRD
+either, and a choice that deserves a record of its own re-routes the work to
+`crew`, where the record has a crew document to attach to.
 
 **Whether a security review is needed is a second question.** It is answered from
 the closed risky list (principle 18) and it adds one `crew_security_reviewer` to
@@ -1262,8 +1272,8 @@ that. It is the one part of this flow a check can read, and what it reads is one
 line of one file — it says nothing about whether the migration ran, and nothing
 about whether a review happened.
 
-**Lives in** `roles/pm.md` (**A bug becomes a task row — on the `crew` and `solo`
-routes only**, step 4 **Write the opening document**, step 8 **Design**, step 9
+**Lives in** `roles/playbooks/bug-rows.md` (**A bug becomes a task row — on the
+`crew` route only**) and `roles/pm.md` (step 4 **Write the opening document**, step 8 **Design**, step 9
 **Run the tasks**, step 10c **QA**, step 18 **Finish**, and the hard rules),
 `roles/architect.md` (**Task breakdown**), `roles/engineer.md` (what to read
 first, and the bug-fix section), `roles/qa.md` (the plan starts from the task's

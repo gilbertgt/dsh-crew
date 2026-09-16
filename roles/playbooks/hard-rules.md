@@ -2,7 +2,7 @@
 
 Every hard rule this crew works under, in one list, for the moment you are unsure which rule a case falls under.
 
-**Read this when:** you are unsure, or a case feels like it is not covered by the shorter `## Always-loaded invariants` list in `roles/pm.md`.
+**Read this when:** you are unsure which rule a case falls under.
 
 This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
 `crew_playbook({ name: "hard-rules" })` — at the moment the job needs it, and only
@@ -47,15 +47,18 @@ front of you.
 - `DoD` is the name of a section, never of a file: never create a file for one,
   in any folder. On the `crew` route, small work and big work both open
   with a PRD of their own, `docs/design/prd-<date>-<job-slug>.md`, and keep the task
-  table in `docs/tasks/`. A `solo` change keeps the task table too but opens no
-  PRD, and a `direct` change keeps neither. Every crew milestone and task row carries a DoD
-  section saying what "done" means and how somebody else checks it. The
-  `direct` scale uses one test and its commit message instead; it creates no PRD
+  table in `docs/tasks/`. Every `crew` milestone and every `crew` task row carries
+  a DoD section saying what "done" means and how somebody else checks it. A `solo`
+  change opens no PRD and keeps no task table and no task row either: its acceptance
+  list is the TaskBrief, which is the whole contract with its one engineer. A
+  `direct` change uses one test and its commit message instead; it creates no PRD
   or task row.
-- A bug on the `crew` and `solo` routes becomes a task row that you write before
+- A bug on the `crew` route becomes a task row that you write before
   the fix starts: what was reported, and its DoD section. The engineer doing the fix
-  never writes that section. A small, low-risk bug may stay `direct`; if it grows
-  past that route, write the row before another role starts.
+  never writes that section. On `solo` the same two things go into the TaskBrief
+  instead — a `solo` job keeps no task row — and a small, low-risk bug may stay
+  `direct`, whose record is its commit message; if a bug grows past that route,
+  write the row before another role starts.
 - The user's turn is at the start and at every milestone review, not item by
   item. Once the scope and the change requests are agreed, decide the rest
   yourself, and let the user interrupt you on a summary of the documents you
@@ -104,10 +107,12 @@ front of you.
   every entry that is `done` or `skipped`, re-runs only `stale`, and redoes only
   what was still `running`. Never repeat finished work because a session ended.
 - Every change to scope, a DoD item, the milestone list or a boundary
-  contract gets a CRD in `docs/decisions/crd/`, whoever asked — **on the `solo`
-  and `crew` routes.** A `direct` change has no confirmed document to change, so
-  it has no CRD; if what the user asks for would move one of those four things,
-  the work has already left `direct` and is re-routed (step 1). A CRD that adds
+  contract gets a CRD in `docs/decisions/crd/`, whoever asked — **on the `crew`
+  route, which is the only route with a confirmed document to change.** A `solo`
+  change and a `direct` change have no confirmed opening document and no record of
+  their own, so neither has a CRD; if what the user asks for would move one of
+  those four things, the work has already left that route and is re-routed to
+  `crew` (step 1). A CRD that adds
   work writes its new items into the task or the milestone it changes, and records
   in itself where they went and how many. Scope needs the user's
   yes; a contract fix that changes nothing the user sees is yours, and you report
@@ -126,9 +131,10 @@ front of you.
   stop, and wait for the user's own clear yes before any of it is built. When you
   cannot tell which of the two you hold, it is a change.
 - Every decision about **how** gets an ADR in `docs/decisions/adr/`, whatever the
-  size of the job — **on the `solo` and `crew` routes, and only there.** A
-  `direct` change keeps its small implementation choice in the code and the commit
-  message, and re-routes the moment the decision deserves a record of its own.
+  size of the job — **on the `crew` route, and only there.** A `solo` change and a
+  `direct` change keep their small implementation choice in the code and the commit
+  message instead, and re-route the moment the decision deserves a record of its
+  own.
   The test is one question: did someone ask for this? If someone
   did, it is a CRD. If nobody did and the crew hit the choice while working, it is
   an ADR. Small work has no architect, so you write it. Its options section quotes

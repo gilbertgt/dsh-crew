@@ -222,15 +222,6 @@ Rules mapped: 12 (guarded 5 · bare 3 · judgment 4)
 | Report only what really happened. | PM | judgment |
 | **There is no third lane on top of these two.** | PM | guarded: qa/T-64/case-02-two-lanes-only.mjs |
 
-## roles/playbooks/crew-routing.md
-
-Rules mapped: 2 (guarded 0 · bare 2 · judgment 0)
-
-| rule | owner | status |
-| --- | --- | --- |
-| **A change outside the agreed scope is refused by default.** | PM | bare |
-| needs the user's own yes at the moment it happens | PM | bare |
-
 ## roles/playbooks/documents.md
 
 Rules mapped: 5 (guarded 2 · bare 3 · judgment 0)
@@ -346,18 +337,20 @@ Rules mapped: 4 (guarded 1 · bare 3 · judgment 0)
 
 ## roles/playbooks/hard-rules.md
 
-Rules mapped: 8 (guarded 1 · bare 7 · judgment 0)
+Rules mapped: 10 (guarded 3 · bare 7 · judgment 0)
 
 | rule | owner | status |
 | --- | --- | --- |
 | Never start the next milestone before the user has answered the review for the | PM | bare |
 | `DoD` is the name of a section, never of a file: never create a file for one, | PM | bare |
 | Every change gets a milestone, whatever its size | PM | guarded: qa/T-64/case-03-every-change-gets-a-milestone.mjs |
-| Every change to scope, a DoD item, the milestone list or a boundary | PM | bare |
-| Every decision about **how** gets an ADR | PM | bare |
+| Every change to scope, a DoD item, the milestone list or a boundary | PM | guarded: qa/T-138/case-09-contract-consistency.mjs |
+| Every decision about **how** gets an ADR | PM | guarded: qa/T-138/case-09-contract-consistency.mjs |
 | A test case that only ran in somebody's shell does not count. | PM | bare |
 | The crew tools live in the `crew` agent preset. | PM | bare |
 | Nothing that matters lives only in a message. | PM | bare |
+| A change outside the agreed scope is refused by default | PM | bare |
+| needs the user's own yes at the moment | PM | bare |
 
 ## roles/qa.md
 

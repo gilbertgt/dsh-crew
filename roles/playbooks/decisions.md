@@ -2,7 +2,7 @@
 
 When a decision needs its own record, which of the two it is, what each file holds, and who decides it.
 
-**Read this when:** the user asks for something that would move scope, a DoD item or a milestone list, or the work runs into a choice about how that deserves a record.
+**Read this when:** on the `crew` route, a decision or a change request needs its own record.
 
 This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
 `crew_playbook({ name: "decisions" })` — at the moment the job needs it, and only

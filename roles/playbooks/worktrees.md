@@ -2,7 +2,7 @@
 
 How a paired task is run: two engineers, two git worktrees, one interface pinned by the architect, and the single first meeting the PM runs.
 
-**Read this when:** a task is on the paired shape in a job that has an architect.
+**Read this when:** a task runs on the paired shape in a job that has an architect.
 
 This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
 `crew_playbook({ name: "worktrees" })` — at the moment the job needs it, and only

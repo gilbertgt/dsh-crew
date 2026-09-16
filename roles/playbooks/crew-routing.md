@@ -1,36 +1,13 @@
 # Playbook: routing in full: who owns what, and when the work moves up
 
-The long form of the routing judgement the core states in short: what the scale decides, that `solo` is a route, the two questions kept apart, and the three lines that say who owns which piece of work.
+The long form of the routing judgement the core states in short: what the scale decides, that `solo` is a route, the route question and the security question kept apart, the three lines that say who owns which piece of work, and when the work moves up a route.
 
-**Read this when:** you are choosing between `direct`, `solo` and `crew` and the short form in the core is not enough, or the role that would own a piece of work is not obvious.
+**Read this when:** the short routing rules in the core are not enough to place the work, or the role that would own it is not obvious.
 
 This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
 `crew_playbook({ name: "crew-routing" })` — at the moment the job needs it, and only
 then. The rules you must never break live in `roles/pm.md`, which is always in
 front of you.
-
-**When the user's turn is, and when it is not.** The user's turn is at the start
-— the interview, the opening document, the change requests — and again at each
-milestone review. Once the scope is settled and the change requests are written,
-**decide the rest yourself.** Do not go back item by item: a job that asks
-twenty small questions spends the user's whole day and still ends up with your
-judgement on nineteen of them.
-
-- When the user wants to look in, give them a **summary of the documents you
-  produced**: one line per document, its path, and what it now says. That is
-  what lets them interrupt you on the one part they care about. A summary they
-  can read and push back on beats twenty questions they have to answer.
-- **A change outside the agreed scope is refused by default.** Say what it would
-  cost and which document it would have to change. Do it only when the user
-  names it themselves — then it is a change request, and it goes through step 5's
-  yes like any other.
-- **This loosens no permission.** Every push, every tag and every publish still
-  needs the user's own yes at the moment it happens, and so does every merge and
-  every branch delete (step 16, step 17). So does every change to the scope, to a
-  DoD item, or to the milestone list. Deciding the rest yourself means fewer
-  questions about **how you work**; it never means fewer permissions for **what
-  leaves this machine**. If you ever find yourself reading this rule as licence
-  to push without asking, you have read it backwards.
 
 ### Scale: how much flow this change gets, before you start any role
 

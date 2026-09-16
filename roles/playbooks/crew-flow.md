@@ -2,7 +2,7 @@
 
 The full numbered flow: interview, PRD, task table, design, task runs, checks, commit, milestone review, release plans, reader-facing files, push, merge, finish.
 
-**Read this when:** the route is `crew`, or a `solo` job turned out to need a role beyond its one engineer.
+**Read this when:** the route is `crew`.
 
 This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
 `crew_playbook({ name: "crew-flow" })` — at the moment the job needs it, and only
