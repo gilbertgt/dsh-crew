@@ -76,7 +76,9 @@ check(
 );
 check(
   "the core says a solo job never opens the crew flow",
-  /`solo` never opens `crew-flow`/.test(core) && /A `solo` job never opens it/.test(core),
+  // The index column states it, and `case-09` checks that column against the
+  // manifest word for word.
+  /a `solo` job never opens it/i.test(core) && /`solo` never opens `crew-flow`/.test(core),
   "nothing stops a solo job from loading the ~95 KB flow",
 );
 

@@ -7,8 +7,9 @@
 //
 // Everything procedural — the numbered crew flow, the document ceremony, the
 // decision records, the job ledger, the paired shape and the long rule list —
-// lives in `roles/playbooks/`. The PM reads one with `read` at the moment the job
-// needs it, and nothing else.
+// lives in `roles/playbooks/`. The PM reads one with the `crew_playbook` tool at
+// the moment the job needs it, and nothing else. The tool resolves the file inside
+// this package, so the PM asks by name and never writes a path.
 //
 // This module is the single source of truth for that list, because three things
 // have to agree about it and none of them may drift:

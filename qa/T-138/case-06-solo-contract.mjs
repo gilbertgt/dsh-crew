@@ -163,7 +163,9 @@ check(
 
 check(
   "the core tells a solo job never to open the crew flow",
-  /A `solo` job never opens it/.test(flat(core)) && /`solo` never opens `crew-flow`/.test(flat(core)),
+  // The index's own column carries this condition in the manifest's words —
+  // `qa/T-138/case-09` checks the two agree word for word.
+  /a `solo` job never opens it/i.test(flat(core)) && /`solo` never opens `crew-flow`/.test(flat(core)),
   "nothing in the core stops a solo job from reading the ~95 KB crew flow, which is the loading V2 exists to avoid",
 );
 check(

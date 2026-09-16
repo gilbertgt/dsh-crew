@@ -64,11 +64,14 @@ function readJob(dir) {
     // A milestone in `review` is waiting for the user's answer, and nothing in
     // the job may move until they give it. That has to be in the notice.
     awaitingReview: current?.state === "review",
-    // A job with no task list yet is unfinished too — but only when it is a job
-    // that was supposed to have one. A `solo` job has no task list BY DESIGN, so a
-    // state file that says `solo` is never evidence of unfinished crew work; the
-    // empty-task-list reading belongs to `crew` alone.
-    unfinished: open.length > 0 || (tasks.length === 0 && route !== "solo"),
+    // THE ROUTE decides, before the task list is read. A `solo` job has no ledger
+    // at all — Crew V2 keeps no job folder for it — so a state file that says
+    // `solo` is never evidence of unfinished crew work: not when it is empty, and
+    // not when it carries tasks somebody wrote into it by hand. A `crew` job (and a
+    // file with no route on it, which predates the field) is unfinished when it has
+    // an open task or no task list yet — the second half is a `crew` job that
+    // stopped while its opening document was being written.
+    unfinished: route === "solo" ? false : open.length > 0 || tasks.length === 0,
     touched: statSync(file).mtime.toISOString().slice(0, 16).replace("T", " "),
   };
 }

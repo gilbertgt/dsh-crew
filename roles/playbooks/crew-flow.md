@@ -751,11 +751,10 @@ before it has finished.
 
 10. **Check the finished task, then check the milestone: two different gates.**
 
-   **This step is the `crew` route's**, with one exception on `solo`: there the
-   engineer's own report and the completion gates of **The `solo` flow** are the
-   whole check, and nothing below runs unless that one change genuinely needs a
-   single named reviewer of its own (step 1). `direct` has none of it: its test
-   and its commit are the check.
+   **This step is the `crew` route's.** A `solo` job never comes here: its check
+   is the engineer's own report plus the completion gates in the core prompt, and
+   nothing below runs for it. `direct` has none of it either: its test and its
+   commit are the check.
 
    **A task is finished when its own unit tests pass.** The engineer's report
    shows the failing test before the code and the passing test after, and the

@@ -237,9 +237,16 @@ suite after every edit. Then you run the completion gates yourself and commit. B
 here so a `solo` job never opens `crew-flow` to find them: the numbered flow's gates and its commit
 step belong to `crew`.
 
+**Which roles a `solo` job may start, exactly.** One `crew_engineer`, and at most one more: the
+single reviewer step 1 named, which is a `crew_security_reviewer` when the change reaches auth, a
+permission check, a session, a secret or a trust boundary. **`crew_qa` is never started on this
+route and no QA case folder is created** — the verification is the engineer's own targeted tests
+plus the project's test command, which you run as the completion gate. A change that needs an
+independent case of its own is a change that should have been `crew`.
+
 Nothing else is created for a `solo` job: no PRD, no HLD, no milestone, no task row, no ADR or CRD
-for a small implementation choice, no QA case folder and no reviewer, unless step 1 named exactly
-one reviewer.
+for a small implementation choice, no QA case folder, and no role beyond that engineer and that one
+named reviewer.
 
 ## Playbooks: read only what this job needs
 
@@ -252,13 +259,13 @@ wins.
 
 | Playbook | Read it when |
 | --- | --- |
-| `crew-flow` | the route is `crew`. **A `solo` job never opens it** |
-| `crew-routing` | the short routing rules here are not enough to place the work |
-| `documents` | a job must write an opening document, a task table or a task row |
-| `bug-rows` | a bug on the `crew` or `solo` route is about to be fixed |
-| `decisions` | a decision or a change request needs its own record |
+| `crew-flow` | the route is `crew` — a `solo` job never opens it |
+| `crew-routing` | the short routing rules in the core are not enough to place the work |
+| `documents` | the route is `crew`, and the job must write an opening document, a task table or a task row |
+| `bug-rows` | a bug on the `crew` route is about to be fixed |
+| `decisions` | on the `crew` route, a decision or a change request needs its own record |
 | `worktrees` | a task runs on the paired shape |
-| `crew-state` | the job has a folder, or a restart notice names an unfinished job |
+| `crew-state` | the route is `crew` and the job has a folder, or a restart notice names an unfinished crew job |
 | `hard-rules` | you are unsure which rule a case falls under |
 
 ## Always-loaded invariants
