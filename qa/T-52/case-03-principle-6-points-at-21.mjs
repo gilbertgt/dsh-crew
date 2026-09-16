@@ -37,9 +37,13 @@ check(
 );
 
 check(
-  "principle 6 names both shapes",
-  /\bSolo\b/.test(flat) && /\bPaired\b/.test(flat),
-  `Solo: ${/\bSolo\b/.test(flat)}, Paired: ${/\bPaired\b/.test(flat)}`,
+  "principle 6 names both shapes, by the values the task row's `Shape` field takes",
+  // V2 names the two shapes by the field's own values instead of the bare words
+  // "Solo" and "Paired": `solo` on its own is also the name of a ROUTE now, and
+  // that route keeps no task row and has no shape to mark. The assertion is
+  // stricter than the one it replaces — it asks for the exact values.
+  /`Shape: solo`/.test(flat) && /`Shape: pair`/.test(flat),
+  `\`Shape: solo\`: ${/`Shape: solo`/.test(flat)}, \`Shape: pair\`: ${/`Shape: pair`/.test(flat)}`,
 );
 
 check(

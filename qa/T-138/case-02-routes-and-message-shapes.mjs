@@ -42,10 +42,17 @@ function audit(raw) {
   );
   add(
     "direct: it is the only route that skips the flow, and it skips all of it",
-    has("no Socratic interview (step 2), no PRD, no HLD, no ADR, no CRD, no design document, no architect, no task rows in `docs/tasks/`, no QA case folder, no review round"),
+    has("no Socratic interview, no PRD, no HLD, no ADR, no CRD, no design document, no architect, no task rows in `docs/tasks/`, no QA case folder, no review round, and no numbered step of the `crew` flow"),
     "the list of what `direct` skips is the whole point of the route: a route with no documents and no "
       + "checks is only acceptable because the list is closed and visible. A missing item is a document "
       + "somebody will write on a `direct` change.",
+  );
+  add(
+    "direct: it carries its own five steps instead of borrowing the crew flow's",
+    has("`direct` has a flow of its own, and it is these five steps: `inspect` the change and every file it touches, `edit` them, run the **targeted validation**, run the **completion gate**, `commit`.")
+      && has("a `direct` job never opens `crew-flow`"),
+    "a `direct` job that is not given its own flow is a job that opens the ~95 KB crew flow to find one, "
+      + "and the route V2 exists to keep out of that file is the one that needs it least.",
   );
   add(
     "solo: exactly ONE crew_engineer, plus at most one more role",
@@ -67,10 +74,13 @@ function audit(raw) {
       + "become the route it was meant to avoid.",
   );
   add(
-    "crew: the numbered flow is this route's flow",
-    has("`crew` — the numbered flow below, unchanged"),
-    "the numbered steps have to name the route they belong to, or `solo` and `direct` read as if they "
-      + "owed them too.",
+    "crew: the numbered flow is this route's, and it is read only after choosing it",
+    has("`crew` — **only for work meeting one of the escalation conditions below.**")
+      && has("Read `crew-flow` only after choosing this route")
+      && has("neither `direct` nor `solo` ever opens it"),
+    "the numbered steps have to name the route they belong to AND say when the file may be opened, or "
+      + "`solo` and `direct` read as if they owed them too — which is how a 95 KB file gets read by a "
+      + "route that has no step to look up.",
   );
   add(
     "the security review is a second question and never moves the route by itself",

@@ -106,7 +106,7 @@ const BANNED = [
 // not grow back, documents and decision records included.
 const REQUIRED_SKIPS = [
   ["no child role", /start \*\*no\*\* child role/i],
-  ["the Socratic interview, by step", /Socratic interview \(step 2\)/i],
+  ["the Socratic interview", /no Socratic interview/i],
   ["the PRD", /no PRD\b/i],
   ["the HLD", /no HLD\b/i],
   ["the ADR", /no ADR\b/i],
@@ -115,7 +115,9 @@ const REQUIRED_SKIPS = [
   ["task rows in `docs/tasks/`", /no task rows?\b[^.]{0,40}`docs\/tasks\/`/i],
   ["the QA case folder", /no QA case folder/i],
   ["the review round", /no review round/i],
-  ["the numbered team steps", /numbered team steps/i],
+  // V2 moved this one off the step number: a `direct` job that is told "step 11"
+  // has to open the crew flow to find it, which is the read the route must not make.
+  ["the crew flow's numbered steps", /no numbered step of the `crew` flow/i],
 ];
 
 // The general scan's three halves, and why each is narrow.
@@ -571,11 +573,11 @@ check(
 
 // Mutation 2: the `direct` bullet loses one of its skips.
 const lostSkip = afterBreaking((dir) => {
-  edit(dir, "roles/pm.md", "no Socratic interview (step 2), no PRD, no HLD,", "no PRD, no HLD,");
+  edit(dir, "roles/pm.md", "no Socratic interview, no PRD, no HLD,", "no PRD, no HLD,");
 });
 check(
   "mutation 2: dropping a skip from the `direct` bullet turns this case red",
-  lostSkip.includes(skipId("the Socratic interview, by step")),
+  lostSkip.includes(skipId("the Socratic interview")),
   `failed checks were ${JSON.stringify(lostSkip)}`,
 );
 

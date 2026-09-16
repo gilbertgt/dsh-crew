@@ -68,7 +68,7 @@ the `documents` playbook.
 - `ask` — the user wants an answer or an explanation. Answer them. No crew, no
   documents, no branch.
 - `team` — a change of any size: a typo, a rename, a one-line fix, a whole
-  feature. Run the team flow below.
+  feature. Pick one of the three routes below.
 
 **There is no third lane on top of these two.** This file used to carry one —
 one small clear change with no design choice, done by the PM alone, no crew and
@@ -99,10 +99,14 @@ There are three routes, and all three sit inside the `team` lane:
 
 - `direct` — **the default for a small, low-risk change.** You do the work in
   this session and start **no** child role. **This route skips the flow, and it
-  is the only route that does**: no Socratic interview (step 2), no PRD, no HLD,
+  is the only route that does**: no Socratic interview, no PRD, no HLD,
   no ADR, no CRD, no design document, no architect, no task rows in
-  `docs/tasks/`, no QA case folder, no review round, and none of the numbered
-  team steps below except the commit (step 11).
+  `docs/tasks/`, no QA case folder, no review round, and no numbered step of the
+  `crew` flow. **`direct` has a flow of its own, and it is these five steps:
+  `inspect` the change and every file it touches, `edit` them, run the
+  **targeted validation**, run the **completion gate**, `commit`.** Nothing in
+  this file, and nothing in a playbook, adds a step to that list, and a `direct`
+  job never opens `crew-flow`.
   The milestone is one task, one test, one commit, and the commit message is
   where that change's reasons and its real test numbers go — on this route the
   commit message **is** the record. Documents, prompts, configuration, a typo,
@@ -110,8 +114,8 @@ There are three routes, and all three sit inside the `team` lane:
   file adds a document, a role or a check to it. A small implementation choice —
   which of two equivalent call shapes, which helper, which of the libraries the
   project already has — stays in that commit message; a decision big enough to
-  deserve its own record is not a `direct` change, and step 1's re-route rule
-  below says what to do with it.
+  deserve its own record is not a `direct` change, and the re-route rule below
+  says what to do with it.
 - `solo` — **the default for ordinary coding.** You start **one**
   `crew_engineer`, and at most one more role: **the single named reviewer this
   change earns, and never a second one.** No architect, no second engineer, no
@@ -126,11 +130,13 @@ There are three routes, and all three sit inside the `team` lane:
   **`solo` runs no interview and opens no PRD.** Read the repository first and
   settle it from what you find there; ask the user only when a question the files
   cannot answer would really change what gets built or how it is built — one
-  question, in one message, and never the step-2 interview. What `solo` keeps is
+  question, in one message, and never the `crew` interview. What `solo` keeps is
   the TaskBrief below, which is the whole contract with its engineer. What it
   drops is the architect, the PRD, the task table, the interview, the crew's own
   review round and the QA round.
-- `crew` — the numbered flow below, unchanged. Only for work that is really
+- `crew` — **only for work meeting one of the escalation conditions below.** Read
+  `crew-flow` only after choosing this route: that file is this route's numbered
+  flow, and neither `direct` nor `solo` ever opens it.
 
 **The `solo` flow, in full.** `solo` is a flow of its own, and it is five
 bullets long. In order:
@@ -140,7 +146,7 @@ bullets long. In order:
   the files, and this is where missing information is looked for.
 - **Ask at most one question**, and only when the files cannot answer it and the
   answer would really change what gets built or how. One message, one question,
-  with your recommendation — never step 2's interview.
+  with your recommendation — never the `crew` interview.
 - **Write the TaskBrief** — see **TaskBrief and Result** below: the route, the
   goal, the files it owns, the acceptance list saying how somebody else checks it,
   the constraints, the test file with its exact command, and where the evidence
@@ -156,7 +162,7 @@ bullets long. In order:
   stops (the project's own test command, and `bash qa/run-all.sh` where the
   project has one), then commit and report.
 
-Nothing in the numbered flow below may be added to that list, and **`solo` never
+Nothing in the `crew` route's numbered flow may be added to that list, and **`solo` never
 opens `crew-flow` to borrow from it**: that is the `crew` route's file, and a
 `solo` job never opens it. Everything this route needs — the briefing shape, the
 blocker rule, the Result shape, the targeted test, the completion gates and the
@@ -165,7 +171,7 @@ document, never asks the user to confirm one, keeps no milestone of its own, and
 starts no role beyond that one engineer and that one named reviewer. **A `solo` job
 keeps no decision record.** There is no ADR and no CRD on this route: a choice big
 enough to need one is not a `solo` change any more, so you re-route it to `crew`
-and write the record there. The job folder of step 6 is `crew`'s as well — a
+and write the record there. The job folder is `crew`'s as well — a
 `solo` job has nothing to resume.
 
 **Choose `crew` when any one of these is true. Choose `solo` only when none of
@@ -186,8 +192,10 @@ hands:**
 **Is a security review needed? That is the second question, and it never moves
 the route by itself.** Ask the two in this order, and keep them apart: **first the
 route** — `direct`, `solo` or `crew`, from the list just above; **then the
-security review** — yes or no, from step 10b's own closed list, which adds one
-`crew_security_reviewer` to whichever route you chose.
+security review** — yes or no, from the closed risky list the `crew-routing`
+playbook states, which adds one `crew_security_reviewer` to whichever route you
+chose. `direct` and `solo` never open `crew-flow` to answer it: that list is not
+in the flow, and the flow is the `crew` route's.
 
 **A screen that merely TAKES input from the user is not a risky change.** A settings page, a
 form, a dropdown, a search box: `solo`, and nothing about them is a security question by itself.

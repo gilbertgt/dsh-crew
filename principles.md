@@ -201,9 +201,9 @@ the trade principle 18 spells out, with what it costs.
 **Two shapes, one rule.** The rule above says nothing about how many agents are
 involved, and that is on purpose, because the crew has two ways of doing it:
 
-- **Solo.** One `crew_engineer` writes both halves of a task: the unit test
+- **`Shape: solo`.** One `crew_engineer` writes both halves of a task: the unit test
   first, then the code. This is the default, and nothing about it has changed.
-- **Paired.** Two engineers each write one half. `crew_test_engineer` writes only
+- **`Shape: pair`.** Two engineers each write one half. `crew_test_engineer` writes only
   the unit tests, `crew_code_engineer` writes only the product code, neither can
   see the other's half while it is being written, and the PM runs the two halves
   together after it merges them. Why that shape exists, what it buys, where it is
@@ -219,7 +219,7 @@ only evidence that the unit test could ever have failed. Scrum says the same
 thing another way: developers build quality in "by adhering to a Definition of
 Done". Quality is built in, not checked afterwards.
 
-**The hole this rule still has in the solo shape.** The unit test is written by
+**The hole this rule still has in `Shape: solo`.** The unit test is written by
 the same agent that is about to write the code, so it can be shaped around the
 code that agent already meant to write, and the failing run does not catch that:
 a unit test aimed at the wrong behaviour fails exactly as convincingly as one
@@ -1196,7 +1196,8 @@ after two review rounds — which is why `limits.reviewRounds` defaults to 2. Th
 fastest correct route is therefore the default, while the full crew remains
 available for large, risky or cross-module work.
 
-**A finished stage stays finished across sessions.** `state.json` carries a
+**A finished stage stays finished across sessions.** `state.json` — the `crew`
+route's ledger, the only route that has one — carries a
 `stages` checkpoint for each milestone step, with the document versions it judged.
 On resume, `done` and `skipped` are not repeated; `running` is repeated because it
 never finished; `stale` is repeated because a later change invalidated its evidence.
@@ -1308,7 +1309,7 @@ weaken an assertion to make a disagreement go away; only the PM may approve a
 change to it, and that change has to be traceable to the words of the DoD
 section.
 
-The solo shape of principle 6 is unchanged and stays the default. Which tasks are
+Principle 6's `Shape: solo` is unchanged and stays the default. Which tasks are
 paired is written in the task row in `docs/tasks/`, proposed by the
 architect when it writes that table. Who confirms it depends on which road the
 job is on, and a paired task only ever exists on one of them. On small work the
@@ -1320,8 +1321,8 @@ already confirmed the opening document, so the PM confirms the shapes and the
 user meets them at the milestone review
 ([`0021-who-stamps-the-shape-on-big-work`](https://github.com/stuarthu/dsh-crew/blob/main/docs/decisions/crd/0021-who-stamps-the-shape-on-big-work.md)).
 
-**Why (ours).** Principle 6 buys a unit test that was red first, but in the solo
-shape that unit test is written by the agent that is about to write the code, so
+**Why (ours).** Principle 6 buys a unit test that was red first, but in `Shape:
+solo` that unit test is written by the agent that is about to write the code, so
 it can be bent towards the code that agent already meant to write. The paired
 shape takes that possibility away by construction: the one who writes the check
 is deliberately not the one who writes the code. The second thing it buys is
@@ -1413,7 +1414,7 @@ that one DoD section, and **that DoD section has no second pair of eyes.** That 
 the deepest limit of the design, written here rather than left to be discovered.
 
 **Lives in** `roles/test-engineer.md`, `roles/code-engineer.md`,
-`roles/engineer.md` (which says at the top that it is the solo road),
+`roles/engineer.md` (which says at the top that it carries the `Shape: solo` rules),
 `roles/pm.md` (the shape decision, the two worktrees, the merge, the one run, the
 clean-up), `roles/architect.md` (marking the shape in the task table, and the
 interface ADR), `roles/code-reviewer.md` (the evidence it must be handed, and the
@@ -1435,7 +1436,7 @@ section just below.
 - Cockburn & Williams, *The Costs and Benefits of Pair Programming* (the Utah
   experiment, **1999**; published **2001**) — pairing cost about 15% more effort
   and produced about 15% fewer defects, and the paired code passed 90% of the
-  acceptance suite against 75% for solo work. Read the cost figure carefully:
+  acceptance suite against 75% for `Shape: solo` work. Read the cost figure carefully:
   those 15% are two people sharing one piece of work, while this shape is two
   people each doing a whole piece.
 - Knight & Leveson, *An Experimental Evaluation of the Assumption of Independence
@@ -1705,7 +1706,7 @@ here.
 
 | Word | What it means | Who writes it | Where it lives |
 | --- | --- | --- | --- |
-| **unit test** | One behaviour per test, written before the code that satisfies it exists | `crew_engineer` in the solo shape, `crew_test_engineer` in the paired shape | The project's own test suite; a file the task owns, committed with the code |
+| **unit test** | One behaviour per test, written before the code that satisfies it exists | `crew_engineer` in a `Shape: solo` row, `crew_test_engineer` in the paired shape | The project's own test suite; a file the task owns, committed with the code |
 | **case** (a QA case) | Acceptance, black box: one DoD item checked the way the user would see it, after the code is finished | `crew_qa` | **Only** `qa/<task-id>/`, with a `run.sh` per task |
 | **the project's test command** | In this repository `npm test`: it runs both of the above and every other check together | — | `package.json`, `scripts.test` |
 | **contract test** | One on each side of a module boundary, proving that side matches the boundary contract (principle 3) | `crew_engineer`, or the engineers of a paired task | The project's own test suite (this repository has no module boundary today, so it has none) |

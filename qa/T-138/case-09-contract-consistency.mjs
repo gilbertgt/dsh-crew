@@ -23,6 +23,10 @@
 //      `CONTRIBUTING.md`, `CLAUDE.md`, `README.md` — may hand a `solo` job a crew
 //      document. V1's `solo` kept a task row and wrote its own ADR and CRD, and
 //      three of those files still said so after V2 moved the contract;
+//   2d. `direct` and `solo` reach no crew step number: `direct` carries its own
+//      five steps, the `crew` bullet gates `crew-flow` on the route that owns it,
+//      a `solo` blocker is answered in `send_message` rather than a document, and
+//      `state.json` is the `crew` route's file alone;
 //   3. `jobsNotice()` must never read a state file that says `solo` as unfinished
 //      crew work — not when its task list is empty, and not when it holds open
 //      tasks somebody wrote by hand.
@@ -294,6 +298,72 @@ for (const phrase of BANNED_SOLO_WORDINGS) {
     `these files carry it again: ${JSON.stringify(offenders)} — it reads as a task row on a route that keeps none`,
   );
 }
+
+// --------------- 2d. the two routes the core describes without the crew flow,
+//                     and the three rules the rule list states about them
+//
+// Three of the sentences here are one contract with the core: `direct` and `solo`
+// never open the ~95 KB crew flow, a `solo` blocker is answered in a message
+// rather than a document, and `state.json` is the `crew` route's file alone.
+const coreFlat = flat(core);
+const directBullet = (() => {
+  const at = core.indexOf("- `direct` — ");
+  if (at === -1) return "";
+  const rest = core.slice(at);
+  const end = rest.indexOf("\n- `solo` — ");
+  return flat(end === -1 ? rest.slice(0, 2500) : rest.slice(0, end));
+})();
+
+check(
+  "the core still has a `direct` bullet to judge",
+  directBullet.length > 200,
+  "the `direct` route moved or was renamed past recognition, so nothing below could be judged",
+);
+check(
+  "`direct` has a flow of its own, with its five steps named",
+  ["`inspect`", "`edit`", "targeted validation", "completion gate", "`commit`"]
+    .every((step) => directBullet.includes(step)),
+  `the \`direct\` route does not spell out its own flow: ${JSON.stringify(directBullet.slice(0, 400))}`,
+);
+check(
+  "the `direct` bullet names no crew step number, and says it never opens the flow",
+  !/\bstep\s*\d/i.test(directBullet) && /never opens `crew-flow`/i.test(directBullet),
+  `a \`direct\` job that is told a step number has to open the crew flow to find it: ${JSON.stringify(directBullet.slice(0, 400))}`,
+);
+check(
+  "`crew-flow` is read after choosing `crew`, by that route only",
+  /Read\s+`crew-flow` only after choosing this route/i.test(coreFlat)
+    && /neither `direct` nor `solo` ever opens it/i.test(coreFlat),
+  "the crew bullet no longer gates the flow on the route that owns it",
+);
+check(
+  "the `solo` route says, twice, that the crew flow is not its own",
+  /`solo` never opens `crew-flow`/i.test(coreFlat)
+    && /a `solo` job never opens it/i.test(coreFlat),
+  "nothing in the core stops a `solo` job from opening the crew flow",
+);
+
+const hard = flat(readPlaybook("hard-rules.md"));
+check(
+  "a `solo` blocker may be answered in `send_message`, with no document written first",
+  /a `solo` job has no job folder, no `Q-` file and no task row\s+to write one into/i.test(hard)
+    && /its blocker and the answer to it live in the two messages\s+themselves/i.test(hard)
+    && /`send_message` back to that same continuable engineer/i.test(hard),
+  `the rule list still asks for a document before a solo blocker can be answered: ${JSON.stringify(hard.slice(hard.indexOf("Nothing that matters"), hard.indexOf("Nothing that matters") + 500))}`,
+);
+check(
+  "`state.json` is the `crew` route's file in the rule list",
+  /`state\.json` belongs to the `crew` route/i.test(hard)
+    && /\*\*`direct` and `solo` never create it\s+and never update it\*\*/i.test(hard),
+  "the rule list no longer says which routes may write the ledger",
+);
+check(
+  "bug escalation names the document for the route the bug lands on",
+  /`direct` → `solo`: write the \*\*TaskBrief\*\* before the\s+engineer starts/i.test(hard)
+    && /and \*\*never a task row\*\*, because a `solo` job keeps none/i.test(hard)
+    && /`direct` or `solo` → `crew`: write the\s+\*\*task row first\*\*, before the crew engineer starts/i.test(hard),
+  `a bug escalating to \`solo\` would be given the wrong record: ${JSON.stringify(hard.slice(hard.indexOf("A bug on the `crew` route"), hard.indexOf("A bug on the `crew` route") + 500))}`,
+);
 
 // ----------------------------- 3. a `solo` state file is never unfinished crew work
 

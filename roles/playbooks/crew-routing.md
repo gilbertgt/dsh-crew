@@ -35,10 +35,12 @@ is `crew`'s to read.
 Mixing those two questions is what used to escalate every ordinary form into the
 full crew. **A screen that merely TAKES input from the user is not a risky
 change.** A settings page, a form, a dropdown, a search box: `solo`, and nothing
-about them is a security question by itself. The line is when the change
-**checks** who the user is or **decides what they may do** — a login, a
-permission check, a session, a secret, a key — or when the input reaches a trust
-boundary: a query, a shell command, a file path, a parser, a rendered page.
+about them is a security question by itself. **The security question has a closed
+list, and it is this one**: the network, a login or permission check, secrets or
+keys, files outside the project, shell commands, **input that reaches a trust
+boundary** — a query, a shell command, a file path, a parser, a rendered page —
+customer data, or a new dependency. **Taking input is not on that list by
+itself**, and the list decides the review only: it never decides the route.
 `solo` plus one security review is a normal outcome and a good one: it is cheaper
 than a whole crew, and it still gets the second reader the auth part earns.
 

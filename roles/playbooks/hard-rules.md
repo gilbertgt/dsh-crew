@@ -34,16 +34,25 @@ front of you.
 - Before you ask to push `main`, read the CI files and put the answer in that
   same question: name the workflow that would publish, or say plainly that none
   would. Never ask for a `main` push without that line, and record it in
-  `state.json` under `merge.publishCheck`.
+  `state.json` under `merge.publishCheck` — on `crew`, the only route with a state
+  file.
 - The crew tools live in the `crew` agent preset. Before you promise a crew,
   check your own tool list. If the role tools are missing, this session runs
   another preset: say so, and offer either a new session on the `crew` preset or
   the work done by you alone.
 - Nothing that matters lives only in a message. Every decision, answer and
   change goes into a document first; the message says which document and which
-  version. On the `direct` route that document is the commit message (step 1):
+  version. On the `direct` route that document is the commit message:
   the route carries no other file, and the rule is about messages, not about
-  inventing one.
+  inventing one. **On `solo` it is the other way round, and no document may be
+  asked for first**: a `solo` job has no job folder, no `Q-` file and no task row
+  to write one into, so its blocker and the answer to it live in the two messages
+  themselves — the engineer's `Result` with `status: blocked`, and the PM's
+  `send_message` back to that same continuable engineer.
+- `state.json` belongs to the `crew` route: **`direct` and `solo` never create it
+  and never update it**, because neither keeps a job folder. On `crew` it is the
+  running ledger — the tasks, the milestones, the document versions, the stage
+  checkpoints and the merge result.
 - `DoD` is the name of a section, never of a file: never create a file for one,
   in any folder. On the `crew` route, small work and big work both open
   with a PRD of their own, `docs/design/prd-<date>-<job-slug>.md`, and keep the task
@@ -55,10 +64,12 @@ front of you.
   or task row.
 - A bug on the `crew` route becomes a task row that you write before
   the fix starts: what was reported, and its DoD section. The engineer doing the fix
-  never writes that section. On `solo` the same two things go into the TaskBrief
-  instead — a `solo` job keeps no task row — and a small, low-risk bug may stay
-  `direct`, whose record is its commit message; if a bug grows past that route,
-  write the row before another role starts.
+  never writes that section. **A bug that escalates is documented for the route it
+  lands on, and only then.** `direct` → `solo`: write the **TaskBrief** before the
+  engineer starts — its acceptance list, its files, its test — and **never a task
+  row**, because a `solo` job keeps none. `direct` or `solo` → `crew`: write the
+  **task row first**, before the crew engineer starts. A bug that stays `direct`
+  keeps its commit message as its whole record.
 - The user's turn is at the start and at every milestone review, not item by
   item. Once the scope and the change requests are agreed, decide the rest
   yourself, and let the user interrupt you on a summary of the documents you
@@ -75,8 +86,8 @@ front of you.
   **Scale** in step 1), and the default is the cheapest scale that can carry the
   change — `direct` for a small low-risk change, `solo` (one `crew_engineer`) for
   ordinary coding, and `crew` only when the work is big, cross-module or risky.
-  Whether a security review is needed is a second question, answered from step
-  10b's own list, and it never moves the route by itself.
+  Whether a security review is needed is a second question, answered from the closed
+  risky list in the `crew-routing` playbook, and it never moves the route by itself.
   A milestone is one full cycle plus one commit — it is **not** a release, and
   pushing and tagging each need their own yes.
 - **Do it yourself when you can; delegate only when a second role earns its
@@ -102,8 +113,9 @@ front of you.
 - **While the work is moving, run the targeted tests.** The project's full test
   command and `bash qa/run-all.sh` are completion gates: once when the coding has
   stopped, and again only for a fix that the run itself demanded.
-- **Write a checkpoint when a step finishes, not when the job does.** `state.json`
-  holds `stages`, one entry per step per milestone, and a resumed session skips
+- **Write a checkpoint when a step finishes, not when the job does.** This is
+  `crew`'s rule, like `state.json` itself: `direct` and `solo` have no ledger to
+  write. On `crew`, `state.json` holds `stages`, one entry per step per milestone, and a resumed session skips
   every entry that is `done` or `skipped`, re-runs only `stale`, and redoes only
   what was still `running`. Never repeat finished work because a session ended.
 - Every change to scope, a DoD item, the milestone list or a boundary
