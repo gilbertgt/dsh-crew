@@ -219,14 +219,57 @@ export function apply(ctx, config) {
   };
 
   /**
-   * Update one standing role tool in order; Fiber.update performs a safe reload.
+   * Hand one config to a role's fiber and WAIT for the reload to settle.
    *
-   * A live Cordis `Fiber.update` writes the new config first and then restarts
-   * the fiber, and a failed restart leaves the fiber inactive with NO rollback
-   * of its own. So this keeps the last config that really went live and puts it
-   * back when the new one is rejected: without that, one bad settings value (a
-   * provider that just went away, say) would delete a role tool that was working
-   * a moment ago, and the PM would lose a role until the next dsh restart.
+   * `Fiber.update(config)` is not the call that reports a failed reload. It runs
+   * the `internal/update` waterfall and returns its result, which for the default
+   * restart is `restart()` — a promise that settles the plugin's own dispose/start
+   * work, but NOT the fiber's lifecycle. `Fiber._reload()` catches a startup
+   * failure, logs it, stores it in `_error` and marks the epoch inactive instead of
+   * rejecting anything, and what rethrows it is `Fiber.await()`:
+   *
+   *     async await() {
+   *       while (this.inertia) await this.inertia;
+   *       if (this._error) throw this._error;
+   *       return this;
+   *     }
+   *
+   * So `await fiber.update(next)` alone would report success for a reload that
+   * FAILED: no throw here, no rollback, and `signatures` would claim a route the
+   * fiber never reached. `await()` also drains `inertia`, the fiber's own
+   * reload/unload chain, which `update()` never touches.
+   *
+   * The order matters and both halves are load-bearing:
+   *
+   *     await fiber.update(next);   // stage the config, run the restart
+   *     await fiber.await();        // settle the lifecycle, rethrow a startup error
+   *
+   * This is dsh's own pattern for a live row — `cordis-plugin-loader` and
+   * `dsh-agent-presets` both do `update`/`plugin(...)` and then `await fiber.await()`.
+   *
+   * `update()` returns `undefined` on its early path (a fiber that is not in state
+   * `2`), and then `await()` still has the whole job: an errored fiber IS in state
+   * `3`, not `2`, so a rollback lands on that early path. It clears `_error`, drops
+   * the epoch to inactive and refreshes, and the reload it kicks off is settled by
+   * the `await()` beside it.
+   *
+   * @throws whatever the reload's startup threw, through `await()`
+   */
+  const applyToFiber = async (fiber, config) => {
+    const staged = fiber.update(config);
+    await staged;
+    if (typeof fiber.await === "function") await fiber.await();
+  };
+
+  /**
+   * Update one standing role tool in order; the fiber performs a safe reload.
+   *
+   * A failed reload leaves the fiber in its error state, where `ctx.get` answers
+   * nothing and the role tool is gone from the session. So this keeps the last
+   * config that really went live and puts it back when the new one is refused:
+   * without that, one bad settings value (a provider that just went away, say)
+   * would delete a role tool that was working a moment ago, and the PM would lose
+   * a role until the next dsh restart.
    */
   const updateRole = (role, next) => {
     const signature = JSON.stringify(next);
@@ -236,7 +279,7 @@ export function apply(ctx, config) {
       const fiber = fibers.get(role.key);
       if (typeof fiber?.update !== "function") return;
       try {
-        await fiber.update(next);
+        await applyToFiber(fiber, next);
         liveConfigs.set(role.key, next);
         signatures.set(role.key, signature);
       } catch (error) {
@@ -245,7 +288,7 @@ export function apply(ctx, config) {
         const lastGood = liveConfigs.get(role.key);
         if (lastGood === undefined || lastGood === next) return;
         try {
-          await fiber.update(lastGood);
+          await applyToFiber(fiber, lastGood);
           signatures.set(role.key, JSON.stringify(lastGood));
         } catch (restoreError) {
           reportUpdateFailure(role, restoreError);
@@ -256,7 +299,15 @@ export function apply(ctx, config) {
     // One `then` per update while a burst is running, and each one does nothing
     // until it is the tail. The last one to land converges the fiber.
     tail.then(() => {
-      if (updateTails.get(role.key) === tail) reconcileRole(role);
+      if (updateTails.get(role.key) !== tail) return;
+      // This role's queue is empty, so nothing is on its way any more. The queued
+      // target has to be forgotten HERE, or a later settings event asking for the
+      // same value is read as "already queued" and skipped for good: after a
+      // refused `B` rolls back to `A`, `pending` still holds `B`, so a fresh
+      // `onChange` that asks for `B` again would clear `rejected` and then hit the
+      // `pending` guard — the retry the refusal handling promises would never run.
+      if (pending.get(role.key) === signature) pending.delete(role.key);
+      reconcileRole(role);
     });
   };
 
@@ -268,13 +319,12 @@ export function apply(ctx, config) {
    * role is already moving towards, so the queue can end with the fiber on a
    * superseded value. This is what closes that gap.
    *
-   * What is NOT covered anywhere: that a real Cordis `Fiber.update` really leaves
-   * the fiber inactive when it is rejected, and that updating it again with the old
-   * config really brings it back. `tools/verify-role-settings.mjs` drives these
-   * paths with a synthetic fiber whose `update` resolves or throws when the test
-   * says so, and this repository has no real `Fiber` to drive — the same optional
-   * peer whose absence `verify-mount.mjs` reports as a SKIP. So the statement here
-   * is "this is the right order of events", not "a live host was observed".
+   * What is still not covered here: nothing in this repository runs a REAL Cordis
+   * fiber. `tools/verify-role-settings.mjs` drives these paths with a synthetic one
+   * that copies the live API's shape — `update()` synchronous-or-thenable, a
+   * separate `await()` that settles the lifecycle and throws the startup error —
+   * but the behavior it imitates belongs to dsh, and installing that peer is the
+   * step `verify-mount.mjs` reports as a SKIP on a plain checkout and in CI.
    */
   const reconcileRole = (role) => {
     const next = roleConfig(role);

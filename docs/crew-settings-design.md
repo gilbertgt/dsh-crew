@@ -102,18 +102,37 @@ role 的 persona 是 `readRoleText()` 的結果加上同一份 language policy�
 `__proto__` key 不能偷偷替 reviewer 換一份 allow list，也不能注入 UI 看不到的 route。
 legacy `roleModels` 在**任何 mount 之前**驗證，壞值會讓整個 crew 不啟動，而不是留下半個
 crew。settings 變更後若新 config 被 host 拒絕，`updateRole()` 會把最後一次真正生效的
-config 重新套回該 Fiber：Cordis 的 `Fiber.update()` 先寫入新 config 再 restart，失敗時
-自己不會 rollback，少了這一步，一個暫時失效的 provider 會讓那個 role tool 消失到下次重啟。
+config 重新套回該 Fiber：一個進入 error state 的 fiber，`ctx.get` 什麼都答不出來，那個 role
+tool 就等於從 session 消失；少了這一步，一個暫時失效的 provider 會讓那個 role tool 消失到
+下次重啟。
 
-這條 reload 路徑上有兩個必須分開記帳的狀態，混在一起就會掉更新。`signatures` 是**真正
+**一次 reload 是兩個 await，`update()` 不是回報失敗的那個。** `Fiber.update(config)` 會跑
+`internal/update` waterfall 並回傳它的結果（預設 restart 的 promise），但 `Fiber._reload()`
+把 startup failure 收進 `_error` 並記 log，**不往外拋**；真正重拋的是 `Fiber.await()`：
+
+```js
+await fiber.update(config);  // 交出新 config、跑 restart
+await fiber.await();         // 等 lifecycle 落定，並重拋 startup error
+```
+
+少了第二個 await，`signatures` 會宣告一條 fiber 從未到達的路由，rollback 也永遠不會被觸發。
+順序不可顛倒，兩半都必要；這也是 dsh 自己的用法（`cordis-plugin-loader`、`dsh-agent-presets`
+都是 `update`／`plugin(...)` 之後再 `await fiber.await()`）。`update()` 在 fiber 不在 state `2`
+時走 early path 回傳 `undefined`，而 **error state 是 `3`**，所以 rollback 正好落在那條路徑
+上——它會清掉 `_error`、把 epoch 降回 inactive 並 refresh，接著由旁邊的 `await()` 落定。
+
+這條 reload 路徑上有三個必須分開記帳的狀態，混在一起就會掉更新。`signatures` 是**真正
 生效**的值，`pending` 是**最後排入佇列**的目標：`refreshRoleTools()` 拿新 config 比對的
 是前者，若只比 `signatures`，同一輪內「先改 B、再改回 A」的第二次事件會因為 A 仍等於
 `signatures` 而被判成「已經正確」、什麼都不排，Fiber 最後停在 B 且再也沒有事件會修正它。
 因此每個 role 的佇列排空後會執行一次 `reconcileRole()`，把 Fiber 收斂到 settings 真正的
-值。`updateRole()` 另外記下最後一次被 host 拒絕的簽章（`rejected`）：被拒絕的值重試一定會
-再被拒絕，從 rollback 內部自我排程就是無窮迴圈，所以收斂只為**新**目標排程，同一個被拒絕的
-值要等下一次 settings 事件（`refreshRoleTools()` 會清掉該 role 的拒絕記錄）才重試。
-`tools/verify-role-settings.mjs` 對這三件事各有一個檢查，包括那個 burst 情境。
+值；同一時間 `pending` 必須在佇列排空時清掉，否則之後那個「再問一次同一個被拒絕值」的
+事件會先清掉拒絕記錄、再被 `pending` 擋下，rollback 承諾的重試永遠不會發生。`rejected`
+記下最後一次被 host 拒絕的簽章：被拒絕的值重試一定會再被拒絕，從 rollback 內部自我排程就是
+無窮迴圈，所以收斂只為**新**目標排程。`tools/verify-role-settings.mjs` 對這四件事各有一個
+檢查，包括 burst、被拒絕後的**同值重試**，以及那個 async contract——測試用的 synthetic fiber
+必須照真實 API 的形狀寫（`update()` 同步或 thenable、`await()` 另外一個），否則它驗的是一個
+真 API 沒有的 await contract。
 
 Settings provider 的 attach/detach 不會改變 role filters、persona 或 max depth。若
 沒有 `settings` service，`ctx.inject` 不會阻擋既有 role mount。
@@ -169,10 +188,18 @@ option 與警示狀態顯示。使用者主動換 provider/model 後，才用新
 level 帶給新模型。從 inherit 切到 custom 時，預填值是 `catalog.default`（若它仍在
 catalog 內），不是「第一組的第一個 model」。
 
-只有「不完整的 draft route」會擋 `Save`：`source` 為 settings/draft 且 model 為空時顯示
-invalid，並停用 Save。catalog 已移除的 provider/model/effort 只顯示 warning，不擋存檔，因為
-真正的有效性由 host preflight 判定（見下）。既有的壞掉 stored route 也會顯示自己的錯誤，
+只有「使用者自己已存、且不完整」的 route 會擋 `Save`：`source` 為 settings、使用者層有這個
+role 的 entry、且 model 為空時顯示 invalid，並停用 Save。preset 自己的 legacy route 不完整
+時不算使用者的錯，不擋存檔。catalog 已移除的 provider/model/effort 只顯示 warning，不擋存檔，
+因為真正的有效性由 host preflight 判定（見下）。既有的壞掉 stored route 也會顯示自己的錯誤，
 但不會擋住其他 role 的存檔：寫入只送有改動 role 的 path ops，擋住並不能修好它。
+
+**「使用者層有 entry」與「這個 entry 真的送到 child」是兩件事**，頁面用兩個旗標分開回答：
+`hasStoredUserOverride`（`hasOwn(user, roleKey)`，決定該列的控制項是
+`Reset this role's user override` 還是 `Undo this role's draft change`）與
+`hasStoredUserRoute`（entry 有非空 model，決定它是否真的覆蓋 preset 的 legacy route）。
+schema 允許空 model，而且這個頁面刻意保留已存但失效的 route，所以前者為真、後者為假是常態
+——把它讀成 draft 會替一個已經存檔的值命名成草稿，也會讓那個值除了手改設定檔之外沒有出口。
 
 設定頁維持 draft，不在每次 select change 時寫檔：
 

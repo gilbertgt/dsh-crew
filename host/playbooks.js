@@ -62,8 +62,8 @@ export const PLAYBOOKS = [
   },
   {
     file: "crew-routing.md",
-    when: "the short routing rules in the core are not enough to place the work, or the role that would own it is not obvious",
-    holds: "the long form of the routing judgement: what the scale decides, the two questions kept apart, and the three lines that say who owns which piece of work",
+    when: "a role choice is not obvious, or the role that would own the work is not either",
+    holds: "the long form of the routing judgement: what the scale decides, the two questions kept apart, the closed security list, and the three lines that say who owns which piece of work",
   },
   {
     file: "documents.md",

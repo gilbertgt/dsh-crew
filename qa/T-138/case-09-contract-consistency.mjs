@@ -489,6 +489,38 @@ check(
   "`high-risk` / `risky` is a crew trigger again in the routing playbook or the rule list",
 );
 
+// The escalation list has exactly ONE home, and it is the always-loaded core.
+//
+// This was two lists in two files. They had drifted: the playbook asked for work
+// that was "large", "undoable or data-loss-sensitive" or "genuinely parallel",
+// none of which the core says, while the core's "an earlier change in the same part
+// of the code already produced a defect" was missing from the playbook. A route is
+// not a small difference — `solo` is one engineer and `crew` is a whole flow — so
+// the same job could have run two ways depending on which list the PM had just
+// read. The playbook now points at the core's list instead of restating it, and
+// these two checks keep it that way.
+const routingPlaybook = flat(readPlaybook("crew-routing.md"));
+const escalationHomework = [
+  "undoable or data-loss-sensitive",
+  "genuinely parallel",
+  "only the conditions above open the full crew",
+];
+check(
+  `the escalation list lives only in the core (${escalationHomework.length} former phrase(s) absent from the playbook)`,
+  escalationHomework.every((phrase) => !routingPlaybook.includes(phrase))
+    && !/\bChoose `crew` when the work is\b/i.test(routingPlaybook),
+  "`crew-routing.md` has grown its own copy of the crew escalation conditions again. Two lists are two "
+    + "answers, and the PM follows whichever one it read last; the playbook must point at the core's list, "
+    + `not repeat it: ${JSON.stringify(escalationHomework.filter((phrase) => routingPlaybook.includes(phrase)))}`,
+);
+check(
+  "the playbook sends the PM to the core's own list instead",
+  routingPlaybook.includes("Read them in `roles/pm.md`")
+    && routingPlaybook.includes("the core wins"),
+  "`crew-routing.md` no longer says where the escalation conditions live, or no longer says which file wins "
+    + "when the two disagree, so a PM that read only the playbook would have no list at all",
+);
+
 // ----------------------------- 3. a `solo` state file is never unfinished crew work
 
 const dir = tempDir("crew-qa-solo-state-");

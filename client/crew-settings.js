@@ -358,9 +358,18 @@ window.__ModuleLoader__.load({
         const desired = this.desiredRoleModels();
         const hasRoute = hasOwn(desired, roleKey);
         const draftOwnsRole = this.draftRoleModels !== undefined && this.draftChangedRoles.has(roleKey);
+        // `hasOwn(user, …)` is not the same as "the user has a WORKING route", and
+        // the two answer different questions. An entry may be inert — a provider
+        // with an empty model, which the schema allows and this page deliberately
+        // keeps visible instead of deleting — so one flag decides whose value is in
+        // force and the other decides whether it really reaches a child.
+        const hasStoredUserOverride = hasOwn(user, roleKey);
+        const storedUserRouteEffective = hasStoredUserOverride && routeHasModel(user[roleKey]);
+        // A draft that keeps the user's own entry still has one, even when that entry
+        // is inert: the source follows whose value is in force, not whose value works.
         const source = draftOwnsRole
-          ? hasRoute ? "settings" : hasOwn(base, roleKey) ? "legacy" : "inherit"
-          : hasOwn(user, roleKey) ? "settings" : hasOwn(base, roleKey) ? "legacy" : "inherit";
+          ? hasRoute || hasStoredUserOverride ? "settings" : hasOwn(base, roleKey) ? "legacy" : "inherit"
+          : hasStoredUserOverride ? "settings" : hasOwn(base, roleKey) ? "legacy" : "inherit";
         const provider = isObject(route) && hasOwn(route, "provider") && typeof route.provider === "string" ? route.provider : "";
         const model = isObject(route) && hasOwn(route, "model") && typeof route.model === "string" ? route.model : "";
         const group = this.groupFor(provider);
@@ -372,7 +381,10 @@ window.__ModuleLoader__.load({
         const advertisedEfforts = modelInfo?.reasoning?.efforts ?? [];
         const reasoningAvailable = modelInfo?.reasoning !== undefined;
         const reasoningInvalid = reasoningAvailable && reasoningEffort.length > 0 && !advertisedEfforts.some((effort) => effort.id === reasoningEffort);
-        const invalidRoute = source === "settings" && hasRoute && (!isObject(route) || model.length === 0);
+        // An incomplete route blocks Save only when the user's OWN stored value is
+        // what is in force. A preset's inert legacy route is not the user's mistake
+        // and must not stop them saving a different role.
+        const invalidRoute = source === "settings" && hasStoredUserOverride && (!isObject(route) || model.length === 0);
         // THE preset's own fallback route, which no settings write can reach.
         //
         // The namespace composes the user layer ON TOP of the preset's legacy
@@ -383,11 +395,15 @@ window.__ModuleLoader__.load({
         // the very next render then reported the legacy route as an unavailable
         // provider — a warning about a route the user never chose and cannot remove
         // from this page.
-        const storedHasUserRoute = hasOwn(user, roleKey) && routeHasModel(user[roleKey]);
-        // The user's OWN route stops the legacy route from being what runs, so the
-        // fallback is only in force when they have none — or when a draft that owns
-        // this role has just taken theirs away, which is the half-clicked "Inherit".
-        const userRouteReachesTheChild = draftOwnsRole ? hasRoute && model.length > 0 : storedHasUserRoute;
+        //
+        // Only an EFFECTIVE user route counts here. An inert stored entry (a
+        // provider with an empty model) overrides nothing, so the preset's route is
+        // what really runs and the page has to say so.
+        // The user's OWN working route stops the legacy route from being what runs,
+        // so the fallback is only in force when they have none — or when a draft
+        // that owns this role has just taken theirs away, which is the half-clicked
+        // "Inherit".
+        const userRouteReachesTheChild = draftOwnsRole ? hasRoute && model.length > 0 : storedUserRouteEffective;
         const legacyFallback = source === "legacy" && !userRouteReachesTheChild && routeHasModel(base?.[roleKey]);
         let status = source === "inherit" || !hasEffectiveRoute && !invalidRoute ? "inherit" : "custom";
         if (hasEffectiveRoute && !providerAvailable) status = "unavailable-provider";
@@ -419,8 +435,17 @@ window.__ModuleLoader__.load({
           invalid: invalidRoute,
           status,
           /** Whether the USER wrote this role's route, as opposed to the preset's legacy one. */
-          hasStoredUserRoute: storedHasUserRoute,
-          hasUserOverride: hasOwn(user, roleKey) || storedHasUserRoute || draftOwnsRole,
+          hasStoredUserRoute: storedUserRouteEffective,
+          /**
+           * Whether the user layer holds an entry for this role, WORKING OR NOT.
+           *
+           * This is what the row's reset control answers to. A stored route with an
+           * empty model is still the user's own saved value: calling it a draft
+           * change would misname it, and hiding the control would leave the value
+           * with no way out short of editing the settings file by hand.
+           */
+          hasStoredUserOverride,
+          hasUserOverride: hasStoredUserOverride || draftOwnsRole,
         };
       }
 
@@ -684,7 +709,7 @@ window.__ModuleLoader__.load({
           className: "dshCrewSettingsReset",
           disabled,
           onClick: () => resetRole(role.key),
-        }, t(role.hasStoredUserRoute ? "reset" : "undoDraft")) : null,
+        }, t(role.hasStoredUserOverride ? "reset" : "undoDraft")) : null,
       );
     }
 

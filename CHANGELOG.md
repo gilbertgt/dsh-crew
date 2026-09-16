@@ -127,7 +127,8 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   being applied, so nothing was written, and every later edit agreed with the stale reading. The
   role kept using the route you had moved away from until dsh restarted. The reload now converges
   on what the settings really say once the queue for that role is empty, and a route the host
-  refuses is retried once per settings change instead of in a loop.
+  refuses is rolled back to the last working one and tried again by the next settings change that
+  asks for it.
 - **The Crew settings page no longer offers "Inherit PM / Session" as if it could clear a route
   that lives in the preset.** If your `agent.cordis.yml` still carries a legacy
   `roleModels: { <role>: … }` line, that route is composed underneath the settings layer, and no
@@ -139,6 +140,29 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   carries its own copy for the jobs the short rules cannot place, and its "Security review" column
   had drifted into wording of its own that pointed at a core section holding no such list. Both
   copies now answer every row the same way, and a check compares them row by row.
+- **The conditions that open the full crew now have one home: the always-loaded core.** The
+  `crew-routing` playbook used to restate them in words of its own, and the two lists had already
+  drifted apart — the playbook had conditions the core never stated, and had lost one the core did.
+  Since `solo` is one engineer and `crew` is a whole flow, the same job could be run two ways
+  depending on which list the PM had just read. The playbook points at the core's list now, and says
+  which file wins when the two ever disagree.
+- **A reload the host refuses no longer leaves the wrong route in place, and a refused route is
+  really retried.** Two things were wrong in how a live settings change reached a role's tool.
+  `fiber.update(config)` is not the call that reports a failed reload — Cordis settles the plugin's
+  own restart inside it, but catches a startup failure into the fiber's error state instead of
+  throwing, and `fiber.await()` is what rethrows it — so the code was reading "applied" for a reload
+  that had failed, and never reached its rollback. It now awaits both, in that order, which is what
+  dsh's own loader does. And the queued-target record was never cleared, so a later settings change
+  asking for the same refused route was skipped as "already on its way": the retry the rollback
+  promises could not happen. Both halves are checked, including the case where a refused route is
+  asked for again.
+- **A stored route with no model is named as your saved value, not as a draft.** The settings page
+  keeps an incomplete route visible instead of deleting it, and it was reporting that row's control
+  as "Undo this role's draft change" when there was no draft — the value was already saved. Those
+  are now two separate facts: whether the user layer holds an entry for the role (which decides the
+  control, "Reset user override"), and whether that entry really reaches a child (an empty model
+  inherits, exactly as `roleAgentOptions` decides). An entry the user left incomplete is reported as
+  invalid rather than announced as the preset's route.
 
 ## 0.10.0 — 2026-08-23
 

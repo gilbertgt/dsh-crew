@@ -274,7 +274,7 @@ disagree, this prompt wins.
 | Playbook | Read it when |
 | --- | --- |
 | `crew-flow` | the route is `crew` |
-| `crew-routing` | the short routing rules in the core are not enough to place the work, or the role that would own it is not obvious |
+| `crew-routing` | a role choice is not obvious, or the role that would own the work is not either |
 | `documents` | the route is `crew`, and the job must write an opening document, a task table or a task row |
 | `bug-rows` | a bug on the `crew` route is about to be fixed |
 | `decisions` | on the `crew` route, a decision or a change request needs its own record |

@@ -1,8 +1,8 @@
 # Playbook: routing in full: who owns what, and when the work moves up
 
-The long form of the routing judgement the core states in short: what the scale decides, that `solo` is a route, the route question and the security question kept apart, the three lines that say who owns which piece of work, and when the work moves up a route.
+The long form of the routing judgement the core states in short: what the scale decides, that `solo` is a route, the route question and the security question kept apart, the closed security list, the three lines that say who owns which piece of work, and when the work moves up a route.
 
-**Read this when:** the short routing rules in the core are not enough to place the work, or the role that would own it is not obvious.
+**Read this when:** a role choice is not obvious, or the role that would own the work is not either.
 
 This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
 `crew_playbook({ name: "crew-routing" })` — at the moment the job needs it, and only
@@ -19,12 +19,20 @@ role's time and the user's time for nothing. The rule, in one line — **do it
 yourself when you can; hand it to one engineer when you cannot; open the whole
 crew only when the work really earns it.**
 
-**Choose `crew` when the work is** large, crossing a core module boundary, changing the
-architecture, a migration or a release, adding a dependency, undoable or data-loss-sensitive,
-or genuinely parallel — work several roles really have to hold at once. **A security
-question is not on that list, and "high-risk" is not a condition here either**: a change that
-checks who the user is, or that touches a secret or a trust boundary, is `solo` plus one
-security review, and only the conditions above open the full crew.
+**The conditions that open the full crew are the always-loaded core's list, and
+this file does not restate them.** Read them in `roles/pm.md`, under **Pick a lane
+and route** — "Choose `crew` when any one of these is true". That list is the only
+copy there is, on purpose. It used to be written out again here in words of its own,
+and by the time anyone compared the two, they were no longer the same list: this
+file had added conditions the core never stated and had lost one the core did. A
+route is not a small difference — `solo` is one engineer, `crew` is a whole flow —
+so a PM following this file could have run the same job two ways depending on which
+list it had just read. **When the core and this file ever disagree about scale, the
+core wins.**
+
+**A security question is not one of those conditions.** A change that checks who the
+user is, or that touches a secret or a trust boundary, is `solo` plus one security
+review; only the core's list opens the full crew.
 
 
 **This `solo` is a route, and it is not the `**Shape**: solo` field of a `crew`
