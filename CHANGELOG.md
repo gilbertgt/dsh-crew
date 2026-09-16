@@ -82,6 +82,17 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
   and the written rule used to disagree.
 - Development runs targeted tests; full gates run once at completion, review issues stop
   after two rounds, and resumed jobs skip stages already recorded as complete.
+- **A `crew_researcher` belongs to the `crew` route.** A `direct` or `solo` job looks things up
+  itself, and digging bigger than that is one of the reasons to re-route the work to `crew` first,
+  where the researcher is started. The rule that started one on any route is gone.
+- **The `solo` security review has its own timing, and it waits for no QA.** Engineer `Result` →
+  the PM puts the diff and the test result together → one `crew_security_reviewer` runs **once** →
+  a blocking fix → the same reviewer re-checks only its own blocking finding → the completion gates
+  → the commit. `crew` keeps its own order: coding, then QA, then the reviews, then the commit.
+- **No route-neutral rule sends you into the crew flow for a step number.** Push, force push, merge
+  and branch deletion are written out where they apply, the core's routing section is called
+  **Pick a lane and route** instead of "Step 1", and the `step 10b` / `step 16` / `step 17` pointers
+  a `direct` or `solo` job could have followed are gone. `crew` still reads its own numbered steps.
 - **Every shipped rule file now tells the same `solo` story.** The full rule list the PM reads on
   demand, the reasons in `principles.md`, and the repository's own two maps still described the V1
   `solo`, which kept a task row and wrote its own ADR and CRD. They now say what the always-loaded

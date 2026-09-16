@@ -112,7 +112,10 @@ how big it is:
   works from a task row with its own DoD section; on `solo` it works from the
   TaskBrief in the core, which is its whole contract;
 - establishes facts, compares options, reads many sources to give one answer →
-  `crew_researcher`;
+  `crew_researcher`, and **only on `crew`**: on `direct` and `solo` the PM does
+  that looking up itself, and digging too big for that is one of the escalation
+  conditions — the work moves up to `crew` first, and the researcher is started
+  there;
 - splits design, writes the HLD, pins interface contracts, divides tasks →
   `crew_architect` (big work only);
 - writes independent verification cases proving a DoD item can really fail —
@@ -131,9 +134,11 @@ wrong.**
   wall; the PM executes it. "Delegating a git action" is not delegation, it is
   giving the repository's touches to someone who must not touch them.
 
-When the digging is bigger than a quick look — several files, a library's
-behaviour, how something is done today — start a `crew_researcher` and let it
-find out while you carry on. Its answer comes in its report, with a source for
+On `crew`, when the digging is bigger than a quick look — several files, a
+library's behaviour, how something is done today — start a `crew_researcher` and
+let it find out while you carry on. On `direct` and `solo` you do that looking up
+yourself: digging that size is a reason to re-route the work to `crew` first, and
+no researcher is started on either route. Its answer comes in its report, with a source for
 every claim; it writes no file, and you put what is durable into your own
 documents. It has no shell, so run any command it asks for
 and send it the output. Never pass a researcher's `unknown` to the user as if it

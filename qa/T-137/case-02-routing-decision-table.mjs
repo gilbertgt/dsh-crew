@@ -26,7 +26,7 @@
 
 import { check, cleanUp, copyFile, done, edit, section, step, tempRepo, pm } from "../lib/qa.mjs";
 
-const HEADING = "Step 1: pick a lane, every time";
+const HEADING = "Pick a lane and route";
 const ROUTES = ["direct", "solo", "crew"];
 const HEADER = ["the work", "route", "security review", "when it becomes `crew`"];
 
@@ -37,7 +37,7 @@ const EXPECTED = [
   { id: "3 個一般 product files → solo", needle: "three ordinary product files", route: "solo", security: "no" },
   { id: "普通設定 UI → solo", needle: "ordinary settings ui", route: "solo", security: "no" },
   { id: "UI + auth/permission → solo + security review", needle: "login or a permission check", route: "solo", security: "yes" },
-  { id: "跨核心模組 contract 變更 → crew", needle: "contract change between two core modules", route: "crew", security: "10b" },
+  { id: "跨核心模組 contract 變更 → crew", needle: "contract change between two core modules", route: "crew", security: "closed-list" },
   { id: "migration + auth + network → crew", needle: "migration plus a login change plus the network", route: "crew", security: "yes" },
 ];
 
@@ -63,12 +63,14 @@ function tableRows(text) {
   return rows;
 }
 
-/** How the security column answers, in the three shapes this table uses. */
+/** How the security column answers, in the shapes this table uses. */
 function securityKind(cell) {
   const text = clean(cell).toLowerCase();
   if (text === "no") return "no";
   if (text.startsWith("yes")) return "yes";
-  if (text.startsWith("only step 10b")) return "10b";
+  // V2: the crew row pointed at "step 10b's own list", which sent a `direct` or
+  // `solo` job into the crew flow for a step number. The list is named instead.
+  if (text.startsWith("the closed risky list")) return "closed-list";
   return "other";
 }
 
@@ -78,7 +80,7 @@ const ID = {
   rows: `the table carries exactly ${EXPECTED.length} rows, so a row that moves away is noticed`,
   empty: "no cell of any row is left empty",
   vocabulary: "every route cell is `direct`, `solo` or `crew`, and nothing else",
-  security: "every security cell answers no, yes, or that step 10b's own list decides",
+  security: "every security cell answers no, yes, or that the closed risky list decides",
   noInput: "the Route column never names user input",
   independence: "two rows share one route and differ in the security review",
   soloNotCrew: "an ordinary settings UI is not routed to the whole crew",

@@ -13,13 +13,15 @@ front of you.
 
 **Every numbered step below belongs to the `crew` route.** `solo` borrows none
 of them and never opens this file: everything it needs is in the always-loaded
-prompt. `direct` runs none of them — step 1 says what it does
+prompt. `direct` runs none of them — the routing section of `roles/pm.md` says
+what it does
 instead, and the commit is the only step it shares. Neither route opens an
 opening document, asks the user to confirm one, or keeps a milestone of its own;
 `direct` starts no role at all, and `solo` starts only its one engineer plus the
-single reviewer step 1 named, if it named one. No rule inside these steps may be
+single named reviewer, if there is one. No rule inside these steps may be
 read as asking either route for more than that — if a sentence below seems to,
-the route is the thing that decides, and the route was settled in step 1.
+the route is the thing that decides, and the route was settled in `roles/pm.md`
+(**Pick a lane and route**), never in these steps.
 
 A `crew` job is read in order, and the order matters: each step assumes the one
 before it has finished.
@@ -867,7 +869,8 @@ before it has finished.
    command, a file path, a parser, a rendered page — customer data, or a new
    dependency.
    **Taking input is not on this list by itself**, and this list decides the
-   review only: it never decides the route (step 1, **Scale**). A settings form
+   review only: it never decides the route (`roles/pm.md`, **Pick a lane and
+   route**). A settings form
    that only collects and stores a value is not a security change, whatever a
    field is called.
    Give it the task ids, their file lists, the documents those rows live in

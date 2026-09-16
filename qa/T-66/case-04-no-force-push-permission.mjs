@@ -360,9 +360,14 @@ function subBlock(flatStep, from, to) {
     );
   }
   check(
-    "the Hard rules point at step 17 for the force push, so the two places cannot drift apart again",
-    rules.includes("(step 17)"),
-    rules,
+    "the Hard rules state the force-push rule itself, and point at no crew step",
+    // V2 took the step numbers out of the route-neutral rules: a `direct` or
+    // `solo` job that read "see step 17" would have to open the crew flow. The
+    // assertion asks for the rule in the hard rules AND for the absence of the
+    // pointer, so it is stricter than the one it replaces.
+    says(rules, ["one command for that one push", "that one command", "that exact command"]).length > 0
+      && !/\bstep\s*\d/i.test(rules),
+    `the Hard rules no longer state which command needs the user's own approval, or they point at a crew step again: ${rules}`,
   );
 }
 

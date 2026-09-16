@@ -13,7 +13,7 @@
 //           work's milestones is the same number, and that number is one;
 //   item 4  step 1's sentence `No matter how small a change is, it gets a
 //           milestone` is still there, exactly once, and still inside the
-//           `## Step 1: pick a lane, every time` section.
+//           `## Pick a lane and route` section.
 //
 // WHY ITEM 3 IS ITS OWN ASSERTION, AND WHY IT IS NOT A PROXY.
 // The bug T-82 fixed was not a missing sentence. It was two sentences that each
@@ -59,7 +59,7 @@
 
 import { pm, step, section, flat, check, done, tempRepo, cleanUp, composePmRulesIn, edit } from "../lib/qa.mjs";
 
-const LANE_HEADING = "Step 1: pick a lane, every time";
+const LANE_HEADING = "Pick a lane and route";
 const STATE_HEADING = "The state file";
 const PRD_STEP = 4;
 
@@ -333,15 +333,15 @@ check(
 );
 
 // Mutation 3: edit the sentence T-82 was forbidden to touch. The exact-one count
-// must catch it. Note the anchor carries the real line break of roles/pm.md: this
-// sentence wraps after `No`, so an anchor written on one line would not be found
-// and `edit` would throw instead of mutating.
+// must catch it. The anchor is the protected sentence itself, so it survives a
+// re-wrap of the paragraphs around it — V2 rewrapped this one and the old anchor's
+// line break moved with it.
 const keptGone = afterBreaking((dir) => {
   edit(
     dir,
     "roles/pm.md",
-    "It is cancelled. No\nmatter how small a change is, it gets a milestone",
-    "It is cancelled. Whenever a change lands, it gets a milestone",
+    "No matter how small a change is, it gets a milestone",
+    "Whenever a change lands, it gets a milestone",
   );
 });
 check(

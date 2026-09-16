@@ -365,6 +365,76 @@ check(
   `a bug escalating to \`solo\` would be given the wrong record: ${JSON.stringify(hard.slice(hard.indexOf("A bug on the `crew` route"), hard.indexOf("A bug on the `crew` route") + 500))}`,
 );
 
+// --------------- 2e. the route-neutral core, and the two light routes
+//
+// The core the PM really carries: `direct` and `solo` start no researcher and
+// reach no crew step number, `solo`'s one review runs before any completion gate
+// and waits for no QA, and `crew` keeps both the researcher and the flow. Every
+// assertion below reads the whole core, not one bullet, except where the subject
+// IS a bullet (the `direct` and `solo` route descriptions).
+//
+// `CREW_STEP` catches both shapes the flow's steps are named in: "step 16", and
+// the bare labels the review bullets used ("10b only for the closed risky list"),
+// which is the shape that reference survived in until this round.
+const CREW_STEP = /\bstep\s*\d|\b1[0-8][a-d]\b/i;
+const soloRouteBullet = (() => {
+  const at = core.indexOf("- `solo` — ");
+  if (at === -1) return "";
+  const rest = core.slice(at);
+  const end = rest.indexOf("\n- `crew` — ");
+  return flat(end === -1 ? rest.slice(0, 2500) : rest.slice(0, end));
+})();
+
+const stepNumberLines = core.split(/\r?\n/).filter((line) => CREW_STEP.test(line));
+check(
+  "every crew step number left in the core sits in a line that is the `crew` route's own",
+  stepNumberLines.every((line) => /crew/i.test(line)),
+  `these lines send a \`direct\` or \`solo\` job after a crew step: ${JSON.stringify(stepNumberLines)}`,
+);
+check(
+  "the core says looking things up is the PM's on `direct` and `solo`, and a researcher is not started there",
+  /neither `direct` nor\s+`solo` starts a `crew_researcher`/i.test(coreFlat)
+    && /move the work to `crew` first/i.test(coreFlat),
+  "the core no longer stops a light route from starting a researcher, or no longer says where digging that big goes",
+);
+check(
+  "the `solo` route bullet names the roles this route may not start, researcher included",
+  soloRouteBullet !== ""
+    && /no `crew_researcher`, no `crew_qa`/i.test(soloRouteBullet)
+    && /at most one more role: \*\*the single named reviewer/i.test(soloRouteBullet),
+  `the solo route's closed role list lost the researcher, so a solo job may start one again: ${JSON.stringify(soloRouteBullet.slice(0, 300))}`,
+);
+check(
+  "the `solo` route bullet names no crew step number either",
+  soloRouteBullet !== "" && !CREW_STEP.test(soloRouteBullet),
+  `the solo route is told a crew step again: ${JSON.stringify(soloRouteBullet.slice(0, 300))}`,
+);
+
+const soloFlow = coreFlat.slice(coreFlat.indexOf("**The `solo` flow, in full.**"));
+const order = ["`Result` comes back", "`crew_security_reviewer`", "re-checks only its own blocking", "completion gates", "commit and report"]
+  .map((marker) => [marker, soloFlow.indexOf(marker)]);
+check(
+  "the `solo` flow's order is Result, one review, the fix re-check, the gates, the commit",
+  order.every(([, at]) => at !== -1) && order.every(([, at], index) => index === 0 || at > order[index - 1][1]),
+  `the solo flow's steps are out of order or missing: ${JSON.stringify(order)}`,
+);
+check(
+  "the `solo` security review waits for no QA and opens no QA case",
+  /`solo` waits for no QA and opens no QA case/i.test(coreFlat) && /`crew_qa` is never started/i.test(coreFlat),
+  "nothing in the core stops a `solo` job from waiting for QA, which is the route whose review runs before the gate",
+);
+check(
+  "the rule list is route-neutral too: no crew step number in `hard-rules.md`",
+  !CREW_STEP.test(hard),
+  `the rule list points a light route at a crew step again: ${JSON.stringify(hard.split(/\r?\n/).filter((line) => CREW_STEP.test(line)))}`,
+);
+check(
+  "`crew` keeps the researcher and the flow",
+  /`crew_researcher`, and \*\*only on `crew`\*\*/i.test(flat(readPlaybook("crew-routing.md")))
+    && /Read\s+`crew-flow` only after choosing this route/i.test(coreFlat),
+  "the crew route lost either the researcher or the flow that is its own",
+);
+
 // ----------------------------- 3. a `solo` state file is never unfinished crew work
 
 const dir = tempDir("crew-qa-solo-state-");

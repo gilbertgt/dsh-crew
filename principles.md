@@ -975,7 +975,7 @@ a bug on `solo` is described in its TaskBrief, not in a task row.
 
 | Lane | Step, by name | Who does it | What it produces | Where that lives | Survives the job? |
 | --- | --- | --- | --- | --- | --- |
-| all | Step 1 of the lane rules, **Pick a lane** | PM | one line naming the lane (`[lane: team]`) | the reply to the user | No — and nothing needs it. Only the `team` lane runs the steps below |
+| all | **Pick a lane and route**, in the PM's core | PM | one line naming the lane (`[lane: team]`) | the reply to the user | No — and nothing needs it. Only the `team` lane runs the steps below |
 | team | Step 1, **Language** | PM asks, user answers | the language every crew document is written in | the documents themselves; `state.json` names it | The documents, yes. `state.json`, no |
 | team | Step 2, **the interview** (principle 22) | PM asks, user answers; a `crew_researcher` when the digging is bigger than a quick look | answers, one question per turn, each carrying the PM's own recommendation, and it stops when every section of the opening document can be written with no guess left; plus the researcher's answer, with a source per claim | the answers become the content of step 4, **Write the opening document**; the researcher's answer is in its report, and the PM writes what is durable into its own documents | The answers, no — step 4 is where they land. The researcher's answer, yes |
 | team | Step 3, **Language and stack** | PM decides, user confirms; a `crew_researcher` when the choice is real | the **Language and stack** section: language and version, package manager, framework, database, test framework with its exact command. Plus the researcher's answer, with a source per claim | the section in the opening document; the researcher's answer is in its report, and the PM writes what is durable into its own documents | Yes, both |
@@ -1168,7 +1168,7 @@ it: `solo` has a flow of its own and borrows none of those steps, and `direct`
 shares only the commit. `solo`'s own flow is five lines long: read the repository,
 ask at most one question, write the TaskBrief — the route's only document, and the
 whole contract with its engineer — start one engineer plus the single named
-reviewer step 1 named, if it named one, run the targeted test and the completion
+reviewer, if there is one, run the targeted test and the completion
 gates, commit.
 Neither of them opens an opening document, waits for the user to confirm
 one, or keeps a milestone of its own; `direct` and `solo` write no ADR and no CRD

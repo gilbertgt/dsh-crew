@@ -61,7 +61,7 @@
 // out of a throwaway copy, so a mutation written into a playbook is really judged.
 import { check, cleanUp, composePmRulesIn, copyFile, done, edit, flat, pm, pmRules, repoFile, step, tempRepo } from "../lib/qa.mjs";
 
-const LANE = "Step 1: pick a lane, every time";
+const LANE = "Pick a lane and route";
 const BUG_HEADING = "## A bug becomes a task row";
 
 // `CONTRIBUTING.md` is the same rule told to a contributor, and it carried the
@@ -198,7 +198,7 @@ const ID = {
   crdHeading: "the CRD section's heading says it applies to crew only",
   crdScoped: "the CRD section exempts direct and solo",
   soloFlow: "step 1 spells out the `solo` flow and says the numbered flow is not for it",
-  soloReviewer: "the `solo` flow allows exactly the one reviewer step 1 named, and no more",
+  soloReviewer: "the `solo` flow allows exactly one named reviewer, and no more",
   soloAdr: "the `solo` flow keeps no decision record and re-routes one that is needed to crew",
   crewFlow: "the numbered flow says it belongs to crew and that solo borrows none of it",
   decisionsAgree: "all four shipped documents put the ADR on crew only",
@@ -316,13 +316,16 @@ function audit(text) {
   // The two round-two defects, pinned as their own checks so a fix cannot pass by
   // rewriting the paragraph around them.
   //
-  // 1. `solo` may start exactly the one reviewer step 1 named — the routing
-  //    decision table puts a `crew_security_reviewer` on a `solo` change, and step
-  //    10's exception says the same. "no QA, no reviewer" as a blanket rule
-  //    contradicted both.
+  // 1. `solo` may start exactly one named reviewer — the routing decision table
+  //    puts a `crew_security_reviewer` on a `solo` change, and the solo flow runs
+  //    it once. "no QA, no reviewer" as a blanket rule contradicted both.
+  //
+  //    V2 moved this off the step number: the allowance is stated in the route
+  //    bullet itself ("at most one more role … and never a second one") and again
+  //    in the closed role list, so the assertion moved with it.
   add(
     ID.soloReviewer,
-    /plus the single\s+reviewer step 1 named if it named one/i.test(flatLane)
+    /and at most one more role: \*\*the single named reviewer this\s+change earns, and never a second one\.\*\*/i.test(flatLane)
       && /starts no role beyond\s+that one engineer and that one named reviewer/i.test(flatLane),
     `the \`solo\` flow does not allow exactly one named reviewer and forbid the rest: ${JSON.stringify(flatLane.slice(0, 500))}`,
   );
@@ -341,7 +344,7 @@ function audit(text) {
     crewFlow !== ""
       && /Every numbered step below belongs to the `crew` route/i.test(flatCrewFlow)
       && /`solo` borrows none\s+of them and never opens this file/i.test(flatCrewFlow)
-      && /`solo` starts only its one engineer plus the\s+single reviewer step 1 named/i.test(flatCrewFlow),
+      && /`solo` starts only its one engineer plus the\s+single named reviewer, if there is one/i.test(flatCrewFlow),
     crewFlow === ""
       ? "the numbered flow no longer has a heading saying whose flow it is"
       : `the numbered flow does not say it is crew-only, that solo borrows none of it, and what solo may start: ${JSON.stringify(flatCrewFlow.slice(0, 450))}`,
@@ -682,10 +685,17 @@ check(
   `failed checks were ${JSON.stringify(soloAdrGone)}`,
 );
 
-// Mutation 11: the two flows go back to saying `solo` starts no reviewer at all,
-// which is what contradicted the routing decision table's `crew_security_reviewer`.
+// Mutation 11: the `solo` route goes back to saying `solo` starts no reviewer at
+// all, which is what contradicted the routing decision table's
+// `crew_security_reviewer`. V2 states the allowance in the route bullet, so the
+// mutation removes it there.
 const soloReviewerGone = afterBreaking((dir) => {
-  edit(dir, "roles/pm.md", "plus the single reviewer step\n  1 named if it named one, and nothing else", "and nothing else");
+  edit(
+    dir,
+    "roles/pm.md",
+    "and at most one more role: **the single named reviewer this\n  change earns, and never a second one.**",
+    "and at most one more role, and no reviewer of its own.",
+  );
 });
 check(
   "mutation 11: `solo` losing its single named reviewer turns this case red",

@@ -22,9 +22,10 @@ A **change request** is anything that would change **what the user gets** or
 - a boundary contract in `docs/design/api/`.
 
 **A `direct` change writes no CRD, because it has no opened document to change.**
-Its whole record is the commit message (step 1). And the moment the user asks for
+Its whole record is the commit message. And the moment the user asks for
 something that would move a confirmed scope, a DoD item or a milestone list, the
-work has stopped being a `direct` change: re-route it (step 1) and write the CRD
+work has stopped being a `direct` change: re-route it, under **Pick a lane and
+route** in `roles/pm.md`, and write the CRD
 on the route that has documents. The rest of this section is `crew`'s. A `solo` job never opens a document that a
 CRD could change, so on that route there is nothing for one to say.
 

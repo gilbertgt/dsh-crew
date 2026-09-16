@@ -58,7 +58,7 @@
 
 import { pm, section, step, flat, check, done, tempRepo, cleanUp, copyFile, composePmRulesIn, edit, rulesFile } from "../lib/qa.mjs";
 
-const HEADING = "Step 1: pick a lane, every time";
+const HEADING = "Pick a lane and route";
 const PUSH_STEP = 16;
 
 // V2: the delegation rule left the core's step 1 for the routing playbook, which
@@ -100,8 +100,12 @@ const ID = {
   notRelease: "step 1 says a milestone is not a release",
   cycle: "a milestone is one full cycle plus one commit",
   yes: "pushing and tagging each still need the user's own yes",
-  names16: `that sentence names step ${PUSH_STEP}`,
-  step16: `step ${PUSH_STEP} really is the push step that sentence points at`,
+  // V2 moved the route-neutral core off the crew flow's step numbers: this
+  // sentence states the permission itself. The assertion moved with the rule
+  // instead of being widened — it now asks for the rule AND for the absence of a
+  // step pointer, which the old one-step-name check could not see.
+  ownYes: "that sentence states the permission itself and names no crew step",
+  step16: `step ${PUSH_STEP} really is the push step of the crew flow`,
   one: "a normal job has one milestone",
   split: "several milestones only when a dependency forces separate releases",
   shortPrd: "the short PRD says small work has one milestone, this job itself",
@@ -175,15 +179,15 @@ function audit(text, routing) {
       + JSON.stringify(notRelease.slice(0, 220)),
   );
   add(
-    ID.names16,
-    new RegExp(`step ${PUSH_STEP}\\b`).test(notRelease),
-    `T-64 DoD item 3 requires that sentence to name step ${PUSH_STEP}, the push step: `
+    ID.ownYes,
+    /every single time/i.test(notRelease) && !/\bstep\s*\d/i.test(notRelease),
+    `the milestone sentence has to state that each yes stands on its own, and name no crew step — a \`direct\` or \`solo\` job reading one would have to open the crew flow to find it: `
       + JSON.stringify(notRelease.slice(0, 220)),
   );
 
-  // The pointer is only worth anything while step 16 is still the push step: a
-  // renumbering that left the digits behind would send the reader to the wrong
-  // place and no count of "step 16" would notice.
+  // The crew flow's own push step is still worth pinning on its own: a
+  // renumbering that left the digits behind would send that route's reader to the
+  // wrong place, and nothing else checks the number against what it contains.
   let pushStep = "";
   try {
     pushStep = flat(step(text, PUSH_STEP));
@@ -193,7 +197,7 @@ function audit(text, routing) {
   add(
     ID.step16,
     /Push/i.test(pushStep) && /permission/i.test(pushStep),
-    `step ${PUSH_STEP} of roles/pm.md is not about pushing with the user's permission: `
+    `step ${PUSH_STEP} of the crew flow is not about pushing with the user's permission: `
       + JSON.stringify(pushStep.slice(0, 160)),
   );
 

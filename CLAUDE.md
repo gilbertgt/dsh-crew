@@ -393,10 +393,11 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
 - **Two lanes, then a route.** `ask` answers a question and changes nothing; `team` handles a
   change. Inside `team`, `direct` is the default for small, low-risk, single-module work: the PM
   executes it without a child role. `solo` is the default for ordinary coding: one `crew_engineer`,
-  and at most the single named reviewer step 1 named — never a `crew_qa`, an architect or a second
+  and at most the single named reviewer the routing decision names — never a `crew_qa`, a
+  `crew_researcher`, an architect or a second
   engineer. `crew` is for large, risky, cross-module or design-heavy work.
   **The three flows are separate in `roles/pm.md`**: the numbered steps are `crew`'s, `solo` has
-  its own five-bullet flow and at most the single reviewer step 1 named — it borrows nothing from
+  its own five-bullet flow and at most the single named reviewer — it borrows nothing from
   the numbered steps, which is why a `solo` job never opens `crew-flow.md` — and `direct` shares
   only the commit. Neither `solo` nor `direct` opens an opening document, confirms one with the user, or
   keeps a milestone of its own; `direct` and `solo` write no ADR and no CRD. A choice that deserves

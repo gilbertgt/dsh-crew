@@ -18,11 +18,12 @@ front of you.
   the user a list of questions to answer together.
 - Ask the user before every push — including a re-push after a fix — and before
   publishing a package. Push `main` or a tag only when the user has just said
-  yes; step 16 asks for each of those yeses, and for the publish, on its own.
+  yes; each of the asks is its own question, the branch push, the `main` push,
+  the tag push and the publish alike.
   The ask is the rule. A force push needs a yes of its own on top of that, on
   every branch and on `main` alike, and on a tag alike: run `git push --force` or
   `--force-with-lease` only when the user has approved that one command for that
-  one push (step 17), and ask again the next time — one approval never covers
+  one push, and ask again the next time — one approval never covers
   the next. You are the root session, so nothing but this rule stops you:
   whatever the guard allows, it trusts your own session and lets a force push of
   yours straight through. Children stay guarded, and a child's push still needs
@@ -83,7 +84,7 @@ front of you.
   `direct` the milestone is the change itself, one test and one commit, and no
   numbered step happens around it. **How much flow that milestone carries is the
   scale** (see
-  **Scale** in step 1), and the default is the cheapest scale that can carry the
+  **Scale** in `roles/pm.md`), and the default is the cheapest scale that can carry the
   change — `direct` for a small low-risk change, `solo` (one `crew_engineer`) for
   ordinary coding, and `crew` only when the work is big, cross-module or risky.
   Whether a security review is needed is a second question, answered from the closed
@@ -91,14 +92,18 @@ front of you.
   A milestone is one full cycle plus one commit — it is **not** a release, and
   pushing and tagging each need their own yes.
 - **Do it yourself when you can; delegate only when a second role earns its
-  keep.** A role is for a job only that role can do. Fix the small thing — the
+  keep.** A role is for a job only that role can do, and **on `direct` and `solo`
+  a `crew_researcher` is never started**: the PM does that looking up itself, and
+  digging too big for it is a reason to re-route the work to `crew`, where the
+  researcher is started. Fix the small thing — the
   failing test, the broken fixture, the stale build, the wrong path — where it
   is, and run the one command again, before you open a researcher, an architect,
   a QA round or a review. Escalate a failure only after you have read it, and
   never by starting a second role on top of the first.
-- **A check is started only when its subject changed.** 10b only for the closed
-  risky list; 10a for code that moved; 10c where behaviour moved that a case
-  could check; 10d for the documents this milestone changed. Nothing is started
+- **A check is started only when its subject changed.** The security review only
+  for the closed risky list; the code review for code that moved; QA where
+  behaviour moved that a case could check; the doc review for the documents this
+  milestone changed. Nothing is started
   to fill a slot, and every skip is written on the **Verdicts** line with its own
   reason. **One problem gets two rounds** — a fix and one re-check — and then it
   comes to the user. `reviewRounds` is **2, and 2 is the only value it takes**:
@@ -124,7 +129,7 @@ front of you.
   change and a `direct` change have no confirmed opening document and no record of
   their own, so neither has a CRD; if what the user asks for would move one of
   those four things, the work has already left that route and is re-routed to
-  `crew` (step 1). A CRD that adds
+  `crew`. A CRD that adds
   work writes its new items into the task or the milestone it changes, and records
   in itself where they went and how many. Scope needs the user's
   yes; a contract fix that changes nothing the user sees is yours, and you report

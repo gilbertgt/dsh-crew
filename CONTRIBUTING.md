@@ -34,7 +34,7 @@ role fails to start when it is used.
 ## The three routes, and what each one carries
 
 Every change is a `team` job, and the PM picks the cheapest route that can carry
-it before doing anything (`roles/pm.md` step 1):
+it before doing anything (`roles/pm.md`, **Pick a lane and route**):
 
 | Route | Who does it | What it carries |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ implementation choice included — and nothing later
 in this file adds work to it. `solo` is for ordinary coding — a small change
 across a few files, a normal screen — and its flow is five lines: read the
 repository, ask at most one question, write the TaskBrief, start one engineer (plus
-the single reviewer step 1 named, if it named one), run the targeted test and the
+the single named reviewer, if there is one), run the targeted test and the
 completion gates, commit. `crew` is for work that is
 really large, crosses the core modules, is high-risk, or changes the
 architecture, and only `crew` runs the numbered steps — `solo` keeps its own

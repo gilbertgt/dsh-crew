@@ -26,7 +26,7 @@
 
 import { pm, section, flat, check, done } from "../lib/qa.mjs";
 
-const HEADING = "Step 1: pick a lane, every time";
+const HEADING = "Pick a lane and route";
 const LANES = ["ask", "team"];
 const BACKTICKED = "`quick`";
 

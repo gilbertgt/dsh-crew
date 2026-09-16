@@ -119,9 +119,12 @@ checks above that do not apply to this change.
 
 ## One round, at the end, on the changed part only
 
-You review **once** per milestone. Your round runs at the end of it — after the
+You review **once** per milestone. On `crew` your round runs at the end of it — after the
 coding and after QA, and before the commit — and the code review and the doc
-review run at the same time as yours, each of them once as well. There is no round
+review run at the same time as yours, each of them once as well. **On `solo` there
+is no QA round to wait for**: the PM hands you the diff and the test result when the
+engineer's `Result` comes back, your one round runs before the completion gates, and
+a blocking fix comes back to you for the one re-check below. There is no round
 two by default, and no round three.
 
 **Only the changed part is in your round.** Code nobody touched is not yours to
