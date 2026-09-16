@@ -57,7 +57,7 @@
 // Reads one file: `roles/pm.md`. Writes nothing outside throwaway copies of the
 // repository, which it removes again. No network.
 
-import { pm, step, section, flat, check, done, tempRepo, cleanUp, copyFile, edit } from "../lib/qa.mjs";
+import { pm, step, section, flat, check, done, tempRepo, cleanUp, composePmRulesIn, edit } from "../lib/qa.mjs";
 
 const LANE_HEADING = "Step 1: pick a lane, every time";
 const STATE_HEADING = "The state file";
@@ -256,7 +256,11 @@ function afterBreaking(breakIt) {
   const dir = tempRepo();
   try {
     breakIt(dir);
-    const broken = copyFile(dir, "roles/pm.md");
+    // Crew V2: the rules are the core plus the playbooks, so a mutation that
+    // lands in `roles/playbooks/…` has to be read back the same way the real file
+    // is judged. Reading the core alone here once let mutation 1 pass while the
+    // sentence it planted sat in a file nobody looked at.
+    const broken = composePmRulesIn(dir);
     return { failed: audit(broken).filter((r) => !r.ok).map((r) => r.id), broken };
   } finally {
     cleanUp(dir);
@@ -271,7 +275,7 @@ function afterBreaking(breakIt) {
 const backWrapped = afterBreaking((dir) => {
   edit(
     dir,
-    "roles/pm.md",
+    "roles/playbooks/crew-state.md",
     "Milestone states:",
     "Leave `milestones` out for small work — Small Work Has No\nMilestones.\n\nMilestone states:",
   );
@@ -309,7 +313,7 @@ check(
 const disagree = afterBreaking((dir) => {
   edit(
     dir,
-    "roles/pm.md",
+    "roles/playbooks/crew-flow.md",
     "small work has **one** milestone, this job itself",
     "small work has **two** milestones, this job and its follow-up",
   );

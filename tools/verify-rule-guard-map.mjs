@@ -34,11 +34,21 @@ const mapFile = process.argv[2] ?? "qa/rule-guard-map.md";
 const mapPath = resolve(packageRoot, mapFile);
 
 // A `## ` or `### ` heading whose first token is a path opens a section. The
-// path is a `.md` file (roles/*.md, principles.md) or a directory
-// (`docs/tasks/`); the optional parenthetical (`### docs/tasks/ (DoD)`) is
-// ignored. Any other heading is not a section — the same "ignore what is not
-// the shape" rule verify-tasks.mjs uses for `## T-<number>`.
-const SECTION = /^(#{2,3})\s+(\S+\.md|\S+\/)(?:\s+\(.*\))?\s*$/;
+// path is a `.md` file (roles/*.md, roles/playbooks/*.md, principles.md), a `.js`
+// module (`host/child-policy.js`, where the rules every crew child carries live
+// since V2), or a directory (`docs/tasks/`); the optional parenthetical
+// (`### docs/tasks/ (DoD)`) is ignored. Any other heading is not a section —
+// the same "ignore what is not the shape" rule verify-tasks.mjs uses for
+// `## T-<number>`.
+//
+// Crew V2 is why a section may name a playbook or a module. The PM rules live in
+// two places now: the always-loaded core `roles/pm.md`, and the on-demand
+// playbooks under `roles/playbooks/`. The rules every crew CHILD carries moved out
+// of the nine role files into `host/child-policy.js`. A section per file is what
+// keeps the map honest about *where* a rule lives, so a rule that moved out of a
+// prompt still has exactly one home here (see `host/playbooks.js` and
+// `host/child-policy.js`).
+const SECTION = /^(#{2,3})\s+(\S+\.md|\S+\.js|\S+\/)(?:\s+\(.*\))?\s*$/;
 // The informational count line the map prints above every table.
 const RULES_MAPPED = /^Rules mapped:\s*(\d+)\s*\(guarded\s+(\d+)\s*·\s*bare\s+(\d+)\s*·\s*judgment\s+(\d+)\)\s*$/;
 // The exact status vocabulary: `guarded: <path>`, `bare`, `judgment`.
@@ -94,6 +104,9 @@ for (const [index, line] of lines.entries()) {
 }
 
 // --- Check 1: one section per roles/*.md file, in both directions. ---
+// `roles/playbooks/<name>.md` sections are deliberately excluded from this
+// one-per-file rule: they name the playbooks the PM's core reads on demand, not
+// roles. Their files are still proved to exist by the per-section check below.
 const rolesDir = join(packageRoot, "roles");
 let roleFiles = [];
 if (existsSync(rolesDir)) {
@@ -101,7 +114,7 @@ if (existsSync(rolesDir)) {
 } else {
   fail(`roles/ is missing, so nothing can prove every role file is mapped (PRD Q2)`);
 }
-const roleSections = sections.filter((section) => /^roles\/.+\.md$/.test(section.source));
+const roleSections = sections.filter((section) => /^roles\/[^/]+\.md$/.test(section.source));
 const mappedRoleKeys = new Set(roleSections.map((section) => section.source));
 // A Set would not notice a second `## roles/<name>.md` section for one role,
 // and every check below reads each section on its own — so a duplicate would

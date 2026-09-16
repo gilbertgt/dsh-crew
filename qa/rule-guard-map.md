@@ -34,8 +34,18 @@ verify-mount refuses a role that can write files. Both kinds are marked
 row of every table is the header `| rule | owner | status |` and a parser must
 skip it (its third cell is the literal word `status`). The `Rules mapped: …`
 lines are informational; a parser should count the rows itself. Each `## ` line
-names exactly one source file under `roles/`; the two `### ` sections name
-`docs/tasks/` and `principles.md`.
+names exactly one source file — a role file under `roles/`, a playbook under
+`roles/playbooks/`, or `principles.md`; the `### docs/tasks/` section names a
+directory and reads every `.md` file under it.
+
+**Why the PM's rules sit under several headings.** Crew V2 split the PM rules in
+two: `roles/pm.md` is the always-loaded core, and the flow, the ceremony and the
+long rule lists moved into the on-demand playbooks under `roles/playbooks/`
+(`host/playbooks.js` is the manifest of them). This map follows that split, one
+section per file, because the map's job is to say **where** a rule lives — a
+single `## roles/pm.md` section holding rules that are no longer in that file is
+exactly the quiet lie this check exists to catch. The core section is small on
+purpose: it holds only what really is in the prompt.
 
 ## roles/architect.md
 
@@ -148,7 +158,7 @@ Rules mapped: 13 (guarded 8 · bare 5 · judgment 0)
 
 ## roles/engineer.md
 
-Rules mapped: 28 (guarded 6 · bare 22 · judgment 0)
+Rules mapped: 27 (guarded 6 · bare 21 · judgment 0)
 
 | rule | owner | status |
 | --- | --- | --- |
@@ -171,7 +181,6 @@ Rules mapped: 28 (guarded 6 · bare 22 · judgment 0)
 | **Recommend one. Always.** | engineer | bare |
 | A message is not an agreement. | engineer | bare |
 | You never use git for writing. | engineer | guarded: host/git-guard.js |
-| To put a file back, use your own backup of it — never git. | engineer | bare |
 | The PM commits your work. | engineer | bare |
 | Never edit the contract file | engineer | bare |
 | Reach the other module only through that boundary. | engineer | bare |
@@ -181,9 +190,22 @@ Rules mapped: 28 (guarded 6 · bare 22 · judgment 0)
 | **A document that judges your work is not yours to edit.** | all roles | guarded: qa/T-63/case-03-rule-b-word-for-word.mjs |
 | **Reading is not restricted, and you should read widely.** | all roles | guarded: qa/T-63/case-04-reading-is-not-restricted.mjs |
 
+## host/child-policy.js
+
+Rules mapped: 1 (guarded 1 · bare 0 · judgment 0)
+
+The rules every crew CHILD carries live here once since Crew V2, instead of being
+written out again inside each of the nine role files. A rule that moved out of a
+role file has its home here, and `qa/T-138/case-03` proves that every composed
+persona still carries it.
+
+| rule | owner | status |
+| --- | --- | --- |
+| **To put a file back, use your own backup of it — never git.** | every maker | guarded: qa/T-138/case-03-persona-composition.mjs |
+
 ## roles/pm.md
 
-Rules mapped: 93 (guarded 38 · bare 51 · judgment 4)
+Rules mapped: 12 (guarded 5 · bare 3 · judgment 4)
 
 | rule | owner | status |
 | --- | --- | --- |
@@ -192,17 +214,57 @@ Rules mapped: 93 (guarded 38 · bare 51 · judgment 4)
 | Short sentences. Common words. No idioms, no slang, no jokes that need culture. | PM | judgment |
 | Say what is true. If a test failed, say it failed and show the output. | PM | judgment |
 | **One question per turn.** | PM | guarded: qa/T-106/case-04-one-question-per-turn-untouched.mjs |
-| **A change outside the agreed scope is refused by default.** | PM | bare |
-| needs the user's own yes at the moment it happens | PM | bare |
 | Before you ask the user anything, look it up yourself | PM | bare |
 | Ask the user only what facts cannot answer: their choice, their taste, their | PM | bare |
+| A force push needs a yes of its own | PM | guarded: qa/T-94/case-01-force-push-needs-user-approval.mjs |
+| Before you ask to push `main`, read the CI files and put the answer in that | PM | guarded: qa/T-01/case-09-publish-check-field.mjs |
+| Never merge and never delete a branch on your own judgement. | PM | guarded: qa/T-01/case-05-hard-rule-no-self-merge.mjs |
+| Report only what really happened. | PM | judgment |
+| **There is no third lane on top of these two.** | PM | guarded: qa/T-64/case-02-two-lanes-only.mjs |
+
+## roles/playbooks/crew-routing.md
+
+Rules mapped: 2 (guarded 0 · bare 2 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
+| **A change outside the agreed scope is refused by default.** | PM | bare |
+| needs the user's own yes at the moment it happens | PM | bare |
+
+## roles/playbooks/documents.md
+
+Rules mapped: 5 (guarded 2 · bare 3 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
 | **Never put one of the judging documents in a role's file list.** | PM | bare |
 | The full table of who writes what, by class, is in the crew's principles file | PM | guarded: qa/T-63/case-07-two-tables-agree.mjs |
 | So the shape is **append, never overwrite**: | PM | guarded: qa/T-66/case-06-append-never-overwrite.mjs |
 | Documents are the only channel | PM | bare |
 | **Never decide anything in a message.** | PM | bare |
+
+## roles/playbooks/decisions.md
+
+Rules mapped: 1 (guarded 0 · bare 1 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
 | Every one becomes a file you write, before anything moves. | PM | bare |
+
+## roles/playbooks/bug-rows.md
+
+Rules mapped: 1 (guarded 0 · bare 1 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
 | A bug becomes a task row — on the `crew` and `solo` routes only | PM | bare |
+
+## roles/playbooks/crew-flow.md
+
+Rules mapped: 59 (guarded 28 · bare 31 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
 | The slug's shape is fixed: lowercase letters, digits and `-`, nothing else | PM | guarded: qa/T-06/case-01-slug-shape-rule.mjs |
 | Create a work branch: `git switch -c crew/<job-slug>` | PM | bare |
 | **Parallel by default.** | PM | bare |
@@ -212,15 +274,14 @@ Rules mapped: 93 (guarded 38 · bare 51 · judgment 4)
 | **One engineer, one code change — the unit is the change, not the task.** | PM | bare |
 | Give every call a numbered display name. | PM | bare |
 | Two tasks can run together when their file lists do not overlap | PM | bare |
-| Open two git worktrees, and make each one able to run the project's checks. | PM | guarded: qa/T-62/case-03-two-worktrees-and-symlink.mjs |
-| **exactly once** | PM | guarded: qa/T-62/case-04-first-meeting-runs-once.mjs |
-| may never **weaken** an assertion to make a disagreement go away | PM | guarded: qa/T-62/case-07-weaken-only-the-pm.mjs |
+| **Open two git worktrees, and make each one able to run the project's | PM | guarded: qa/T-62/case-03-two-worktrees-and-symlink.mjs |
+| may never **weaken** an assertion to | PM | guarded: qa/T-62/case-07-weaken-only-the-pm.mjs |
 | When a disagreement improves the wording of a DoD section | PM | guarded: qa/T-62/case-08-two-destinations-for-wording.mjs |
-| **QA and the three reviews run once per milestone, at the end of it.** | PM | guarded: qa/T-65/case-02-qa-round-two-steps.mjs |
+| **Applicable QA and reviews run at most once per milestone, at the end of | PM | guarded: qa/T-65/case-02-qa-round-two-steps.mjs |
 | **10b. Security review — only when the change is risky | PM | bare |
 | **Run every verification command in those DoD sections yourself first, and | PM | bare |
 | `qa/run-all.sh` and `qa/gaps.md` are **yours, not QA's**. | PM | guarded: qa/T-72/case-02-shared-files-belong-to-the-pm.mjs |
-| **you add the one config line** that lets the runner see the folder | PM | guarded: qa/T-42/case-01-scripts-test-runs-qa-cases.mjs |
+| the one config line** that lets the runner see the folder | PM | guarded: qa/T-42/case-01-scripts-test-runs-qa-cases.mjs |
 | A case from an earlier task that now fails is a **regression** and is | PM | bare |
 | **The two words stay apart | PM | bare |
 | **Verdicts (this line is yours).** | PM | guarded: tools/verify-tasks.mjs |
@@ -229,7 +290,7 @@ Rules mapped: 93 (guarded 38 · bare 51 · judgment 4)
 | **Milestone review — stop and ask the user (big work only).** | PM | bare |
 | Then ask **one** question, with these four answers | PM | bare |
 | Never start the next milestone because the user said something that sounded | PM | bare |
-| **Release this milestone to users** — this answer names two steps, step 13 and step 16, not one. | PM | guarded: qa/T-66/case-03-release-to-users-answer.mjs |
+| **Release this milestone to users** — this answer names two steps, step 13 | PM | guarded: qa/T-66/case-03-release-to-users-answer.mjs |
 | **The milestone is not shipping.** Write no plan. Write a **shipping gap | PM | bare |
 | `README.md` is always the main one and is always in **English** | PM | bare |
 | The two always say the same thing and go in the same commit | PM | guarded: qa/T-79/case-01-both-readmes-say-the-same-thing.mjs |
@@ -241,33 +302,20 @@ Rules mapped: 93 (guarded 38 · bare 51 · judgment 4)
 | Three separate yeses, and one yes never covers the next thing | PM | guarded: qa/T-01/case-19-merge-clear-yes.mjs |
 | Prove it, never believe it. | PM | guarded: qa/T-01/case-07-three-delete-proofs.mjs |
 | Never `--squash` | PM | guarded: qa/T-01/case-08-ff-only-never-force.mjs |
-| A force push needs a yes of its own | PM | guarded: qa/T-94/case-01-force-push-needs-user-approval.mjs |
-| Before you ask to push `main`, read the CI files and put the answer in that | PM | guarded: qa/T-01/case-09-publish-check-field.mjs |
 | **Move what is durable out before you drop anything.** | PM | bare |
-| You do not have to go looking. | PM | guarded: tools/verify-jobs.mjs |
-| Tell the user about it before anything else | PM | bare |
-| Never start the next milestone before the user has answered the review for the | PM | bare |
-| Never merge and never delete a branch on your own judgement. | PM | guarded: qa/T-01/case-05-hard-rule-no-self-merge.mjs |
-| `DoD` is the name of a section, never of a file: never create a file for one, | PM | bare |
-| Every change gets a milestone, whatever its size | PM | guarded: qa/T-64/case-03-every-change-gets-a-milestone.mjs |
-| Every change to scope, a DoD item, the milestone list or a boundary | PM | bare |
-| Every decision about **how** gets an ADR | PM | bare |
-| A test case that only ran in somebody's shell does not count. | PM | bare |
-| Report only what really happened. | PM | judgment |
 | **"Not in scope" may only hold an item with a real cost** | PM | guarded: qa/T-106/case-03-not-in-scope-real-cost.mjs |
-| **There is no third lane** | PM | guarded: qa/T-64/case-02-two-lanes-only.mjs |
 | **Judge every question for whether it can be skipped.** | PM | bare |
-| **A recommendation for the paired shape rests on one of four reasons, and there is no fifth:** | PM | guarded: qa/T-56/case-04-four-reasons-exactly.mjs |
+| **A recommendation for the paired shape rests on one of four reasons, and | PM | guarded: qa/T-56/case-04-four-reasons-exactly.mjs |
 | **One hard limit runs the other way, and it is not a fifth reason.** | PM | guarded: qa/T-56/case-05-hard-constraint-separate.mjs |
 | **The cost is an estimate, and you pass it on as one.** | PM | guarded: qa/T-56/case-06-cost-is-an-estimate.mjs |
 | **Every task row carries a shape, and `solo` is the default.** | PM | guarded: qa/T-56/case-01-shape-field-in-step-4.mjs |
 | **A shape is stamped with its table, in one yes — never row by row.** | PM | guarded: qa/T-56/case-03-default-plus-exceptions.mjs |
 | **`M1` is the PoC** | PM | bare |
 | **There is no numbered list of checks any more, anywhere.** | PM | bare |
-| **One job, one opening document, and its name carries the job: `docs/design/prd-<date>-<job-slug>.md`** | PM | guarded: qa/T-67/case-05-prd-filename-shape.mjs |
+| **One job, one opening document, and its name carries the job: | PM | guarded: qa/T-67/case-05-prd-filename-shape.mjs |
 | Version history does not go in the PRD. | PM | guarded: qa/T-67/case-08-version-history-lives-elsewhere.mjs |
 | **What a PRD does not hold**: file ownership, task ids, verification commands | PM | guarded: qa/T-67/case-07-what-a-prd-holds.mjs |
-| The PRD keeps **one line** — its current version and its date | PM | guarded: qa/T-67/case-09-no-version-list-in-a-prd.mjs |
+| keeps **one line** — its current version and its date | PM | guarded: qa/T-67/case-09-no-version-list-in-a-prd.mjs |
 | **Test whether it is finished.** Two questions, both yes before step 5 | PM | bare |
 | **The design never waits for this review.** | PM | bare |
 | When the user overturns a recommended option at the review, that is a | PM | bare |
@@ -276,8 +324,38 @@ Rules mapped: 93 (guarded 38 · bare 51 · judgment 4)
 | A run that never starts is not a pass. Say it did not start. | PM | bare |
 | Write the result into `state.json` under `merge` | PM | guarded: qa/T-01/case-03-state-merge-block.mjs |
 | Drop the single-use documents only after you have given the user this | PM | bare |
+
+## roles/playbooks/worktrees.md
+
+Rules mapped: 1 (guarded 1 · bare 0 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
+| **The PM runs the first meeting, in the merged tree, exactly once.** | PM | guarded: qa/T-62/case-04-first-meeting-runs-once.mjs |
+
+## roles/playbooks/crew-state.md
+
+Rules mapped: 4 (guarded 1 · bare 3 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
+| You do not have to go looking. | PM | guarded: tools/verify-jobs.mjs |
+| Tell the user about it before anything else | PM | bare |
 | A child's `report` arrives as a message to you. Answer it by **updating the | PM | bare |
 | `send_message` **every** live crew child | PM | bare |
+
+## roles/playbooks/hard-rules.md
+
+Rules mapped: 8 (guarded 1 · bare 7 · judgment 0)
+
+| rule | owner | status |
+| --- | --- | --- |
+| Never start the next milestone before the user has answered the review for the | PM | bare |
+| `DoD` is the name of a section, never of a file: never create a file for one, | PM | bare |
+| Every change gets a milestone, whatever its size | PM | guarded: qa/T-64/case-03-every-change-gets-a-milestone.mjs |
+| Every change to scope, a DoD item, the milestone list or a boundary | PM | bare |
+| Every decision about **how** gets an ADR | PM | bare |
+| A test case that only ran in somebody's shell does not count. | PM | bare |
 | The crew tools live in the `crew` agent preset. | PM | bare |
 | Nothing that matters lives only in a message. | PM | bare |
 

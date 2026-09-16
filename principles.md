@@ -1731,17 +1731,21 @@ pretending the repository is uniform.
 
 ## Wording every role prompt copies word for word
 
-Three blocks live below. They are the **authoritative wording**, and every one of the ten role
-prompts carries them **word for word**: `roles/pm.md`, `roles/architect.md`, `roles/engineer.md`,
+Three blocks live below. They are the **authoritative wording**, and every crew role carries them
+**word for word**: `roles/pm.md`, `roles/architect.md`, `roles/engineer.md`,
 `roles/test-engineer.md`, `roles/code-engineer.md`, `roles/qa.md`, `roles/code-reviewer.md`,
-`roles/security-reviewer.md`, `roles/doc-reviewer.md` and `roles/researcher.md`.
+`roles/security-reviewer.md`, `roles/doc-reviewer.md` and `roles/researcher.md`. Since Crew V2 the
+PM carries them in its own file, which is always loaded, and the nine child roles get them from
+`host/child-policy.js` (`COMMON_CHILD_POLICY`), joined into each persona by `composeChildPersona()`.
+No role file repeats them — a role file that still carries one of these blocks is a second copy,
+and `qa/T-138/case-03` goes red on it.
 
-**Copy, do not paraphrase.** A rule that ten files each state in their own words is ten rules, and
-nobody can tell which one is the real one. Nine of those files are written by nine engineers who
-cannot talk to each other, so judgement is exactly where the ten copies would drift apart.
-Copying does not drift. Changing a block here means changing all ten in the same commit, and
-`tools/verify-mount.mjs` pins the two anchor sentences so a half-done change goes red instead of
-quiet.
+**Copy, do not paraphrase — and copy once.** A rule that ten files each state in their own words is
+ten rules, and nobody can tell which one is the real one. Nine of those files were written by nine
+engineers who could not talk to each other, so judgement is exactly where the ten copies drifted
+apart; V2 ended that by giving the shared rules one home. Changing a block here means changing that
+one home, and `tools/verify-mount.mjs` pins the two anchor sentences so a half-done change goes red
+instead of quiet.
 
 ### Rule A, on text that arrives inside a tool result
 

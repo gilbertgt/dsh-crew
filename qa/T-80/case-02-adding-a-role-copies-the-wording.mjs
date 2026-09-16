@@ -1,16 +1,25 @@
 // T-80 DoD item 7 (PRD requirement 7 / A3, downstream): the "Adding or changing
-// a role" checklist in `CLAUDE.md` tells whoever adds the next role to copy the
-// shared wording into the new prompt word for word — the `## What you may write`
-// section, the reading line, and the two rules whose authoritative text lives in
+// a role" checklist in `CLAUDE.md` tells whoever adds the next role how the
+// shared wording reaches the new prompt — the `## What you may write` section,
+// the reading line, and the two rules whose authoritative text lives in
 // `principles.md`.
 //
-// What it proves: that step is the ONLY surviving mechanism for the ten role
-// prompts staying identical. Today they match because this job edited them one by
-// one; the person who adds the eleventh role will read this checklist and nothing
-// else. So the checklist has to say it, name what to copy, say "copy, do not
-// paraphrase", and name the check that goes red on a half-done change.
+// What it proves: that step is the ONLY surviving mechanism for those blocks
+// reaching every role. Today they reach all of them because they exist once, in
+// `host/child-policy.js`, and `composeChildPersona()` joins them into each
+// persona; the person who adds the eleventh role will read this checklist and
+// nothing else. So the checklist has to say it, name what is shared, say NOT to
+// copy it in, name the marker that places it, and name the check that goes red on
+// a second copy.
 //
-// What it does NOT prove: that the next person actually copied anything. That
+// V2 (Crew V2) rewrote that step. It used to say "copy the shared wording into
+// the new prompt, word for word"; it now says "do not copy it in — leave
+// `<!-- crew-common -->`". The assertions below follow the MECHANISM, not the old
+// instruction: the step must still name all three blocks, say why one home beats
+// ten copies, name the check that guards it, and say who a change to it reaches.
+// Reading the old instruction back in would demand the ten copies V2 removed.
+//
+// What it does NOT prove: that the next person actually leaves the marker. That
 // happens in a later job, to a role that does not exist yet, and no case can
 // reach it. See the note at the end of this file.
 //
@@ -143,29 +152,35 @@ check(
 );
 
 check(
-  "that step says to copy, not to paraphrase",
-  /\bcopy\b[^.]{0,60}paraphrase/i.test(words),
-  `step ${carrier.number} tells you to copy nothing word for word — "write something like it" is how ten copies become ten rules`,
+  "that step tells the new prompt NOT to copy the shared wording in",
+  /do not copy|not copy|leave the marker/i.test(words),
+  `step ${carrier.number} still reads as an instruction to copy the blocks in. Since Crew V2 they exist once, in host/child-policy.js, and a second copy in a role file is the thing qa/T-138/case-03 goes red on.`,
 );
 
-const reasons = ["own words", "ten rules", "nobody can tell"].filter((phrase) => words.includes(phrase));
+check(
+  "that step names the marker that places them",
+  words.includes("crew-common"),
+  `step ${carrier.number} does not name the marker a role file leaves, so the next person has no way to say where the shared rules belong in the new file`,
+);
+
+const reasons = ["own words", "ten rules", "one home", "one place", "nobody can tell"].filter((phrase) => words.includes(phrase));
 
 check(
-  "that step says WHY copying beats writing it again",
+  "that step says WHY copying once beats writing it again in every prompt",
   reasons.length >= 2,
-  `step ${carrier.number} carries ${reasons.length} of the three reason phrases (${reasons.join("; ") || "none"}) — a step with no reason reads as bookkeeping and gets skipped`,
+  `step ${carrier.number} carries ${reasons.length} of the reason phrases (${reasons.join("; ") || "none"}) — a step with no reason reads as bookkeeping and gets skipped`,
 );
 
 check(
-  "that step names the check that guards the copies",
-  words.includes("tools/verify-mount.mjs"),
+  "that step names the check that guards the wording",
+  words.includes("tools/verify-mount.mjs") || words.includes("qa/T-138"),
   `step ${carrier.number} names no check, so whoever changes one of those sentences has no idea anything is watching`,
 );
 
 check(
   "it says what that check pins: both anchor sentences, on the PM's copy",
   /anchor sentence/i.test(words) && /\bPM\b/.test(words),
-  `step ${carrier.number} does not say the pin is the two anchor sentences of the PM's copy — a reader could think all ten copies are pinned, and nine of them are not`,
+  `step ${carrier.number} does not say the pin is the two anchor sentences of the PM's copy — a reader could think every composed persona is pinned that way, and only the PM's copy is`,
 );
 
 // The count is deliberately NOT pinned. Today the sentence reads "all ten
@@ -175,9 +190,9 @@ check(
 // turns into the thing blocking the new one. What must survive is "every prompt",
 // not the number.
 check(
-  "it says a change to one of those sentences is a change to EVERY prompt, in one commit",
-  /same commit/i.test(words) && /\ball \w+ prompts\b/i.test(words),
-  `step ${carrier.number} does not say all the prompts and the check move together in one commit, which is the half-done change this whole step exists to stop`,
+  "it says where a change to one of those blocks lands, and who it reaches",
+  /child-policy\.js/.test(words) && /every (?:child|crew)/i.test(words),
+  `step ${carrier.number} does not say that the shared blocks live in host/child-policy.js and reach every crew child. That one home is what replaced "change all ten prompts in the same commit" in V2, and without it the step reads as if nothing is shared at all`,
 );
 
 // -------------------------------------------------- the pointer is not dead

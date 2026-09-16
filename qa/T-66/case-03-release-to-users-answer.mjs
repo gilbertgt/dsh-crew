@@ -51,17 +51,28 @@
 // all four numbers (flattened and line-based, with and without case) so a future
 // reader can see for themselves which greps would have lied.
 //
-// Reads one file: `roles/pm.md`. Everything it breaks, it breaks inside a
-// throwaway copy of the repository, which it removes again. It writes nothing
-// anywhere else and touches no network.
+// Reads the PM's rules: `pm()`, the always-loaded core plus every playbook, which
+// is where step 12 and its four answers SHIP. After V2 that sentence is not in
+// `roles/pm.md` at all — steps 12, 13, 16 and 17 live in
+// `roles/playbooks/crew-flow.md` — so this case cuts the steps out of the composed
+// text, and every mutation below breaks `roles/playbooks/crew-flow.md` inside a
+// throwaway copy and reads the copy's COMPOSED rules back with
+// `composePmRulesIn(dir)`. Editing the copy and then composing from the real
+// package would judge unchanged text and pass while proving nothing. It writes
+// nothing anywhere else and touches no network.
 
-import { pm, step, flat, check, done, tempRepo, cleanUp, copyFile, edit, put } from "../lib/qa.mjs";
+import { pm, composePmRulesIn, step, flat, check, done, tempRepo, cleanUp, copyFile, edit, put } from "../lib/qa.mjs";
 
 const OLD_ANSWER = "Ship this milestone";
 const ANSWER = "- **Release this milestone to users**";
 const PLANS_STEP = 13;
 const PUSH_STEP = 16;
 const REVIEW_STEP = 12;
+
+// The playbook that really holds the numbered flow, and so holds every anchor the
+// mutations below rewrite. Confirmed to carry them: the four answers (step 12), the
+// `- **Release this milestone to users**` bullet, and step 17's prose.
+const CREW_FLOW = "roles/playbooks/crew-flow.md";
 
 // ------------------------------------------------------------------ counting
 
@@ -101,8 +112,8 @@ function near(text, needle, before = 140, after = 140) {
 // that runs in the suite.
 
 const ID = {
-  oldGone: `the old answer name "${OLD_ANSWER}" is gone from roles/pm.md (flattened, any case)`,
-  stepCut: `roles/pm.md still has a step ${REVIEW_STEP}`,
+  oldGone: `the old answer name "${OLD_ANSWER}" is gone from the PM's rules (flattened, any case)`,
+  stepCut: `the PM's rules still have a step ${REVIEW_STEP}`,
   fourAnswers: `step ${REVIEW_STEP} asks one question whose four answers open with releasing to users`,
   answerThere: "the answer is named for what the user gets: releasing this milestone to users",
   names13: `the answer's body names step ${PLANS_STEP}`,
@@ -224,7 +235,7 @@ function audit(text) {
   add(
     ID.pushStep,
     /push/i.test(pushStep) && /permission/i.test(pushStep) && /publish/i.test(pushStep),
-    `step ${PUSH_STEP} of roles/pm.md is not the push-with-permission-and-publish step the answer `
+    `step ${PUSH_STEP} of the PM's rules is not the push-with-permission-and-publish step the answer `
       + `points at, so the pointer sends the reader to the wrong place: ${JSON.stringify(pushStep.slice(0, 200))}`,
   );
   let plansStep = "";
@@ -234,7 +245,7 @@ function audit(text) {
   add(
     ID.plansStep,
     /release/i.test(plansStep) && /upgrade/i.test(plansStep) && /plan/i.test(plansStep),
-    `step ${PLANS_STEP} of roles/pm.md is not the release-and-upgrade-plans step the answer points `
+    `step ${PLANS_STEP} of the PM's rules is not the release-and-upgrade-plans step the answer points `
       + `at: ${JSON.stringify(plansStep.slice(0, 200))}`,
   );
 
@@ -249,7 +260,7 @@ const reviewStep = (() => { try { return step(text, REVIEW_STEP); } catch { retu
 const pushStepText = (() => { try { return step(text, PUSH_STEP); } catch { return ""; } })();
 
 console.log(
-  `      "${OLD_ANSWER}" in roles/pm.md: ${before.flattened} flattened with case, `
+  `      "${OLD_ANSWER}" in the PM's rules: ${before.flattened} flattened with case, `
     + `${before.flattenedAnyCase} flattened any case, ${before.byLine} line by line with case, `
     + `${before.byLineAnyCase} line by line any case`,
 );
@@ -274,7 +285,10 @@ function afterBreaking(label, breakIt) {
   const dir = tempRepo();
   try {
     breakIt(dir);
-    const broken = copyFile(dir, "roles/pm.md");
+    // The copy's COMPOSED rules, never the real package's: the steps this case
+    // judges live in a playbook, so a read-back that skipped the copy would hand
+    // back unchanged text and report a pass for a mutation it never saw.
+    const broken = composePmRulesIn(dir);
     const failed = audit(broken).filter((result) => !result.ok);
     for (const result of failed) {
       console.log(`      red: ${label}: ${result.id}\n           ${result.detail.slice(0, 240)}`);
@@ -287,7 +301,7 @@ function afterBreaking(label, breakIt) {
 
 // Mutation 1: the old answer name comes back, exactly as it was before T-66.
 const renamed = afterBreaking("mutation 1", (dir) => {
-  edit(dir, "roles/pm.md", ANSWER, `- **${OLD_ANSWER}**`);
+  edit(dir, CREW_FLOW, ANSWER, `- **${OLD_ANSWER}**`);
 });
 check(
   "mutation 1: bringing the old `Ship this milestone` answer back turns this case red",
@@ -301,7 +315,7 @@ check(
 // answer that names the step writing plans and never the step that reaches
 // users. Nothing else in the file moves, so only the body's pointer is on trial.
 const rotted = afterBreaking("mutation 2", (dir) => {
-  const whole = copyFile(dir, "roles/pm.md");
+  const whole = copyFile(dir, CREW_FLOW);
   const at = whole.indexOf(ANSWER);
   if (at === -1) throw new Error(`mutation anchor not found: ${ANSWER}`);
   const end = whole.indexOf("\n    - **", at + ANSWER.length);
@@ -309,7 +323,7 @@ const rotted = afterBreaking("mutation 2", (dir) => {
   const body = whole.slice(at, end);
   const rewritten = body.replace(/([Ss])tep 16/g, `$1tep ${PLANS_STEP}`);
   if (rewritten === body) throw new Error("the answer body names no step 16, so there was nothing to rot");
-  put(dir, "roles/pm.md", whole.slice(0, at) + rewritten + whole.slice(end));
+  put(dir, CREW_FLOW, whole.slice(0, at) + rewritten + whole.slice(end));
 });
 check(
   `mutation 2: taking the step ${PUSH_STEP} pointer out of the answer turns this case red`,
@@ -325,7 +339,7 @@ check(
 const sneaked = afterBreaking("mutation 3", (dir) => {
   edit(
     dir,
-    "roles/pm.md",
+    CREW_FLOW,
     "with these four answers: release this milestone to\n    users,",
     "with these four answers: ship this\n    milestone, release this milestone to\n    users,",
   );

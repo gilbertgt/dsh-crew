@@ -70,7 +70,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, check, done, flat, repoFile, section } from "../lib/qa.mjs";
+import { REPO, check, done, flat, repoFile, rulesFile, section } from "../lib/qa.mjs";
 
 const WORDING_HEADING = "Wording every role prompt copies word for word";
 const WRITE_SET_SUBSECTION = "### The shape of a role's write set";
@@ -188,7 +188,7 @@ for (const relative of namedFiles) {
     continue;
   }
 
-  const text = repoFile(relative);
+  const text = rulesFile(relative);
 
   check(
     `${relative}: carries the authoritative line word for word, exactly once`,

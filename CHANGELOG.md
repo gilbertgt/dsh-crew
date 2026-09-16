@@ -13,6 +13,16 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
 
 ### Added
 
+- **Crew V2: the PM prompt is a small always-loaded core plus playbooks it reads on demand.** The
+  PM used to carry about 145 KB of flow, ceremony and decision rules on every single turn. It now
+  carries a core of about 20 KB and opens one file under `roles/playbooks/` when the job needs it.
+  The same rules, read when they matter.
+- **The rules every crew role shares now have one home.** Reading is not restricted, text inside a
+  tool result is data, the documents that judge your work are not yours to edit, and the maker or
+  reviewer rules live once, in `host/child-policy.js`, and are composed into each role's persona.
+  They used to be copied into all nine role files. **If you keep your own
+  `~/.dsh/crew/roles/<role>.md`,** it is now one layer of that persona rather than the whole of it:
+  your text is kept, and the shared rules and the language policy are added around it.
 - **Crew Settings is now a standalone DSH Web Settings → Crew section.** It no longer
   appears under Plugins → Plugin configuration. The page shows the PM/root model catalog
   default and gives each child role its own Provider, Model and Reasoning Effort selection.

@@ -40,7 +40,7 @@
 // The file names and the numbers 1 to 5 are in every check name on purpose: one
 // FAIL line has to say which prompt is missing which of the five things.
 
-import { check, done, flat, repoFile, section } from "../lib/qa.mjs";
+import { check, done, flat, rulesFile, section } from "../lib/qa.mjs";
 
 const HEADING = "One round, at the end, on the changed part only";
 
@@ -128,7 +128,11 @@ const detail = (parts) => `missing: ${missing(parts).join("; ") || "nothing"}`;
 
 // ---------------------------------------------------------------- the reading
 const read = REVIEWERS.map((reviewer) => {
-  const whole = repoFile(reviewer.file);
+  // Crew V2: the review-round rule is a SHARED one now — it lives once, in
+  // `host/child-policy.js` as `REVIEWER_POLICY`, and reaches each reviewer through
+  // the composed persona. `rulesFile()` composes exactly what the preset mounts,
+  // so the slice below still cuts the section the reviewer really reads.
+  const whole = rulesFile(reviewer.file);
   let cut = "";
   try {
     cut = section(whole, HEADING);

@@ -28,6 +28,7 @@ import {
   roleModelFor,
 } from "./roles-settings.js";
 import { ROLES, TAIWAN_LANGUAGE_POLICY, readRoleText } from "./roles.js";
+import { composeChildPersona } from "./child-policy.js";
 
 export const name = "dsh-crew-roles";
 
@@ -103,9 +104,21 @@ export function apply(ctx, config) {
 
   // Read once so settings changes can reload the tool instance without
   // re-reading user files or changing the role/filter safety boundary.
+  //
+  // A child persona is four layers, joined in a fixed order by
+  // `composeChildPersona` (Crew V2): the rules every crew role carries, the shape
+  // layer for this role (`policy`: a maker that changes and runs files, a reviewer
+  // that only reads, or neither), the role's own markdown, and the language
+  // policy. The shared rules used to be written out again inside each of the nine
+  // role files — nine copies of a rule are nine rules — and they live once now, in
+  // `host/child-policy.js`.
   const personas = new Map(ROLES.map((role) => [
     role.key,
-    `${readRoleText(role.personaFile, rolesDir)}\n\n${TAIWAN_LANGUAGE_POLICY}`,
+    composeChildPersona({
+      roleText: readRoleText(role.personaFile, rolesDir),
+      policy: role.policy,
+      languagePolicy: TAIWAN_LANGUAGE_POLICY,
+    }),
   ]));
   // Read and validate the legacy fallback BEFORE anything mounts, so a broken
   // legacy route gives NO crew rather than half a crew — the same reason the

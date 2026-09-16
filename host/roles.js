@@ -67,6 +67,7 @@ export const ROLES = [
     key: "researcher",
     toolName: "crew_researcher",
     personaFile: "researcher.md",
+    policy: "none",
     summary: "Find the facts a decision needs",
     // Reads anything, searches the web — and has no shell and no file-writing tool,
     // so it cannot run or change the project while it is looking around. The PM
@@ -77,6 +78,7 @@ export const ROLES = [
     key: "architect",
     toolName: "crew_architect",
     personaFile: "architect.md",
+    policy: "none",
     summary: "Design the work and split it into tasks",
     // The architect writes design documents, so it needs the writing tools; it
     // must not start agents, and it must not touch code.
@@ -86,6 +88,7 @@ export const ROLES = [
     key: "engineer",
     toolName: "crew_engineer",
     personaFile: "engineer.md",
+    policy: "maker",
     // A short line shown in the PM's own prompt (crew.js's runtimeFactsSection,
     // which builds one line per role from `role.summary`) — it is not
     // passed to the tool schema. It names the shape, not just the job: in that
@@ -102,6 +105,7 @@ export const ROLES = [
     key: "test_engineer",
     toolName: "crew_test_engineer",
     personaFile: "test-engineer.md",
+    policy: "maker",
     // Says both halves of what makes this role different from `crew_engineer`
     // and from `crew_qa`: what it writes (unit tests, in the project's own test
     // suite) and when (before the code exists). The PM's own prompt is built
@@ -118,6 +122,7 @@ export const ROLES = [
     key: "code_engineer",
     toolName: "crew_code_engineer",
     personaFile: "code-engineer.md",
+    policy: "maker",
     // The other half of the pair: product code only. It never writes the unit
     // tests for the behaviour it is building — that is the whole point of
     // splitting the task in two.
@@ -129,6 +134,7 @@ export const ROLES = [
     key: "qa",
     toolName: "crew_qa",
     personaFile: "qa.md",
+    policy: "maker",
     // Naming the folder is what separates this role from the test engineer now
     // that both write checks: QA's cases stay in `qa/<task-id>/`, the test
     // engineer's unit tests live in the project's own test suite. Only the
@@ -143,6 +149,7 @@ export const ROLES = [
     key: "code_reviewer",
     toolName: "crew_code_reviewer",
     personaFile: "code-reviewer.md",
+    policy: "reviewer",
     summary: "Review one crew task's code",
     // ALLOW list, not a deny list. A live test showed why: the same session also
     // handed the reviewer `workflow`, `ralph` and a set of desktop-control MCP
@@ -159,6 +166,7 @@ export const ROLES = [
     key: "security_reviewer",
     toolName: "crew_security_reviewer",
     personaFile: "security-reviewer.md",
+    policy: "reviewer",
     summary: "Check one change for security holes",
     // Read-only for the same reason as any reviewer — and pointedly so here: a
     // role that hunts for dangerous code should not be able to run it.
@@ -168,6 +176,7 @@ export const ROLES = [
     key: "doc_reviewer",
     toolName: "crew_doc_reviewer",
     personaFile: "doc-reviewer.md",
+    policy: "reviewer",
     summary: "Review the crew's documents",
     // Same read-only shape as the code reviewer, and for the same reason: a
     // reviewer that can edit the thing it judges is not a reviewer.

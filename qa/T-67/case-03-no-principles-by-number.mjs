@@ -41,7 +41,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, check, done, flat, repoFile } from "../lib/qa.mjs";
+import { REPO, check, done, flat, repoFile, rulesFile } from "../lib/qa.mjs";
 
 const NAME = "principles.md";
 const ENGINEER = "engineer.md";
@@ -57,7 +57,7 @@ const BY_NUMBER_QUOTED = /principles\.md["'`)\]*,;:]*\s+[0-9]/g;
 const files = readdirSync(join(REPO, "roles"))
   .filter((name) => name.endsWith(".md"))
   .sort()
-  .map((name) => ({ name, text: repoFile(`roles/${name}`), flat: flat(repoFile(`roles/${name}`)) }));
+  .map((name) => ({ name, text: rulesFile(`roles/${name}`), flat: flat(rulesFile(`roles/${name}`)) }));
 
 /** Every hit of `pattern` in one prompt, as a reportable string with context. */
 function hits(file, pattern) {

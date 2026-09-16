@@ -64,6 +64,19 @@
 //   * "read the wrong file" — the ten files come from `readdirSync("roles")`, so a
 //     new eleventh role prompt is judged too, and every path is printed.
 //
+// ONE OF THE TEN IS NOT ONE FILE (V2). `roles/pm.md` is now the always-loaded CORE
+// and the PM's write set moved into `roles/playbooks/documents.md` — `roles/pm.md`
+// carries no `## What you may write` heading at all any more. So the PM's row is
+// judged on the COMPOSED rules (`rulesFile("roles/pm.md")`, the core plus every
+// playbook), which is where the sentence a reader looks for really ships, and the
+// other nine rows are still their own single file. That is the V2 rule
+// `qa/lib/qa.mjs` states: a case that asks whether a rule still exists reads the
+// composition, and a case that asks where it LIVES reads the core alone. This case
+// asks whether the write set hard-codes a file name, so it reads the composition.
+// In the composed text the cut happens to stop at `## A bug becomes a task row`
+// — the next `## ` heading after the write set — so all three cut checks below
+// still mean what they meant on a single file.
+//
 // Group 4 is this case's own negative control: it copies the repository, hard-codes
 // a name in ONE prompt's section and a placeholder shape in another, and asserts
 // the scanner reports exactly the first one. The real repository is read-only here.
@@ -75,7 +88,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { REPO, check, cleanUp, done, edit, flat, repoTextAt, section, tempRepo } from "../lib/qa.mjs";
+import { REPO, check, cleanUp, composePmRulesIn, done, edit, flat, repoTextAt, rulesFile, section, tempRepo } from "../lib/qa.mjs";
 
 const HEADING = "What you may write";
 
@@ -155,16 +168,25 @@ for (const [text, banned, why] of CRITERION) {
  * Cut the write-set section out of every role prompt under `roles/` of one
  * repository root, checking the cut is the one it claims to be.
  *
+ * `pmRulesText` supplies the PM's rules instead of a single file: on the real
+ * repository that is `rulesFile("roles/pm.md")` (the composed core + playbooks),
+ * and inside a `tempRepo()` copy it is `composePmRulesIn(dir)`. A mutation case
+ * MUST compose from its own copy — reading the real package while the mutation
+ * sat in `roles/playbooks/documents.md` would judge unchanged text and pass while
+ * proving nothing. Each of the other nine roles is one file, read directly.
+ *
+ * @param root - a repository root: `REPO` or a `tempRepo()` copy
+ * @param pmRulesText - returns the PM's rules text for that root
  * @returns [{ file, text, length, headings, startsAtLineStart, stopsAtNextHeading }]
  */
-function writeSets(root) {
+function writeSets(root, pmRulesText) {
   const dir = join(root, "roles");
   return readdirSync(dir)
     .filter((name) => name.endsWith(".md"))
     .sort()
     .map((name) => {
       const relative = `roles/${name}`;
-      const whole = readFileSync(join(dir, name), "utf8");
+      const whole = name === "pm.md" ? pmRulesText() : readFileSync(join(dir, name), "utf8");
       const headings = (whole.match(/^## What you may write[ \t]*$/gm) ?? []).length;
       let text = "";
       let startsAtLineStart = false;
@@ -179,7 +201,7 @@ function writeSets(root) {
     });
 }
 
-const sections = writeSets(REPO);
+const sections = writeSets(REPO, () => rulesFile("roles/pm.md"));
 
 console.log(`\nthe cut, one line per role prompt (${sections.length} file(s) under roles/):`);
 for (const s of sections) {
@@ -253,7 +275,7 @@ try {
   // — and does not go red a second time over a real finding group 3 already
   // reported.
   const already = new Set(sections.filter((s) => concreteNames(s.text).length > 0).map((s) => s.file));
-  const guilty = writeSets(copy)
+  const guilty = writeSets(copy, () => composePmRulesIn(copy))
     .map((s) => ({ file: s.file, found: concreteNames(s.text) }))
     .filter((s) => s.found.length > 0 && !already.has(s.file));
 
@@ -275,6 +297,34 @@ try {
   );
 } finally {
   cleanUp(copy);
+}
+
+// The PM is the one row that is not a single file, so the read-back above is only
+// worth something while it composes from the COPY. Hard-code the old name in the
+// playbook that really holds the PM's write set, in a copy of its own, and the PM's
+// row has to become guilty. Without this control a `writeSets(copy, …)` that still
+// composed from the real package would pass every check above while judging text
+// nobody broke — the false green this case exists to avoid.
+{
+  const pmCopy = tempRepo();
+  try {
+    edit(
+      pmCopy,
+      "roles/playbooks/documents.md",
+      `## ${HEADING}\n`,
+      `## ${HEADING}\n\n- the opening document at \`docs/design/prd.md\`;\n`,
+    );
+    const pmRow = writeSets(pmCopy, () => composePmRulesIn(pmCopy)).find((s) => s.file === "roles/pm.md");
+    const found = concreteNames(pmRow?.text ?? "");
+    check(
+      "negative control: a hard-coded `docs/design/prd.md` in the PM's write set, which lives in a playbook, is found",
+      found.includes("docs/design/prd.md"),
+      `the mutation sat in roles/playbooks/documents.md and the PM's row read ${JSON.stringify(found)} — `
+        + "the composed read-back is not reading the copy it mutated",
+    );
+  } finally {
+    cleanUp(pmCopy);
+  }
 }
 
 done();

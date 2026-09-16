@@ -2362,3 +2362,21 @@ T-114（README Quick start 中英对）给两份 README 加 `## Quick start` / `
 **该怎么办**：PM 在 review reports 落地后人工核对 Verdicts 和四份报告；若要自动化，先定义持久 report 路径、格式与命令，再新增 case。
 
 **状态**：未关闭，按设计如此（manual gate）。
+---
+## 64. Crew V2 的 prompt 预算量得出来，live job 的 wall time 与 token 用量量不出来
+
+**缺口**（crew-v2，2026-09-16）：V2 把 PM 的规则拆成常驻 core 与按需 playbook，
+`tools/measure-prompt-budget.mjs` 能把「每回合真的携带多少字节」量出来，而且可复现
+（`qa/T-138/case-04` 守着它：连跑两次输出逐字节相同、数字与 `roles/pm.md` 及
+`roles/playbooks/` 的实际大小相符）。但「少带了这些字，一次真实 job 的 wall time、
+tool call 数、token 用量与 cache 命中到底改善多少」没有任何用例能判——那需要一个真实
+session，而且会随模型、路由与任务不同而变。
+
+**为什么**：静态测量只需要两个 revision 的文本；live A/B 需要跑两次可比的 job，两次任务
+不同就不能比。把它写成一个断言，只会得到一个钉住某一次运行的假绿灯。
+
+**该怎么办**：要这个数字就得真的跑两份可比对的 session，并在报告里写明任务、模型与路由，
+否则不要引用任何百分比。在此之前，`tools/measure-prompt-budget.mjs` 的输出里已经明说
+它不是 wall-clock / token 的 A/B。
+
+**状态**：未关闭，而且不会由用例关闭。

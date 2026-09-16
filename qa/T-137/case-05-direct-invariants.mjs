@@ -55,7 +55,11 @@
 // Reads `roles/pm.md` and `CONTRIBUTING.md`; writes only inside throwaway copies,
 // which it removes.
 
-import { check, cleanUp, copyFile, done, edit, flat, pm, repoFile, step, tempRepo } from "../lib/qa.mjs";
+// V2: `pm()`/`pmRules()` are the composed rules (the always-loaded core plus every
+// playbook), which is what "the PM prompt says X" means now that half of the rules
+// live in `roles/playbooks/`. `composePmRulesIn(dir)` is the same text read back
+// out of a throwaway copy, so a mutation written into a playbook is really judged.
+import { check, cleanUp, composePmRulesIn, copyFile, done, edit, flat, pm, pmRules, repoFile, step, tempRepo } from "../lib/qa.mjs";
 
 const LANE = "Step 1: pick a lane, every time";
 const BUG_HEADING = "## A bug becomes a task row";
@@ -511,7 +515,7 @@ function auditDocuments(files) {
 
 const text = pm();
 const contributing = repoFile(CONTRIBUTING);
-const documents = Object.fromEntries(DOC_FILES.map((file) => [file, repoFile(file)]));
+const documents = Object.fromEntries(DOC_FILES.map((file) => [file, file === "roles/pm.md" ? pmRules() : repoFile(file)]));
 for (const phrase of BANNED) {
   const needle = phrase.toLowerCase();
   const at = flat(text).toLowerCase().split(needle).length - 1;
@@ -531,7 +535,7 @@ function afterBreaking(breakIt) {
   const dir = tempRepo();
   try {
     breakIt(dir);
-    return audit(copyFile(dir, "roles/pm.md")).filter((result) => !result.ok).map((result) => result.id);
+    return audit(composePmRulesIn(dir)).filter((result) => !result.ok).map((result) => result.id);
   } finally {
     cleanUp(dir);
   }
@@ -550,7 +554,7 @@ function mutateContributing(from, to) {
 
 // Mutation 1: the old opener comes back in front of the scoped bug rule.
 const opener = afterBreaking((dir) => {
-  edit(dir, "roles/pm.md", "**On those two routes, a bug gets a task row of its own", "**Whatever its size.** **On those two routes, a bug gets a task row of its own");
+  edit(dir, "roles/playbooks/bug-rows.md", "**On those two routes, a bug gets a task row of its own", "**Whatever its size.** **On those two routes, a bug gets a task row of its own");
 });
 check(
   "mutation 1: putting the old \"Whatever its size.\" opener back turns this case red",
@@ -570,7 +574,7 @@ check(
 
 // Mutation 3: step 4 stops saying which route opens a PRD.
 const unscopedStep4 = afterBreaking((dir) => {
-  edit(dir, "roles/pm.md", "**This step is the `crew` route's opening document.** `solo` opens no PRD", "`solo` opens no PRD");
+  edit(dir, "roles/playbooks/crew-flow.md", "**This step is the `crew` route's opening document.** `solo` opens no PRD", "`solo` opens no PRD");
 });
 check(
   "mutation 3: un-scoping step 4 turns this case red",
@@ -580,7 +584,7 @@ check(
 
 // Mutation 4: the hard-rules bullet restates the PRD rule with no route on it.
 const unscopedBullet = afterBreaking((dir) => {
-  edit(dir, "roles/pm.md", "in any folder. On the `crew` route, small work and big work both open", "in any folder. Small work and big work both open");
+  edit(dir, "roles/playbooks/hard-rules.md", "in any folder. On the `crew` route, small work and big work both open", "in any folder. Small work and big work both open");
 });
 check(
   "mutation 4: the hard-rules PRD bullet losing its `crew` scoping turns this case red",
@@ -590,12 +594,16 @@ check(
 
 // Mutation 5: a NEW unconditional rule the banned list has never seen, so the
 // general scan is doing real work instead of decorating the four anchors.
+//
+// V2: the bug section moved to `roles/playbooks/bug-rows.md`, so the new sentence
+// is planted in front of it THERE — and read back through `composePmRulesIn`, so
+// the planted rule really lands in the text the audit judges.
 const freshRule = afterBreaking((dir) => {
   edit(
     dir,
-    "roles/pm.md",
-    "## A bug becomes a task row",
-    "Every change gets a task row in `docs/tasks/` before it starts.\n\n## A bug becomes a task row",
+    "roles/playbooks/bug-rows.md",
+    "## A bug becomes a task row — on the `crew` and `solo` routes only",
+    "Every change gets a task row in `docs/tasks/` before it starts.\n\n## A bug becomes a task row — on the `crew` and `solo` routes only",
   );
 });
 check(
@@ -610,7 +618,7 @@ check(
 const adrHeadingBack = afterBreaking((dir) => {
   edit(
     dir,
-    "roles/pm.md",
+    "roles/playbooks/decisions.md",
     "## Decisions about how: every one gets an ADR — on the `solo` and `crew` routes",
     "## Decisions about how: every one gets an ADR",
   );
@@ -626,7 +634,7 @@ check(
 const adrExemptionGone = afterBreaking((dir) => {
   edit(
     dir,
-    "roles/pm.md",
+    "roles/playbooks/decisions.md",
     "**A `direct` change writes no ADR, and nothing here may be read as asking it\nfor one.**",
     "**A `direct` change writes one ADR, like everything else.**",
   );

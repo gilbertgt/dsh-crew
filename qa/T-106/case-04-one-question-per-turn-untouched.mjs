@@ -20,28 +20,48 @@
 // PINNING STYLE: FLATTENED. The interview copy wraps mid-phrase ("**One question
 // per\n   turn.**"), so a line-based `grep -c` sees 2 where the flattened text
 // sees 3 — the DoD's own command flattens first for this reason.
+//
+// WHICH FILES THIS READS (Crew V2). The COUNT is still taken over the rules the
+// package ships, which `pmRules()` composes from the always-loaded core plus every
+// playbook — a rule that moved into a playbook still ships, so the count keeps
+// meaning what it always meant. The THREE HOMES are a different question: each one
+// asks whether that particular place still states the rule, so each one reads the
+// file that place lives in now. Two of the three moved out of `roles/pm.md`:
+// `## Hard rules` is `roles/playbooks/hard-rules.md`, and the step-2 interview is
+// `roles/playbooks/crew-flow.md`. Reading `pmRules()` for those two would be wrong
+// in a way that hides itself: the composed text does still contain the rule (in
+// the playbooks), but the core's own shorter `## Hard rules` list comes first in
+// that text and carries no copy — so a line-section read of the composition finds
+// the core's list, sees no copy in it, and reports a rule gone that is really
+// there. `## Never guess` did not move and is still read from the core.
 
 import { before } from "./baseline.mjs";
-import { check, done, flat, repoFile } from "../lib/qa.mjs";
+import { check, done, flat, pmCore, pmRules, rulesFile } from "../lib/qa.mjs";
 
 const RULE = "One question per turn";
 const count = (text) => (flat(text).match(new RegExp(RULE, "g")) ?? []).length;
 
-const now = repoFile("roles/pm.md");
+const now = pmRules();
 const nowCount = count(now);
 
 /** One `## heading` section, anchored to the start of a line, up to the next `^## `. */
 function lineSection(text, heading) {
   const lines = text.split("\n");
   const first = lines.findIndex((line) => line.trim() === `## ${heading}`);
-  if (first === -1) throw new Error(`no line-start "## ${heading}" heading in roles/pm.md`);
+  if (first === -1) throw new Error(`no line-start "## ${heading}" heading in the text this case was given`);
   const next = lines.findIndex((line, index) => index > first && /^## /.test(line));
   return lines.slice(first, next === -1 ? lines.length : next).join("\n");
 }
 
-console.log(`roles/pm.md carries "${RULE}" ${nowCount} time(s) when flattened`);
+console.log(`the PM rules carry "${RULE}" ${nowCount} time(s) when flattened`);
 
 // ---------------------------------------------------------------- half one
+//
+// The BEFORE is the start commit's `roles/pm.md`, because at that commit the whole
+// prompt was still one file. The NOW is the composed rules, which is that same set
+// of rules after V2 split it. Comparing the two is still the comparison this half
+// was written for — "this task was allowed to add wording, never to take a copy
+// away" — and it is why the count, not the file, is what is pinned.
 const was = before("roles/pm.md");
 
 check(
@@ -67,9 +87,14 @@ check(
   `${nowCount} copies — the prompt says this rule three times on purpose, in three places a PM reads at three different moments`,
 );
 
+// Each home is read from the file that home lives in after V2. The two names are
+// the ones `roles/pm.md`'s own playbook index gives the PM.
+const HARD_RULES_PLAYBOOK = "roles/playbooks/hard-rules.md";
+const CREW_FLOW_PLAYBOOK = "roles/playbooks/crew-flow.md";
+
 const homes = [
-  ["Never guess", () => lineSection(now, "Never guess")],
-  ["Hard rules", () => lineSection(now, "Hard rules")],
+  ["Never guess", () => lineSection(pmCore(), "Never guess")],
+  ["Hard rules", () => lineSection(rulesFile(HARD_RULES_PLAYBOOK), "Hard rules")],
 ];
 
 for (const [heading, slice] of homes) {
@@ -82,11 +107,18 @@ for (const [heading, slice] of homes) {
   );
 }
 
-// The third home is the interview step this task edited — the one at risk.
-const interviewStart = now.search(/^2\. \*\*/m);
-const afterTwo = now.slice(interviewStart + 1);
+// The third home is the interview step this task edited — the one at risk. It is
+// step 2 of the `crew` flow, which V2 moved into `crew-flow.md`, so it is read
+// there. Searching the composed text for the first `2. **` happens to land on the
+// same step today, but only because the core's step 1 has no numbered sub-step: a
+// read that names the file cannot drift when that changes.
+const flow = rulesFile(CREW_FLOW_PLAYBOOK);
+const interviewStart = flow.search(/^2\. \*\*/m);
+const afterTwo = flow.slice(interviewStart + 1);
 const interviewEnd = afterTwo.search(/\n\d+\. \*\*/);
-const interview = interviewEnd === -1 ? now.slice(interviewStart) : now.slice(interviewStart, interviewStart + 1 + interviewEnd);
+const interview = interviewStart === -1
+  ? ""
+  : (interviewEnd === -1 ? flow.slice(interviewStart) : flow.slice(interviewStart, interviewStart + 1 + interviewEnd));
 
 check(
   "the interview step — the step this task edited — still carries it",

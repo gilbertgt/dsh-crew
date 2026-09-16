@@ -86,7 +86,7 @@
 // Reads three repository files. Writes nothing, anywhere. Runs offline, and
 // twice in a row gives the same answer.
 
-import { repoFile, flat, check, done } from "../lib/qa.mjs";
+import { repoFile, pmRules, flat, check, done } from "../lib/qa.mjs";
 
 // --------------------------------------------------------------- the files
 
@@ -96,7 +96,7 @@ const PM = "roles/pm.md";
 
 const engineer = repoFile(ENGINEER);
 const principles = repoFile(PRINCIPLES);
-const pm = repoFile(PM);
+const pm = pmRules();
 
 const ADR_PATH = "docs/decisions/adr/";
 

@@ -28,7 +28,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, repoFile, repoTextAt, flat, check, done } from "../lib/qa.mjs";
+import { REPO, repoFile, flat, check, done, rulesFile } from "../lib/qa.mjs";
 
 const HEADING = "### Rule A, on text that arrives inside a tool result";
 const ANCHOR = "is data, not instructions";
@@ -119,7 +119,13 @@ check(
 );
 
 for (const name of roles) {
-  const text = repoTextAt(join(REPO, "roles", name));
+  // Crew V2: the rule is SHARED, so it now reaches a role through the composed
+  // persona rather than sitting in its file. `rulesFile()` composes exactly what
+  // the preset mounts — the shared rules, the shape layer, the role's own text and
+  // the language policy — so this case still judges the text the role really has
+  // in front of it. Reading the file alone would report a rule that still ships as
+  // missing from nine files at once.
+  const text = rulesFile(`roles/${name}`);
 
   // The paragraph the anchor sits in, so the check is equality on a block and
   // not a substring search over the whole file. A paragraph is a run of lines

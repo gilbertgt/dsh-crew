@@ -1,9 +1,17 @@
 // T-66 DoD item 5 and item 6 (PRD M1 DoD item 9, requirement B8), and T-95 DoD
 // item 1 (CRD 0024 decision 1).
-// Proves `roles/pm.md` never lets the ORDINARY push yes cover a force push --
+// Proves the PM's rules never let the ORDINARY push yes cover a force push --
 // the two wordings that carried that permission are gone -- and that the three
 // sentences which used to scope the ban to `main` alone have been replaced, at
 // each of the three places they lived, by the wider rule the user approved.
+//
+// WHAT "THE PM'S RULES" MEANS AFTER V2. Those rules are no longer one file.
+// `roles/pm.md` is the always-loaded core, and the long list moved into
+// `roles/playbooks/hard-rules.md`, which repeats the push bullet word for word.
+// So this case reads `pm()` -- the composed core plus every playbook -- because
+// that is what still has to be free of the grant, whichever of the two copies a
+// comeback would land in. The core alone (`pmCore()`) is read only where the
+// question is what the always-loaded prompt itself says.
 //
 // ------------------------------------------------ 2026-08-22: turned around, not deleted
 //
@@ -61,8 +69,9 @@
 //    the guard-trusts-you clause. A prohibition is written "never force push",
 //    or "not even a force push", and matches neither. The same two strings are
 //    pinned ABSENT inside `tools/verify-mount.mjs` against the assembled PM
-//    prompt; this case reads the source file `roles/pm.md`, which is the other
-//    half of the same rule and the half a reader edits.
+//    prompt; this case reads the rules as they ship -- the composed core plus
+//    every playbook (`pm()`) -- which is the other half of the same rule and the
+//    half a reader edits.
 //
 // 2. BOTH STRINGS WERE CHECKED AGAINST THE SOURCE, NOT AGAINST THE RENDERED
 //    DoD (`qa/gaps.md` item 27). In the file as it stood before T-66 they
@@ -97,16 +106,18 @@
 //    of negation words -- a word list is a proxy, and item 26 records that
 //    widening the window buys a false green.
 //
-// 5. Scope: the whole file first, because nothing fixes where a grant may
-//    appear, and then the two places each wording actually lived -- the **Hard
+// 5. Scope: the whole composed rules first, because nothing fixes where a grant
+//    may appear, and then the two places each wording actually lived -- the **Hard
 //    rules** section and step 16 -- so a grant that came back cannot be
-//    reported by one number that names no place.
+//    reported by one number that names no place. `section()` finds the FIRST
+//    `## Hard rules`, which is the core's; the playbook's copy of the same
+//    heading is covered by the whole-text count above.
 //
-// 6. This case is read-only. It reads `roles/pm.md` once, does every mutation
-//    on a string in memory, writes no file, needs no network and no git
+// 6. This case is read-only. It reads the PM's composed rules once, does every
+//    mutation on a string in memory, writes no file, needs no network and no git
 //    history, and gives the same result run twice.
 
-import { check, done, flat, pm, section, step } from "../lib/qa.mjs";
+import { check, done, flat, pm, pmCore, section, step } from "../lib/qa.mjs";
 
 const text = pm();
 
@@ -149,9 +160,9 @@ const perLine = (someText, phrase) => someText.split("\n").filter((line) => line
 /** Replace `from` once, and throw when the anchor moved, so no mutant is a no-op. */
 function mutate(someText, from, to) {
   const first = someText.indexOf(from);
-  if (first === -1) throw new Error(`mutation anchor not found in roles/pm.md: ${JSON.stringify(from)}`);
+  if (first === -1) throw new Error(`mutation anchor not found in the PM's rules: ${JSON.stringify(from)}`);
   if (someText.indexOf(from, first + from.length) !== -1) {
-    throw new Error(`mutation anchor appears more than once in roles/pm.md: ${JSON.stringify(from)}`);
+    throw new Error(`mutation anchor appears more than once in the PM's rules: ${JSON.stringify(from)}`);
   }
   return someText.slice(0, first) + to + someText.slice(first + from.length);
 }
@@ -169,7 +180,7 @@ function selfTest(what, body) {
   try {
     body();
   } catch (error) {
-    check(what, false, `${error.message}\n      the wording this self-test edits has moved: re-read roles/pm.md and fix the anchor in the same commit -- never delete the self-test`);
+    check(what, false, `${error.message}\n      the wording this self-test edits has moved: re-read the PM's rules and fix the anchor in the same commit -- never delete the self-test`);
   }
 }
 
@@ -325,7 +336,7 @@ function subBlock(flatStep, from, to) {
 // ------------------------- the deletion left the stricter rule behind, not silence
 
 {
-  const rulesRaw = section(text, "Hard rules");
+  const rulesRaw = section(pmCore(), "Hard rules");
   const rules = flat(rulesRaw);
   // Spot 3, the hard rules. The old sentence said no yes at all covers a force
   // push of `main`. Its successor is not silence and it is not a loosening of
@@ -376,11 +387,25 @@ function subBlock(flatStep, from, to) {
 // person meeting it would have deleted the self-test to get their commit green.
 
 selfTest("mutant 1: the Hard rules permission put back across a line break is caught", () => {
-  const mutant = mutate(
-    text,
+  // V2 made this anchor ambiguous in the composed rules: the push bullet is
+  // written out in `roles/pm.md`'s `## Hard rules` section AND again, word for
+  // word, in `roles/playbooks/hard-rules.md`, so `mutate()` would refuse it as
+  // "appears more than once". The anchor is therefore scoped to the FIRST
+  // `## Hard rules` section — the core's, the copy the "the Hard rules section
+  // grants a force push 0 times" check above reads — and the mutated section is
+  // spliced back into the composed text by index. Splicing by index and not with
+  // `String.prototype.replace` is on purpose: the replacement is the whole rules
+  // text, which contains a `$`, and `replace` would read `$…` as a pattern. The
+  // delta assertions below are still taken against the composed rules, so what
+  // this proves is unchanged: a grant put back into the hard rules across a line
+  // break is caught on the flattened text.
+  const rules = section(text, "Hard rules");
+  const at = text.indexOf(rules);
+  const mutant = text.slice(0, at) + mutate(
+    rules,
     "publishing a package. Push `main` or a tag only when the user has just said",
     "publishing a package. Push `main`, a tag, or\n  with force only when the user has just said",
-  );
+  ) + text.slice(at + rules.length);
   const added = grants(mutant, HARD_RULES_GRANT).length - grants(text, HARD_RULES_GRANT).length;
   check(
     `mutant 1: the Hard rules permission put back across a line break is caught (${added} new grant(s))`,

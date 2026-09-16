@@ -89,7 +89,10 @@ const describe = (value) => value === undefined
 
 /** An override persona, distinctive per role. Trimmed, because readRoleText() trims. */
 const overrideText = (key) => `# override persona for ${key}\n\nThis is not the shipped text.\n`;
-const completePersona = (text, policy) => `${text.trim()}\n\n${policy}`;
+// Crew V2: a child persona is four layers (see `host/child-policy.js`), so this is
+// replaced inside the copy below with the copy's own `composeChildPersona`. The
+// fallback never runs; it exists so the helper is defined before the try block.
+let completePersona = (text) => text.trim();
 let languagePolicy = "";
 
 const dir = presetCopy();
@@ -101,6 +104,12 @@ try {
   tableRoles = ROLES;
   pmFile = PM_PERSONA_FILE;
   const shipped = (file) => readFileSync(join(dir, "roles", file), "utf8").trim();
+  const childPolicy = await load(dir, "child-policy.js");
+  completePersona = (roleText, role) => childPolicy.composeChildPersona({
+    roleText: roleText.trim(),
+    policy: role.policy,
+    languagePolicy: TAIWAN_LANGUAGE_POLICY,
+  });
    languagePolicy = TAIWAN_LANGUAGE_POLICY;
 
   console.log(`note  the role table holds ${ROLES.length} role(s): ${ROLES.map((role) => role.key).join(", ")}`);
@@ -118,7 +127,7 @@ try {
   // losing its persona says which one — not just "something is wrong".
   for (const [index, role] of ROLES.entries()) {
     const persona = run.mounts[index]?.config?.persona;
-    const want = `${shipped(role.personaFile)}\n\n${TAIWAN_LANGUAGE_POLICY}`;
+    const want = completePersona(shipped(role.personaFile), role);
     check(
       `${role.key} (${role.toolName}) is mounted with the whole text of roles/${role.personaFile} as its persona`,
       typeof persona === "string" && persona.length > 0 && persona === want,
@@ -163,7 +172,7 @@ try {
   try {
     for (const role of ROLES) writeFileSync(join(all, role.personaFile), overrideText(role.key));
     const overridden = mount(preset, { rolesDir: all });
-    const wrong = ROLES.filter((role, index) => overridden.mounts[index]?.config?.persona !== completePersona(overrideText(role.key), languagePolicy));
+    const wrong = ROLES.filter((role, index) => overridden.mounts[index]?.config?.persona !== completePersona(overrideText(role.key), role));
     check(
       "rolesDir reaches every role: each one reads its own file out of the override folder",
       overridden.thrown === undefined && wrong.length === 0,
@@ -176,10 +185,10 @@ try {
     const partly = mount(preset, { rolesDir: one });
     check(
       `${only.key}: one file in rolesDir replaces that role's shipped persona`,
-      partly.mounts[ROLES.length - 1]?.config?.persona === completePersona(overrideText(only.key), languagePolicy),
+      partly.mounts[ROLES.length - 1]?.config?.persona === completePersona(overrideText(only.key), only),
       describe(partly.mounts[ROLES.length - 1]?.config?.persona),
     );
-    const moved = ROLES.slice(0, -1).filter((role, index) => partly.mounts[index]?.config?.persona !== completePersona(shipped(role.personaFile), languagePolicy));
+    const moved = ROLES.slice(0, -1).filter((role, index) => partly.mounts[index]?.config?.persona !== completePersona(shipped(role.personaFile), role));
     check(
       "the roles the override folder says nothing about keep their shipped persona",
       partly.thrown === undefined && moved.length === 0,
@@ -228,7 +237,7 @@ if (real !== undefined) {
   // same raw bytes here instead of repoFile(), whose LF normalization is for
   // repository-shape assertions and would make a CRLF checkout look different.
   const rawPersona = (file) => readFileSync(join(REPO, "roles", file), "utf8").trim();
-  const wrong = tableRoles.filter((role, index) => run.mounts[index]?.config?.persona !== completePersona(rawPersona(role.personaFile), languagePolicy));
+  const wrong = tableRoles.filter((role, index) => run.mounts[index]?.config?.persona !== completePersona(rawPersona(role.personaFile), role));
   check(
     "the same mount against the real @deepseek-ai/dsh-tool-subagent gives every role its own persona",
     run.thrown === undefined && run.mounts.length === tableRoles.length && wrong.length === 0,

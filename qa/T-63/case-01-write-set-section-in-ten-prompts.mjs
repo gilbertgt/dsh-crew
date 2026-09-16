@@ -38,7 +38,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { REPO, repoFile, flat, check, done } from "../lib/qa.mjs";
+import { REPO, repoFile, rulesFile, flat, check, done } from "../lib/qa.mjs";
 
 const ROLES_DIR = "roles";
 const EXPECTED_FILES = 10;
@@ -91,7 +91,7 @@ const nextH2 = /\n## /;
 
 for (const name of files) {
   const relative = `${ROLES_DIR}/${name}`;
-  const text = repoFile(relative);
+  const text = rulesFile(relative);
   const hits = [...text.matchAll(headingLine)];
 
   check(

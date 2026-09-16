@@ -1,5 +1,22 @@
-// T-42, DoD item 5 (part 1): step 10's finish gate in `roles/pm.md` is pinned by
+// T-42, DoD item 5 (part 1): step 10's finish gate is pinned by
 // `tools/verify-mount.mjs`, and both directions of that pin really go red.
+//
+// WHERE THE RULE LIVES, AND WHY THAT CHANGED NOTHING HERE (Crew V2).
+// This case used to mutate `roles/pm.md`, because that file was every rule there
+// was. V2 split the PM's rules: `roles/pm.md` is the always-loaded core and the
+// numbered flow — step 10 among its steps — moved to
+// `roles/playbooks/crew-flow.md`. The gate did NOT disappear and the pin did not
+// weaken: `tools/verify-mount.mjs` judges the COMPOSED rules
+// (`composePmRules()`), so it still fires wherever the sentence lives, and this
+// case is about the pin, not about which file the sentence sits in.
+//
+// So the anchor moves to the file that really holds it, and that is not a
+// cosmetic edit: an `edit()` against `roles/pm.md` now throws "anchor not found",
+// and a case that kept reading `roles/pm.md` would be asserting about a file the
+// gate is no longer in. `FLOW` below is `roles/playbooks/crew-flow.md`; a check
+// states out loud that `roles/pm.md` does NOT hold the sentence, so if core and
+// playbook are ever swapped back the anchor is corrected rather than left
+// pointing at the wrong file.
 //
 // This is the rule the crew actually broke: about twenty tasks of this job were
 // called done with no code review at all, and nothing in the system noticed —
@@ -52,19 +69,27 @@
 // pinned directly in `qa/T-56/case-08-existing-pins-intact.mjs`, which is
 // the insurance file for what nothing else pins.
 
-import { check, done, tempRepo, runCheck, cleanUp, edit, expectRed, expectGreen, saidOk } from "../lib/qa.mjs";
+import { check, done, tempRepo, runCheck, cleanUp, copyFile, edit, expectRed, expectGreen, saidOk } from "../lib/qa.mjs";
 
 const GATE = "A task is finished when its own unit tests pass";
 const OLD_GATE = "A task is finished when code review passes";
 const FAIL = "PM section is missing `A task is finished when its own unit tests pass`";
 const FAIL_OLD = "PM section still says `A task is finished when code review passes`";
 const REGISTERED = "PM prompt section registered";
+// V2: the core plus the playbook that holds the numbered flow. See the header.
+const CORE = "roles/pm.md";
+const FLOW = "roles/playbooks/crew-flow.md";
 
 const dir = tempRepo();
 try {
   const base = runCheck(dir, "tools/verify-mount.mjs");
   expectGreen(base, "the untouched copy is green (so the red below is the mutation)");
   check(`the copy says: ok ${REGISTERED}`, saidOk(base, REGISTERED), base.out);
+  // The anchor is only meaningful where the sentence really is. The pin reads the
+  // composed rules, so the sentence may live in either half; these two checks say
+  // which half holds it today and send the mutations to that file.
+  check(`the numbered flow (${FLOW}) holds the finish gate`, copyFile(dir, FLOW).includes(GATE), FLOW);
+  check(`the always-loaded core (${CORE}) does not hold it, so the mutation below targets a file the pin really reads`, !copyFile(dir, CORE).includes(GATE), CORE);
 } finally {
   cleanUp(dir);
 }
@@ -73,7 +98,7 @@ try {
 // smallest edit that loses the gate.
 const reworded = tempRepo();
 try {
-  edit(reworded, "roles/pm.md", GATE, "A task is done when its own unit tests pass");
+  edit(reworded, FLOW, GATE, "A task is done when its own unit tests pass");
   const run = runCheck(reworded, "tools/verify-mount.mjs");
   expectRed(run, FAIL, "the finish gate reworded is red");
   check("and the PM prompt section is not reported as registered", !saidOk(run, REGISTERED), run.out);
@@ -84,7 +109,7 @@ try {
 // Red: the whole sentence deleted.
 const deleted = tempRepo();
 try {
-  edit(deleted, "roles/pm.md", GATE, "");
+  edit(deleted, FLOW, GATE, "");
   expectRed(runCheck(deleted, "tools/verify-mount.mjs"), FAIL, "the finish gate deleted is red");
 } finally {
   cleanUp(deleted);
@@ -95,7 +120,7 @@ try {
 // the only way to reach the second pin at all.
 const restored = tempRepo();
 try {
-  edit(restored, "roles/pm.md", GATE, `${GATE}. ${OLD_GATE}`);
+  edit(restored, FLOW, GATE, `${GATE}. ${OLD_GATE}`);
   const run = runCheck(restored, "tools/verify-mount.mjs");
   expectRed(run, FAIL_OLD, "the old three-check gate put back beside the new one is red");
   check("and the FAIL says why that gate can no longer be met", run.out.includes("CRD 0020 replaced"), run.out);

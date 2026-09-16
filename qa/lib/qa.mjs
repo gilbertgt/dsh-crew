@@ -12,6 +12,18 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 
+// The manifest of PM playbooks (V2). Imported statically: it is plain ESM with no
+// dsh dependency, so a case can read the composed rules without a mount.
+import { composePmRules, PLAYBOOKS } from "../../host/playbooks.js";
+// The role table and the child-persona layers (V2). Plain ESM too, for the same
+// reason: `rulesFile()` has to compose the same persona the preset mounts, and a
+// case must be able to ask that question without a dsh deployment.
+import { ROLES, TAIWAN_LANGUAGE_POLICY } from "../../host/roles.js";
+import { composeChildPersona } from "../../host/child-policy.js";
+
+/** Role rows by the markdown file they load, so `rulesFile()` can find the shape layer. */
+const ROLES_BY_PERSONA = new Map(ROLES.map((role) => [role.personaFile, role]));
+
 /** Repository root: <repo>/qa/lib -> up two. */
 export const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -45,8 +57,87 @@ export const repoTextAt = (absolute) => asLf(readFileSync(absolute, "utf8"));
  */
 export const importRepoModule = (relative) => import(pathToFileURL(join(REPO, relative)).href);
 
-/** The PM prompt file, the deliverable most checks are about. */
-export const pm = () => repoFile("roles/pm.md");
+/**
+ * Every PM rule that ships: the always-loaded core plus every playbook, in
+ * manifest order (V2).
+ *
+ * This is the text a check about *content* should read. A rule that moved into
+ * `roles/playbooks/` still ships, so pinning it here keeps meaning what it always
+ * meant, and no case has to care which file a sentence lives in.
+ *
+ * Two things it is deliberately NOT:
+ *   - it is not what dsh loads. dsh loads the core alone, which is the whole point
+ *     of V2: see `pmCore()` for the text the PM really has in front of it.
+ *   - it is not the place to judge structure. A case that asks "is this sentence in
+ *     the prompt" wants `pmCore()`; a case that asks "does this rule still exist"
+ *     wants `pm()`.
+ */
+export const pm = () => composePmRules();
+
+/** The always-loaded core alone: `roles/pm.md`. */
+export const pmCore = () => repoFile("roles/pm.md");
+
+/**
+ * The same text as `pm()`, under a second name.
+ *
+ * It exists for the cases that hold a local variable called `pm` — usually
+ * `const pm = flat(repoFile("roles/pm.md"))`, written when pm.md was every rule
+ * there was. V2 moved the flows into `roles/playbooks/`, so those reads became
+ * "the rules the package ships" rather than "the file called pm.md", and they use
+ * this name to say so without a shadowing clash.
+ */
+export const pmRules = () => composePmRules();
+
+/**
+ * Read the markdown a role's rules live in (V2).
+ *
+ * For every role but the PM that used to be its own file. V2 changed what "the
+ * rules a role has in front of it" means for both halves of the crew:
+ *
+ *   - the PM is the composed rules — the core the prompt always carries plus the
+ *     playbooks it reads on demand;
+ *   - a crew child is its composed PERSONA — the shared rules every child carries,
+ *     its shape layer (`MAKER_POLICY` or `REVIEWER_POLICY`), its own role file,
+ *     and the language policy, joined by `composeChildPersona()`. The shared rules
+ *     moved out of the nine role files, so a case that reads the file alone would
+ *     report a rule that still ships as missing.
+ *
+ * A case that must know the always-loaded half uses `pmCore()`. A case that must
+ * judge the FILE rather than the persona — what a user's own override replaces —
+ * reads `repoFile()` directly, and says so.
+ *
+ * @param relative - repository-relative path, e.g. `roles/pm.md`
+ */
+export const rulesFile = (relative) => {
+  if (relative === "roles/pm.md") return pmRules();
+  const role = ROLES_BY_PERSONA.get(relative.startsWith("roles/") ? relative.slice("roles/".length) : "");
+  if (role !== undefined) {
+    return composeChildPersona({
+      roleText: repoFile(relative),
+      policy: role.policy,
+      languagePolicy: TAIWAN_LANGUAGE_POLICY,
+    });
+  }
+  return repoFile(relative);
+};
+
+/**
+ * The composed rules as they exist inside a COPY of the repository (V2).
+ *
+ * A mutation case edits a file in `tempRepo()` and then re-reads the text it
+ * judges. With the rules split across `roles/pm.md` and `roles/playbooks/`, a case
+ * that mutated the core and then composed from the REAL package would judge an
+ * unchanged text and pass while proving nothing. So a mutation case composes from
+ * its own copy: `join(dir, "roles", "pm.md")` plus the manifest's playbook files
+ * under `join(dir, "roles", "playbooks")`.
+ *
+ * @param dir - absolute path to the repository copy
+ */
+export function composePmRulesIn(dir) {
+  const core = asLf(readFileSync(join(dir, "roles", "pm.md"), "utf8")).trim();
+  const playbooks = PLAYBOOKS.map((playbook) => asLf(readFileSync(join(dir, "roles", "playbooks", playbook.file), "utf8")).trim());
+  return [core, ...playbooks].join("\n\n");
+}
 
 /**
  * One numbered step of the PM prompt, from `N. **` to the next `N. **` at the

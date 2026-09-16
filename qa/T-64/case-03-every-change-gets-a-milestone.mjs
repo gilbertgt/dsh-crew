@@ -37,13 +37,33 @@
 // The zero-counts alone would also pass on a file where the whole paragraph was
 // deleted, so the two replacement sentences are pinned positively as well.
 //
-// Reads one file: `roles/pm.md`. Writes nothing outside a throwaway copy of the
-// repository, which it removes again.
+// WHICH FILES THIS READS (Crew V2). The subject here is the rules the package
+// ships, and since V2 those are the always-loaded core `roles/pm.md` PLUS every
+// playbook its index names — which is exactly what `pm()` composes. V2 moved three
+// of the things judged below out of the core: the short-PRD paragraph to
+// `roles/playbooks/crew-flow.md`, the state file's `milestones` wording to
+// `roles/playbooks/crew-state.md`, and the long routing judgement (the delegation
+// rule this case pins as `ID.reviews`) to `roles/playbooks/crew-routing.md`. A
+// case that read `roles/pm.md` alone would report all of them gone while the PM
+// still ships them, so every read here goes through `pm()` — and where the check
+// needs one particular home, it reads that playbook by name.
+//
+// The same rule binds the two mutations at the bottom: each one edits the file its
+// anchor really lives in and reads the copy back through `composePmRulesIn(dir)`.
+// Reading the core alone after planting a sentence in a playbook would leave the
+// copy's composed text unchanged, the audit green, and the case reporting a pass
+// for a pin it never touched.
+//
+// Writes nothing outside throwaway copies of the repository, which it removes again.
 
-import { pm, section, step, flat, check, done, tempRepo, cleanUp, copyFile, edit } from "../lib/qa.mjs";
+import { pm, section, step, flat, check, done, tempRepo, cleanUp, copyFile, composePmRulesIn, edit, rulesFile } from "../lib/qa.mjs";
 
 const HEADING = "Step 1: pick a lane, every time";
 const PUSH_STEP = 16;
+
+// V2: the delegation rule left the core's step 1 for the routing playbook, which
+// is where the core's index sends the PM when the short routing form is not enough.
+const ROUTING_PLAYBOOK = "roles/playbooks/crew-routing.md";
 
 // The two wordings T-82 removed. Neither may come back, in any capitalisation.
 const BANNED = ["small work has none", "small work has no milestones"];
@@ -87,9 +107,9 @@ const ID = {
   shortPrd: "the short PRD says small work has one milestone, this job itself",
   stateFile: "the state file's `milestones` array holds one entry for small work",
 };
-const banned = (phrase) => `the cancelled wording "${phrase}" is gone from roles/pm.md`;
+const banned = (phrase) => `the cancelled wording "${phrase}" is gone from the PM rules`;
 
-function audit(text) {
+function audit(text, routing) {
   const results = [];
   const add = (id, ok, detail = "") => results.push({ id, ok, detail });
 
@@ -125,9 +145,14 @@ function audit(text) {
   );
   add(
     ID.reviews,
-    /role whose subject this change never touched is not started/i.test(lane),
+    // Read where the rule lives now, not where it used to: V2 put the long routing
+    // judgement — including this delegation line — in `crew-routing.md`, and the
+    // core's step 1 only points at it. Judging the core's step 1 section alone
+    // would report a shipped rule gone. The sentence is unchanged, so the check
+    // still asks the same question it always asked.
+    /role whose subject this change never touched is not started/i.test(routing),
     "the delegation rule does not say an unrelated role is not started: "
-      + JSON.stringify(getsOne.slice(0, 220)),
+      + JSON.stringify(routing.slice(0, 220)),
   );
 
   // --- DoD item 3 -----------------------------------------------------------
@@ -219,16 +244,20 @@ function audit(text) {
   return results;
 }
 
-// ------------------------------------------------------------- the real file
+// ------------------------------------------------------------- the real files
+//
+// `pm()` is the core plus every playbook — the rules the package ships. The one
+// check that has to know WHICH home the rule sits in reads that file by name.
 
 const text = pm();
+const routing = flat(rulesFile(ROUTING_PLAYBOOK));
 
 for (const phrase of BANNED) {
   const seen = counts(text, phrase);
-  console.log(`      "${phrase}" in roles/pm.md: ${seen.flattened} flattened, ${seen.byLine} line by line`);
+  console.log(`      "${phrase}" in the PM rules: ${seen.flattened} flattened, ${seen.byLine} line by line`);
 }
 
-for (const result of audit(text)) check(result.id, result.ok, result.detail);
+for (const result of audit(text, routing)) check(result.id, result.ok, result.detail);
 
 // -------------------------------------------------------------- mutations
 //
@@ -241,8 +270,14 @@ function afterBreaking(breakIt) {
   const dir = tempRepo();
   try {
     breakIt(dir);
-    const broken = copyFile(dir, "roles/pm.md");
-    return { failed: audit(broken).filter((r) => !r.ok).map((r) => r.id), broken };
+    // The copy is judged the same way the real package is: composed, and with the
+    // routing playbook read by name. `copyFile(dir, "roles/pm.md")` would have
+    // judged the core alone — a mutation planted in a playbook would then sit in a
+    // file this line never opened, and the audit would pass on it.
+    return {
+      failed: audit(composePmRulesIn(dir), flat(copyFile(dir, ROUTING_PLAYBOOK))).filter((r) => !r.ok).map((r) => r.id),
+      broken: composePmRulesIn(dir),
+    };
   } finally {
     cleanUp(dir);
   }
@@ -265,7 +300,10 @@ check(
 const backWrapped = afterBreaking((dir) => {
   edit(
     dir,
-    "roles/pm.md",
+    // V2: the `Milestone states:` paragraph lives in `crew-state.md` now, so the
+    // anchor moved with it. `edit` throws when an anchor is missing, which is what
+    // caught this the moment the paragraph moved out of the core.
+    "roles/playbooks/crew-state.md",
     "Milestone states: `todo`",
     "Leave `milestones` out for small work — small work has no\nmilestones.\n\nMilestone states: `todo`",
   );

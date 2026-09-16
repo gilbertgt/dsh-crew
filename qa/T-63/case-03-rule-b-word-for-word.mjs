@@ -49,7 +49,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, repoFile, repoTextAt, flat, check, done } from "../lib/qa.mjs";
+import { REPO, repoFile, flat, check, done, rulesFile } from "../lib/qa.mjs";
 
 const HEADING = "### Rule B, on the documents that judge your work";
 
@@ -165,7 +165,12 @@ check(
 );
 
 for (const name of roles) {
-  const text = repoTextAt(join(REPO, "roles", name));
+  // Crew V2: rule B is shared, so it reaches a role through the composed persona
+  // (`rulesFile()` is exactly what the preset mounts) rather than sitting in the
+  // role's own file. `pmRules()` is no longer a special case here — the helper
+  // already maps `roles/pm.md` to the composed PM rules — but the name is kept so
+  // the call still reads the same.
+  const text = rulesFile(`roles/${name}`);
 
   // The paragraph the anchor sits in, so the comparison is equality on a block
   // rather than a substring search over the whole file. A paragraph is a run of

@@ -12,7 +12,7 @@
 // case keeps them apart:
 //
 //   * the crew-trigger passage names no input at all;
-//   * `roles/pm.md` says in its own sentence that a screen which merely TAKES
+//   * the rules say in their own sentence that a screen which merely TAKES
 //     input is not a risky change;
 //   * the security list keeps the trust-boundary wording instead, so the review
 //     still fires where it earns its keep — a query, a shell command, a file path,
@@ -21,17 +21,28 @@
 //   * the PM is told the order to ask the two questions in, and that the second
 //     one never moves the route.
 //
-// Everything is judged on FLATTENED text. `roles/pm.md` wraps at about 80 columns
-// and the sentence this task added really does wrap; a line-by-line grep for it
-// matches nothing whether the rule is there or not.
+// Everything is judged on FLATTENED text. The rules wrap at about 80 columns and
+// the sentence this task added really does wrap; a line-by-line grep for it matches
+// nothing whether the rule is there or not.
 //
 // The mutations put the old wording back, one place at a time, and demand the run
 // go red: `input` restored to the crew triggers, and the "taking input is not
-// risky" sentence deleted.
+// risky" sentence turned around, and the trust-boundary wording dropped.
 //
-// Reads `roles/pm.md`; writes only inside throwaway copies, which it removes.
+// Reads the repository; writes only inside throwaway copies, which it removes.
+//
+// V2: the rules are read as ONE text — the always-loaded `roles/pm.md` plus every
+// playbook — because that is what "the rules still say X" means now that the
+// security list lives in `roles/playbooks/crew-flow.md`. `pm()` is that text for
+// the real run, and every mutation reads its own copy back through
+// `composePmRulesIn(dir)`: a mutation written into a playbook and then judged
+// against the real core alone would stay green while proving nothing. The "not a
+// risky change" sentence is carried by TWO files (the core and
+// `roles/playbooks/crew-routing.md`), so the mutation that reverses it edits both
+// — one copy left standing would still ship the rule, and the check would rightly
+// stay green.
 
-import { check, cleanUp, copyFile, done, edit, flat, pm, tempRepo } from "../lib/qa.mjs";
+import { check, cleanUp, composePmRulesIn, done, edit, flat, pm, tempRepo } from "../lib/qa.mjs";
 
 const CREW_TRIGGERS_START = "Choose `crew` when any one of these is true";
 const SECURITY_QUESTION = "Is a security review needed";
@@ -85,7 +96,7 @@ function audit(text) {
   add(
     ID.riskySentence,
     whole.includes(RISKY_SENTENCE),
-    `roles/pm.md does not carry ${JSON.stringify(RISKY_SENTENCE)}, so "takes input" is still open to being `
+    `the rules do not carry ${JSON.stringify(RISKY_SENTENCE)}, so "takes input" is still open to being `
       + "read as a risky change",
   );
   add(
@@ -138,9 +149,9 @@ for (const result of audit(text)) check(result.id, result.ok, result.detail);
 const OLD = "input that comes from a user";
 const occurrences = flat(text).toLowerCase().split(OLD).length - 1;
 const byLine = text.toLowerCase().split("\n").filter((line) => line.includes(OLD)).length;
-console.log(`      "${OLD}" in roles/pm.md: ${occurrences} flattened, ${byLine} line by line`);
+console.log(`      "${OLD}" in the PM rules: ${occurrences} flattened, ${byLine} line by line`);
 check(
-  `the old crew trigger "${OLD}" is gone from roles/pm.md`,
+  `the old crew trigger "${OLD}" is gone from the PM rules`,
   occurrences === 0,
   `${occurrences} occurrence(s) flattened, ${byLine} line by line`,
 );
@@ -152,13 +163,14 @@ function afterBreaking(breakIt) {
   const dir = tempRepo();
   try {
     breakIt(dir);
-    return audit(copyFile(dir, "roles/pm.md")).filter((result) => !result.ok).map((result) => result.id);
+    return audit(composePmRulesIn(dir)).filter((result) => !result.ok).map((result) => result.id);
   } finally {
     cleanUp(dir);
   }
 }
 
-// Mutation 1: put the old trigger back into the crew-trigger passage.
+// Mutation 1: put the old trigger back into the crew-trigger passage. That
+// passage is one of the rules that stayed in the always-loaded core.
 const triggerBack = afterBreaking((dir) => {
   edit(
     dir,
@@ -174,10 +186,17 @@ check(
 );
 
 // Mutation 2: the sentence that separates taking input from being risky is turned
-// around, so "takes input" is open to being read as risky again. The anchor stops
-// short of the sentence's end because the source line wraps in the middle of it.
+// around, so "takes input" is open to being read as risky again.
+//
+// V2: the sentence ships in the core AND in `roles/playbooks/crew-routing.md`, and
+// the audit judges the two composed into one text — so BOTH copies have to go, or
+// the rule would still ship and the check would (rightly) stay green. The anchor
+// stops short of the sentence's end because the playbook's copy wraps in the
+// middle of it.
+const RISKY_CARRIERS = ["roles/pm.md", "roles/playbooks/crew-routing.md"];
+const RISKY_TURNED = "A screen that merely TAKES input from the user is a risky";
 const sentenceGone = afterBreaking((dir) => {
-  edit(dir, "roles/pm.md", RISKY_ANCHOR, "A screen that merely TAKES input from the user is a risky");
+  for (const file of RISKY_CARRIERS) edit(dir, file, RISKY_ANCHOR, RISKY_TURNED);
 });
 check(
   'mutation 2: turning "takes input is not a risky change" around turns this case red',
@@ -190,7 +209,7 @@ check(
 const boundaryGone = afterBreaking((dir) => {
   edit(
     dir,
-    "roles/pm.md",
+    "roles/playbooks/crew-flow.md",
     "**user input that reaches a trust boundary** — a query, a shell\n   command, a file path, a parser, a rendered page —",
     "input that comes from a user,",
   );

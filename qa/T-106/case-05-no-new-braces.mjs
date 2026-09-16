@@ -17,9 +17,9 @@
 // the end of one line to a `{` at the start of the next — inventing a hit that is
 // not in the file.
 
-import { check, done, repoFile } from "../lib/qa.mjs";
+import { check, done, pmRules, repoFile } from "../lib/qa.mjs";
 
-const prompt = repoFile("roles/pm.md");
+const prompt = pmRules();
 const braces = (prompt.match(/\{\{/g) ?? []).length;
 
 // ------------------------------------------------------------ reverse proof
