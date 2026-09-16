@@ -1983,8 +1983,15 @@ if (roles) {
   const custom = fakeContext();
   roles.apply(custom, { roleDeny: { engineer: ["crew_engineer"] } });
   const engineer = custom.mounts.find(mount => mount.config.toolName === "crew_engineer");
-  if (engineer?.config.toolFilter?.deny?.length !== 1) fail("roleDeny did not replace the shipped deny list");
-  else ok("roleDeny replaces the shipped deny list");
+  // Crew V2: `roleDeny` still REPLACES the shipped list for every tool the user
+  // names, but the PM-only tools are unioned back on whatever they wrote. A filter
+  // is the user's own line, and no line of theirs may hand the PM's own playbook
+  // loader to a child — so the check is both halves: their list really replaced
+  // the shipped one, and the invariant survived it.
+  const userDeny = (engineer?.config.toolFilter?.deny ?? []).filter((name) => !PM_ONLY_TOOLS.includes(name));
+  if (userDeny.length !== 1 || userDeny[0] !== "crew_engineer") fail("roleDeny did not replace the shipped deny list");
+  else if (!PM_ONLY_TOOLS.every((name) => engineer?.config.toolFilter?.deny?.includes(name))) fail(`roleDeny dropped ${PM_ONLY_TOOLS.join(", ")} from the deny list, so that child could call the PM's own playbook loader`);
+  else ok("roleDeny replaces the shipped deny list, and the PM-only tool is unioned back on");
 
   // CRD 0016: an EMPTY list must refuse to start, not be waved through. An empty
   // array is not nullish, so `??` never reached the shipped list, and

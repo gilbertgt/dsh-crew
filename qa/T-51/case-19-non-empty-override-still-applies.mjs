@@ -14,6 +14,9 @@
 
 import { check, cleanUp, done } from "../lib/qa.mjs";
 import { loadPreset, loadRoles, mountAttempt, presetCopy } from "./preset-mount.mjs";
+// Crew V2: the PM-only tools are unioned onto every deny list, so a user's own
+// list is compared with them taken out.
+import { PM_ONLY_TOOLS } from "../../host/roles.js";
 
 const dir = presetCopy();
 try {
@@ -49,10 +52,16 @@ try {
     denied.message,
   );
   const engineer = denied.ctx.mounts.find((mount) => mount.config.toolName === "crew_engineer");
+  const userDeny = (engineer?.config.toolFilter?.deny ?? []).filter((name) => !PM_ONLY_TOOLS.includes(name));
   check(
     "the non-empty roleDeny replaces the shipped list, name for name",
-    JSON.stringify(engineer?.config.toolFilter?.deny) === JSON.stringify(["crew_engineer"]),
+    JSON.stringify(userDeny) === JSON.stringify(["crew_engineer"]),
     `crew_engineer's deny list is ${JSON.stringify(engineer?.config.toolFilter?.deny)}`,
+  );
+  check(
+    "and the PM-only tools are unioned back on top of it",
+    PM_ONLY_TOOLS.every((name) => engineer?.config.toolFilter?.deny?.includes(name)),
+    `crew_engineer's deny list is ${JSON.stringify(engineer?.config.toolFilter?.deny)} — a user's line may shape every other tool, but it may not open the PM's own to a child`,
   );
   const untouched = denied.ctx.mounts.find((mount) => mount.config.toolName === "crew_qa");
   const shippedQa = ROLES.find((role) => role.key === "qa");

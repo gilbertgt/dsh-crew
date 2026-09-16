@@ -15,7 +15,7 @@
 //   3. `crew` is the route the numbered flow belongs to;
 //   4. whether a security review is needed is a SECOND question, and it never
 //      moves the route by itself;
-//   5. TaskBrief carries its six fields, and Result its five;
+//   5. TaskBrief carries its fields (with `artifact paths` optional), and Result its five;
 //   6. a blocker on `solo` goes back to the SAME continuable engineer.
 //
 // Three breakages in throwaway copies prove the assertions have teeth: a `solo`
@@ -79,10 +79,13 @@ function audit(raw) {
       + "and a route that changes because a form takes input is a crew nobody asked for.",
   );
   add(
-    "TaskBrief carries its six fields",
-    has("`goal` (one sentence); `files` (the exact files the engineer may touch); `acceptance` (the checks that must pass, each one runnable); `constraints` (what must not change); `test` (the test file to write and the exact command that runs it); `artifact paths` (where the evidence goes)."),
-    "the six fields are the briefing contract. A missing one is a question the engineer has to ask "
-      + "instead of doing the work.",
+    "TaskBrief carries its fields, and its artifact path is optional",
+    has("`goal` (one sentence); `files` (the exact files the engineer may touch); `acceptance` (the checks that must pass, each one runnable); `constraints` (what must not change); `test` (the test file to write and the exact")
+      && has("and `artifact paths`, **which is optional and usually absent**")
+      && has("a `solo` job has no job folder to put one in"),
+    "the fields are the briefing contract, and `artifact paths` is the one of them a `solo` job "
+      + "usually does not have: with no job folder there is nowhere to put one, so the Result in the "
+      + "message is the whole record unless the PM names a path on purpose.",
   );
   add(
     "Result carries its five fields",
@@ -149,7 +152,7 @@ const missingField = afterBreaking(
 );
 check(
   "mutation 3: a TaskBrief missing a field turns this case red",
-  missingField.includes("TaskBrief carries its six fields") && missingField.length === 1,
+  missingField.includes("TaskBrief carries its fields, and its artifact path is optional") && missingField.length === 1,
   `failed checks were ${JSON.stringify(missingField)}`,
 );
 

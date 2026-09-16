@@ -26,13 +26,22 @@ after an upgrade. Durable `dsh-crew-roles` Web settings live outside that folder
 - **The PM reads its flow playbooks with a new `crew_playbook` tool.** The playbooks ship inside
   the package, so asking for one by name — `crew-flow`, `documents`, `hard-rules`, … — works from
   any working directory. The old `read roles/playbooks/...` path only ever resolved inside a
-  dsh-crew checkout. The tool is the PM's alone: no child role can see or call it.
+  dsh-crew checkout.
+- **`crew_playbook` cannot be handed to a child role, whatever your settings say.** Your
+  `roleAllow` / `roleDeny` lines shape every other tool, but not this one: an allow list that names
+  it has it removed, and a deny list that omits it still denies it. A `roleAllow` that names nothing
+  but `crew_playbook` is refused at startup — as written it would have left that child with *every*
+  tool the preset registers, which is the opposite of what the line asks for.
 - **A `solo` job keeps no task row, no job folder and no decision record.** Its TaskBrief is the
   whole contract with the one engineer: the acceptance criteria, the test to write, the files to
   touch, and where the evidence goes. On that route the PM never opens the crew flow, the job
   writes no `state.json` (so a crashed `solo` job is not offered back as unfinished crew work), an
   engineer that hits a blocker reports it and is answered in place rather than opening a `Q-` file,
   and a decision that deserves a record re-routes the work to `crew`. A `crew` job is unchanged.
+- **A `solo` TaskBrief no longer asks for an artifact path.** With no job folder there is nowhere
+  to put one, so the path is optional and usually absent: the `Result` in the message carries the
+  tests, their real result and the remaining risk, and the PM names a path only when the output
+  really is too large to report that way.
 - **Crew Settings is now a standalone DSH Web Settings → Crew section.** It no longer
   appears under Plugins → Plugin configuration. The page shows the PM/root model catalog
   default and gives each child role its own Provider, Model and Reasoning Effort selection.

@@ -27,7 +27,7 @@ import {
   roleAgentOptions,
   roleModelFor,
 } from "./roles-settings.js";
-import { ROLES, TAIWAN_LANGUAGE_POLICY, readRoleText } from "./roles.js";
+import { PM_ONLY_TOOLS, ROLES, TAIWAN_LANGUAGE_POLICY, readRoleText } from "./roles.js";
 import { composeChildPersona } from "./child-policy.js";
 
 export const name = "dsh-crew-roles";
@@ -80,6 +80,19 @@ export function apply(ctx, config) {
     for (const field of ["roleAllow", "roleDeny"]) {
       const configured = configValueFor(config, field, role.key);
       if (configured === undefined || configured === null) continue;
+
+      // A well-formed list can still be a useless one: a `roleAllow` that names
+      // ONLY the PM-only tools leaves the child nothing it may call, and the
+      // mount below would then drop the filter altogether — the opposite of what
+      // the user asked for. Refused here, before the shape gate, because this
+      // value is a list and the gate below would let it through.
+      if (field === "roleAllow" && Array.isArray(configured) && configured.length > 0) {
+        const usable = configured.filter((name) => !PM_ONLY_TOOLS.includes(name));
+        if (usable.length === 0) {
+          throw new Error(`dsh-crew: roleAllow.${role.key} names only ${PM_ONLY_TOOLS.join(", ")}, and no child role may use ${PM_ONLY_TOOLS.length === 1 ? "it" : "them"} — ${PM_ONLY_TOOLS.join(", ")} ${PM_ONLY_TOOLS.length === 1 ? "is the PM's own tool" : "are the PM's own tools"}, and dsh-crew removes ${PM_ONLY_TOOLS.length === 1 ? "it" : "them"} from every role's filter whatever this line says. As written the list would leave ${role.toolName} with no filter at all, and a child with no filter gets every tool this preset registers. Name at least one tool the role may really use, or delete the roleAllow.${role.key} line.`);
+        }
+      }
+
       if (Array.isArray(configured) && configured.length > 0) continue;
 
       // Each half of the message has to be true of THIS role and THIS value, so
@@ -140,12 +153,20 @@ export function apply(ctx, config) {
   /** Build one complete tool-subagent config from the current role settings. */
   const roleConfig = (role) => {
     // A role ships either an allow list (everything else is closed) or a deny
-    // list. `roleAllow` / `roleDeny` replace the shipped list for that role.
+    // list. `roleAllow` / `roleDeny` replace the shipped list for that role —
+    // except for the PM-only tools, which are a hard invariant rather than a
+    // default: a user's line shapes every other tool, and it cannot open the PM's
+    // own material to a child. An allow list closes a role by construction, so
+    // those tools are removed from it (a list that named nothing else was refused
+    // in the pass above, so this can never empty it); a deny list is the only
+    // thing keeping a child out, so they are unioned in.
     const allow = configValueFor(config, "roleAllow", role.key) ?? role.allow;
     const deny = configValueFor(config, "roleDeny", role.key) ?? role.deny;
+    const allowed = allow?.length > 0 ? allow.filter((name) => !PM_ONLY_TOOLS.includes(name)) : allow;
+    const denied = deny?.length > 0 ? [...new Set([...deny, ...PM_ONLY_TOOLS])] : deny;
     const filter = {
-      ...allow?.length > 0 ? { allow } : {},
-      ...deny?.length > 0 ? { deny } : {},
+      ...allowed?.length > 0 ? { allow: allowed } : {},
+      ...denied?.length > 0 ? { deny: denied } : {},
     };
     const agentOptions = roleAgentOptions(roleModelFor(roleModels, role.key));
 

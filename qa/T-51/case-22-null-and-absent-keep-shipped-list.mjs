@@ -18,6 +18,8 @@
 
 import { check, cleanUp, done } from "../lib/qa.mjs";
 import { loadPreset, loadRoles, mountAttempt, presetCopy } from "./preset-mount.mjs";
+// Crew V2: every deny list carries the PM-only tools, whatever the user wrote.
+import { PM_ONLY_TOOLS } from "../../host/roles.js";
 
 /** The filter the table ships for one role, in the shape the mount builds. */
 const shippedFilter = (role) => ({
@@ -110,7 +112,8 @@ try {
     "a null override and a legal override live side by side",
     mixed.thrown === undefined
       && JSON.stringify(mountedReviewer?.config.toolFilter) === JSON.stringify(shippedFilter(reviewer))
-      && JSON.stringify(mountedEngineer?.config.toolFilter?.deny) === JSON.stringify(["crew_engineer"]),
+      && JSON.stringify((mountedEngineer?.config.toolFilter?.deny ?? []).filter((name) => !PM_ONLY_TOOLS.includes(name))) === JSON.stringify(["crew_engineer"])
+      && PM_ONLY_TOOLS.every((name) => mountedEngineer?.config.toolFilter?.deny?.includes(name)),
     mixed.thrown
       ? mixed.message
       : `reviewer: ${JSON.stringify(mountedReviewer?.config.toolFilter)} | engineer deny: ${JSON.stringify(mountedEngineer?.config.toolFilter?.deny)}`,

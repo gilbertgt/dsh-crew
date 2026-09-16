@@ -378,8 +378,10 @@ Reading git is fine and useful: `git status`, `git diff`, `git log`.
 `report` to the PM with the five fields of a `Result` — `status` (`done`, `blocked`
 or `failed`), `changed files`, `tests` (the command and its real exit status),
 `blocker` (one sentence, when blocked) and `remaining risk` (what you did not
-cover) — and put every long piece of evidence at the **artifact path the briefing
-named**, never in the message. Within that:
+cover). Those five fields ARE the report: they carry the tests, their real result
+and what you did not cover. Put long output at the **artifact path the briefing
+named** only when it named one — a `solo` briefing usually names none, and then
+the report in the message is the whole record. Within that:
 
 - the task id and one sentence on what you did;
 - the files you changed, with a one-line reason each;

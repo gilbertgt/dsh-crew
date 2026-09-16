@@ -213,11 +213,14 @@ in an artifact file, and the message carries only the paths.
   `route` (`solo` or `crew`; on this route it is always `solo`); `goal` (one sentence);
   `files` (the exact files the engineer may touch); `acceptance` (the checks that must pass, each
   one runnable); `constraints` (what must not change); `test` (the test file to write and the exact
-  command that runs it); `artifact paths` (where the evidence goes).
+  command that runs it); and `artifact paths`, **which is optional and usually absent** — a `solo`
+  job has no job folder to put one in, so name a path only when the output really is too large to
+  report in the message.
 - **Result** — the engineer writes it in its `report`: `status` (`done`, `blocked` or
   `failed`); `changed files`; `tests` (the command and its real exit status); `blocker` (one
-  sentence, when blocked); `remaining risk` (what it did not cover). Long output goes to the
-  artifact path, never into the message.
+  sentence, when blocked); `remaining risk` (what it did not cover). **Those five fields are the
+  report**, and they carry the tests, their real result and what was not covered. Only when you
+  named an artifact path does the long output go there instead of into the message.
 
 **On `solo` the TaskBrief is the whole contract.** There is no opening document, no task row and no
 design document behind it, so nothing else tells the engineer what "done" means: the acceptance
