@@ -13,7 +13,7 @@
 import { check, done, tempRepo, runCheck, cleanUp, copyFile, put, expectRed, expectGreen, saidOk } from "../lib/qa.mjs";
 
 const SHELL_OK = "these roles keep the shell they work with";
-const DENY = "deny: [...NO_DELEGATION],";
+const DENY = "deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS],";
 
 /**
  * Add `"bash"` to the deny list of one ROLES entry inside a copy.
@@ -27,7 +27,7 @@ function denyBash(dir, key) {
   if (at === -1) throw new Error(`host/roles.js has no entry with key "${key}" — the role table's shape moved`);
   const denyAt = text.indexOf(DENY, at);
   if (denyAt === -1) throw new Error(`the "${key}" entry has no ${DENY} line to break`);
-  put(dir, "host/roles.js", `${text.slice(0, denyAt)}deny: [...NO_DELEGATION, "bash"],${text.slice(denyAt + DENY.length)}`);
+  put(dir, "host/roles.js", `${text.slice(0, denyAt)}deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS, "bash"],${text.slice(denyAt + DENY.length)}`);
 }
 
 const base = tempRepo();

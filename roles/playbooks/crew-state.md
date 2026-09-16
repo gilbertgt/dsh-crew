@@ -2,11 +2,12 @@
 
 The ledger of a job that has a folder: `state.json`, the stage checkpoints, the `Q-` question files, and how a restarted session picks the job up.
 
-**Read this when:** a job has a folder (`crew`, and `solo` once it starts an engineer), or an unfinished-job notice appears.
+**Read this when:** the route is `crew` and the job has a folder, or a restart notice names an unfinished crew job.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rules you must never break live in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "crew-state" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
 ## While the crew is working
 
@@ -32,8 +33,10 @@ which is always in front of you.
 
 ## The state file
 
-This is the ledger of a job that has a folder — `crew`, and `solo`'s one
-engineer. A `direct` change has no state file and nothing to keep in one.
+This is the ledger of a `crew` job — only `crew`. `direct` and `solo` keep no job
+folder and no state file: they are one engineer, one change, and the PM carries it
+in the conversation. A `crew` job is the one that survives a crash by having this
+file, which is also why the host can put an unfinished job in front of you.
 
 `~/.dsh/crew/jobs/<job-slug>/state.json`, English, keep it small:
 

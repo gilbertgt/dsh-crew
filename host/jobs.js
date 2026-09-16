@@ -44,6 +44,11 @@ function readJob(dir) {
   const tasks = Array.isArray(state.tasks) ? state.tasks : [];
   const open = tasks.filter(task => OPEN_STATES.has(task?.state));
   const blocked = open.filter(task => task?.state === "blocked");
+  // The route the job recorded, when it recorded one. A `solo` job keeps no job
+  // folder at all since Crew V2, so this is only ever set by a state file somebody
+  // wrote on purpose — but a file that says `solo` must never be read as an
+  // interrupted crew job.
+  const route = typeof state.route === "string" ? state.route : undefined;
   // Milestones are optional: only PRD-sized jobs have them.
   const milestones = Array.isArray(state.milestones) ? state.milestones : [];
   const current = milestones.find(one => OPEN_MILESTONES.has(one?.state));
@@ -59,9 +64,11 @@ function readJob(dir) {
     // A milestone in `review` is waiting for the user's answer, and nothing in
     // the job may move until they give it. That has to be in the notice.
     awaitingReview: current?.state === "review",
-    // A job with no task list yet is unfinished too — it was interrupted while
-    // the document was being written.
-    unfinished: tasks.length === 0 || open.length > 0,
+    // A job with no task list yet is unfinished too — but only when it is a job
+    // that was supposed to have one. A `solo` job has no task list BY DESIGN, so a
+    // state file that says `solo` is never evidence of unfinished crew work; the
+    // empty-task-list reading belongs to `crew` alone.
+    unfinished: open.length > 0 || (tasks.length === 0 && route !== "solo"),
     touched: statSync(file).mtime.toISOString().slice(0, 16).replace("T", " "),
   };
 }

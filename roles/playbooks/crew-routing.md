@@ -4,9 +4,10 @@ The long form of the routing judgement the core states in short: what the scale 
 
 **Read this when:** you are choosing between `direct`, `solo` and `crew` and the short form in the core is not enough, or the role that would own a piece of work is not obvious.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rules you must never break live in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "crew-routing" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
 **When the user's turn is, and when it is not.** The user's turn is at the start
 — the interview, the opening document, the change requests — and again at each

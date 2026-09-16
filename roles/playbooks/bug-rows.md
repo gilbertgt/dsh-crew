@@ -2,27 +2,26 @@
 
 What a bug's row holds — what was reported and its DoD section — and who writes it.
 
-**Read this when:** a bug on the `crew` or `solo` route is about to be fixed.
+**Read this when:** a bug on the `crew` route is about to be fixed.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rule you must never break lives in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "bug-rows" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
-## A bug becomes a task row — on the `crew` and `solo` routes only
+## A bug becomes a task row — on the `crew` route only
 
-**On those two routes, a bug gets a task row of its own, and you write that row
-before the fix starts.** A typo, a rename, a one-line change: on `crew` and on
-`solo` every one of them is a task, and the row is written before any engineer or
-QA sees it. Which routes those are was settled in step 1, before anything was
-written, and this section does not reopen that choice.
+**On that route a bug gets a task row of its own, and you write that row before
+the fix starts.** A typo, a rename, a one-line change: on `crew` every one of them
+is a task, and the row is written before any engineer or QA sees it.
 
-**A `direct` bug gets no row, and nothing here may be read otherwise.** That
-route's entire record is one test and the commit message (step 1). So this is not
-a rule about bugs; it is a rule about the routes that carry a task row — the row
-is what an engineer, QA and a reviewer read, and a `direct` change starts none of
-them.
+**No other route carries a task row, and nothing here may be read otherwise.**
+`direct`'s entire record is one test and the commit message. `solo` has no task
+table at all: its acceptance criteria live in the TaskBrief, and a bug fixed on
+that route is described there like any other change. So this is not a rule about
+bugs; it is a rule about the one route that carries a task row.
 
-On `crew` and `solo`, before any engineer starts on a bug, you write its row in
+On `crew`, before any engineer starts on a bug, you write its row in
 `docs/tasks/` yourself. The row holds two things:
 
 - **What was reported** — who reported it (the user, QA with its task id, a

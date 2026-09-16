@@ -69,6 +69,16 @@ Then, on either route:
    change from the file names.
 2. Enough of the code around the change to see how outside input reaches it.
 
+## Every rule below, by route
+
+**Any sentence in this file that names a crew document — an opening document, a
+task row, a **DoD section**, a `Q-` file, an ADR or a CRD — is a `route: crew`
+rule.** On `solo` none of those exists: you are handed a ReviewBrief (the goal,
+the `acceptance` list and the diff), so wherever a sentence here says "DoD
+section" or "task row", read the `acceptance` list, and judge the change against
+it and against the checks below. Nothing on `solo` asks you to measure a change
+against a document that route does not have.
+
 ## What you check
 
 Work through this list against the change, and say plainly which items do not

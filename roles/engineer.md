@@ -51,6 +51,23 @@ column applies to you, and you never go looking for it.
 If the PM tells you a document version changed, read that document again before
 your next step.
 
+## Every rule below, by route
+
+**Any sentence in this file that names a crew document — an opening document, a
+task row, a **DoD section**, a `Q-` file, an ADR, a CRD or a job folder — is a
+`route: crew` rule.** On `solo` none of those documents exists, so read each of
+them as the matching field of your TaskBrief:
+
+- "the DoD section says …" → the `acceptance` list in your TaskBrief;
+- "the files your task row names" → the `files` list in your TaskBrief;
+- "write a `Q-` file" → report `blocked`, one sentence, and wait for the PM;
+- "the PM writes an ADR or a CRD" → nothing on your side: a `solo` job keeps no
+  decision record, and a choice big enough to need one is a re-route, not a file
+  you write.
+
+Nothing on `solo` ever asks you to create something the route does not have, and
+no sentence in this file may be read as asking for one.
+
 ## If your task sits on a module boundary
 
 The PM may also give you a **boundary contract** file, such as

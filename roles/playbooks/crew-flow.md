@@ -4,20 +4,17 @@ The full numbered flow: interview, PRD, task table, design, task runs, checks, c
 
 **Read this when:** the route is `crew`, or a `solo` job turned out to need a role beyond its one engineer.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rules you must never break live in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "crew-flow" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
 ## The `crew` flow, step by step
 
-**Every numbered step below belongs to the `crew` route.** Two of them are
-borrowed: `solo` uses step 9's briefing list for its one engineer, and step 11's
-commit, because on every route the PM commits and nobody else does. Everything
-else is `crew`'s alone. `direct` runs none of them — step 1 says what it does
-instead, and the commit is the only step it shares. `solo` otherwise runs only
-the five bullets in **The `solo` flow** above: read the repository, ask at most
-one question, write the task row with its DoD section, start one engineer, watch
-the targeted test, run the completion gates, commit. Neither route opens an
+**Every numbered step below belongs to the `crew` route.** `solo` borrows none
+of them and never opens this file: everything it needs is in the always-loaded
+prompt. `direct` runs none of them — step 1 says what it does
+instead, and the commit is the only step it shares. Neither route opens an
 opening document, asks the user to confirm one, or keeps a milestone of its own;
 `direct` starts no role at all, and `solo` starts only its one engineer plus the
 single reviewer step 1 named, if it named one. No rule inside these steps may be
@@ -103,7 +100,7 @@ before it has finished.
    the `crew` route's too.** On `solo` there is nothing to settle and nobody to
    ask: the stack is what the repository already uses, read in `solo`'s first
    bullet, and the only part of it `solo` needs is the project's test command,
-   which goes in the task row. `direct` needs even less — it uses what is there.
+   which goes into its TaskBrief. `direct` needs even less — it uses what is there.
    **On `crew`:** no task starts
    until it is written down and the user has said yes. Somebody has to choose
    once, or five engineers choose five times.
@@ -152,15 +149,10 @@ before it has finished.
    dependency also turns on the security review in step 10b.
 
 4. **Write the opening document — a PRD, on small work and on big work alike.**
-   **This step is the `crew` route's opening document.** `solo` opens no PRD — it
-   starts one engineer from a task row, per **The `solo` flow** — and `direct`
-   writes no document at all. Everything below about the opening document, its
-   milestones and the confirmation in step 5 belongs to `crew`. **What `solo`
-   takes from this step is the task row**: the fields **The task table** below
-   names — the id, the sentence of work, the exact files it owns, the test file
-   it must write, and its own **DoD section** — plus the `**Shape**` field, which
-   on a `solo` route is always `solo`. Write that one row and nothing else around
-   it.
+   **This step is the `crew` route's opening document.** `solo` opens no PRD and
+   takes nothing from this step — it starts one engineer from its TaskBrief — and
+   `direct` writes no document at all. Everything below about the opening
+   document, its milestones and the confirmation in step 5 belongs to `crew`.
    Judge the size from what the user asked for and what the repository shows: how
    many parts it touches, whether it is a product or a fix, whether any real
    design choice is open. Say in one line how big you judged it, and that a
@@ -281,10 +273,9 @@ before it has finished.
    was lost altogether.
 
    **The task table is `docs/tasks/`, on small work and on big work
-   alike — and it is the one document `solo` writes.** One file, one
-   place, one shape. Only the typist changes: on big work the architect writes it
-   (step 8), on small work you write it yourself, because small work has no
-   architect, and on `solo` you write its single row and it is the whole table.
+   alike.** One file, one place, one shape. Only the typist changes: on big work
+   the architect writes it (step 8), on small work you write it yourself, because
+   small work has no architect. A `solo` job has no task table at all.
    Each row holds an id (`T-01`), one sentence of work, the exact files
    it owns, the **test file** it must write — one of the files it owns, so the
    test is a real file in the project's suite that lives on after the job, not a
@@ -383,8 +374,8 @@ before it has finished.
    on as anything firmer would claim more than this crew can back.
 
 5. **Confirm.** **This step is the `crew` route's.** `solo` confirms nothing:
-   its one question, when there is one, was asked before the task row was written,
-   and the task row starts the engineer with no separate yes. `direct` asks for
+   its one question, when there is one, was asked before the TaskBrief was
+   written, and the TaskBrief starts the engineer with no separate yes. `direct` asks for
    nothing here either — the PM write guard's own permission is the only one it
    needs, and it asks for exactly the writes it makes.
    **On `crew`:** show the document to the user and ask them to confirm it,
@@ -412,9 +403,9 @@ before it has finished.
 6. **Job folder.** Settle the job slug, then create
    `~/.dsh/crew/jobs/<job-slug>/state.json` (shape below). Keep it up to date
    after every step. This is what lets the job survive a restart.
-   **`solo` keeps this folder too**, because the one engineer needs somewhere to
-   leave a question and a restart has to find the job — but nothing else in this
-   step is ceremony for it. **`direct` has no folder at all**: it starts no role,
+   **`solo` keeps no folder either**: its TaskBrief goes straight into the one
+   engineer's prompt and there is no state to resume. **`direct` has no folder at
+   all**: it starts no role,
    so there is nothing to resume and nothing to name.
 
    The slug's shape is fixed: lowercase letters, digits and `-`, nothing else,
@@ -503,9 +494,9 @@ before it has finished.
    step 4.
 
 9. **Run the tasks, one milestone at a time.** **This step is the `crew`
-   route's.** On `solo` the whole of it is the briefing list below, given to the
-   one engineer named in **The `solo` flow**: no parallel start, no numbered
-   display names, no walking skeleton, no paired shape, no second milestone.
+   route's.** A `solo` job never comes here: its TaskBrief is the briefing, and
+   it goes to the one engineer named in **The `solo` flow** —no parallel start,
+   no numbered display names, no walking skeleton, no paired shape.
    Never start a task from the next
    milestone while this one is open, even when the files do not overlap. The
    whole point is to stop and ask.

@@ -56,7 +56,7 @@ export const PM_CORE_MAX_BYTES = 24 * 1024;
 export const PLAYBOOKS = [
   {
     file: "crew-flow.md",
-    when: "the route is `crew`, or a `solo` job needs a role beyond its one engineer",
+    when: "the route is `crew` — a `solo` job never opens it",
     holds: "the numbered flow: interview, PRD, task table, design, task runs, checks, commit, milestone review, release plans, reader-facing files, push, merge, finish",
   },
   {
@@ -66,17 +66,17 @@ export const PLAYBOOKS = [
   },
   {
     file: "documents.md",
-    when: "a job must write an opening document, a task table or a task row",
+    when: "the route is `crew`, and the job must write an opening document, a task table or a task row",
     holds: "the opening document, the task table and its rows, and the write set by document class",
   },
   {
     file: "bug-rows.md",
-    when: "a bug on the `crew` or `solo` route is about to be fixed",
+    when: "a bug on the `crew` route is about to be fixed",
     holds: "what a bug's task row holds, and who writes it",
   },
   {
     file: "decisions.md",
-    when: "a decision or a change request needs its own record",
+    when: "on the `crew` route, a decision or a change request needs its own record",
     holds: "change requests (CRD), decisions about how (ADR), and who decides each",
   },
   {
@@ -86,7 +86,7 @@ export const PLAYBOOKS = [
   },
   {
     file: "crew-state.md",
-    when: "the job has a folder, or a restart notice names an unfinished job",
+    when: "the route is `crew` and the job has a folder, or a restart notice names an unfinished crew job",
     holds: "`state.json`, the stage checkpoints, the `Q-` files, and what a restart repeats",
   },
   {

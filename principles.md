@@ -675,15 +675,14 @@ the PM's finish summary; a way that would change a boundary contract gets a CRD.
 Every such decision is written into a document before the engineer starts again,
 and holds the same five things: the cause, **every** option with its cost and
 **why it lost**, which one was chosen, who chose it, and the reason. It goes in an
-ADR at `docs/decisions/adr/NNNN-<short-name>.md`, whatever the size of the job —
-**on the `solo` and `crew` routes**. A `direct` change writes no ADR and no CRD:
-its small implementation choice stays in the code and the commit message, and a
-decision that deserves a record of its own moves the work to `solo` or `crew`
-rather than adding a document to `direct`. This is the route rule of principle 6
-read one level down: a route that carries no second reader carries no record for
-one either.
-Big work may have a fresh architect write it; small work has no architect, so
-the PM writes it itself, in the same shape. And every ADR — bug fix
+ADR at `docs/decisions/adr/NNNN-<short-name>.md` **on the `crew` route**. A
+`direct` or `solo` change writes no ADR and no CRD: its small implementation
+choice stays in the code and the commit message, and a decision that deserves a
+record of its own re-routes the work to `crew` rather than adding a crew document
+to either lighter route. This is the route rule of principle 6 read one level
+down: a route that carries no crew document carries no decision record either.
+Big crew work may have a fresh architect write the ADR; small crew work has no
+architect, so the PM writes it itself, in the same shape. And every ADR — bug fix
 or not — lists every option with its cost and why it lost, **marks** the one it
 recommends with a one sentence reason, and
 is written so a reader who has never seen the code can tell the options apart.

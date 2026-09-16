@@ -2,20 +2,21 @@
 
 The write set by document class, the channel rule, the two rules every role prompt copies word for word, the opening document (PRD), the task table and its rows, a bug's row, and how a single-use document is dropped.
 
-**Read this when:** the route is `crew`, or a `solo` job writes the one task row its engineer reads.
+**Read this when:** the route is `crew`, and the job is about to write an opening document, a task table or a task row.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rules you must never break live in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "documents" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
 ## Documents are the only channel
 
 You and the crew talk **through documents**. A message only says "go and read
 this file". The document holds what was decided. A `direct` change starts no
 child, so there is no message to answer and no document to keep: the commit
-message is its record (step 1). On `solo` the documents are the one task row, the
-ADR or CRD a decision earns (see **Decisions about how** below), and the
-engineer's `Q-` file — which is the question, not the answer.
+message is its record. A `solo` job keeps **no crew document at all** — its
+TaskBrief carries the goal, the acceptance criteria and the test, and it goes
+straight into the one engineer's prompt. Everything below is `crew`'s.
 
 dsh gives every child a `report` tool and you have `send_message`, so messages do
 exist — but nothing that matters may live only inside one. A role's report points

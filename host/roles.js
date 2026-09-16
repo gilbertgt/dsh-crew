@@ -49,6 +49,16 @@ const READ_ONLY = ["read", "glob", "grep"];
 // `maxDepth: 1` guards the same rule without depending on any name at all.
 const NO_DELEGATION = [...ROLE_TOOL_NAMES];
 
+// Tools only the PM may call.
+//
+// `crew_playbook` resolves the flow playbooks INSIDE this package and hands the
+// whole file back. That is the PM's own material: a child works from the briefing
+// it was given, and a child able to pull the crew flow into its context would be
+// reading a route it is not on. The three allow-list roles are closed already —
+// their lists name `read`, `glob`, `grep` and `web_search` and nothing else — so
+// this is the half that closes the deny-list roles.
+export const PM_ONLY_TOOLS = ["crew_playbook"];
+
 // Why the reviewer uses an allow list instead: two live tests. With only
 // `write` and `edit` denied it wrote a file with `echo hello > file` — a shell
 // is a file-writing tool. With `bash` denied too, its own tool report still
@@ -82,7 +92,7 @@ export const ROLES = [
     summary: "Design the work and split it into tasks",
     // The architect writes design documents, so it needs the writing tools; it
     // must not start agents, and it must not touch code.
-    deny: [...NO_DELEGATION],
+    deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS],
   },
   {
     key: "engineer",
@@ -99,7 +109,7 @@ export const ROLES = [
     summary: "Write one task's code and its tests (solo shape)",
     // Deny list: an engineer needs most of the tool set, so naming what it may
     // NOT have is the only workable shape here.
-    deny: [...NO_DELEGATION],
+    deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS],
   },
   {
     key: "test_engineer",
@@ -116,7 +126,7 @@ export const ROLES = [
     // hand-written copy of the names. A copy would keep exactly the names it was
     // typed with, so the next role added to ROLE_TOOL_NAMES would be missing
     // from it, and this role could start that one.
-    deny: [...NO_DELEGATION],
+    deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS],
   },
   {
     key: "code_engineer",
@@ -128,7 +138,7 @@ export const ROLES = [
     // splitting the task in two.
     summary: "Write the product code for one task",
     // Deny list from NO_DELEGATION, for the reason given on the role above.
-    deny: [...NO_DELEGATION],
+    deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS],
   },
   {
     key: "qa",
@@ -143,7 +153,7 @@ export const ROLES = [
     // QA must actually run the software, so it keeps the shell. It writes only
     // its own test plan and defect notes; the PM's commit step catches any file
     // it touched that no task owns.
-    deny: [...NO_DELEGATION],
+    deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS],
   },
   {
     key: "code_reviewer",

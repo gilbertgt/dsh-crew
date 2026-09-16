@@ -257,7 +257,7 @@ Rules mapped: 1 (guarded 0 · bare 1 · judgment 0)
 
 | rule | owner | status |
 | --- | --- | --- |
-| A bug becomes a task row — on the `crew` and `solo` routes only | PM | bare |
+| A bug becomes a task row — on the `crew` route only | PM | bare |
 
 ## roles/playbooks/crew-flow.md
 

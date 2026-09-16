@@ -4,9 +4,10 @@ How a paired task is run: two engineers, two git worktrees, one interface pinned
 
 **Read this when:** a task is on the paired shape in a job that has an architect.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rules you must never break live in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "worktrees" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
 ## The paired shape
 

@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PM_PERSONA_FILE, ROLE_TOOL_NAMES, ROLES, readRoleText } from "../host/roles.js";
+import { PM_PERSONA_FILE, PM_ONLY_TOOLS, ROLE_TOOL_NAMES, ROLES, readRoleText } from "../host/roles.js";
 import { composePmRules } from "../host/playbooks.js";
 import { logCapture, recording, timesSaid } from "./lib/boot-log.mjs";
 
@@ -2071,7 +2071,7 @@ if (roles) {
     }
     const engineerMount = tried.mounts.find(mount => mount.config.toolName === "crew_engineer");
     if (tried.mounts.length !== ROLES.length) fail(`${label} mounted ${tried.mounts.length} role(s), expected ${ROLES.length}`);
-    else if (engineerMount?.config.toolFilter?.deny?.length !== ROLE_TOOL_NAMES.length) fail(`${label} did not fall back to the shipped deny list (got ${engineerMount?.config.toolFilter?.deny?.length ?? "no filter"}, expected ${ROLE_TOOL_NAMES.length} names)`);
+    else if (engineerMount?.config.toolFilter?.deny?.length !== ROLE_TOOL_NAMES.length + PM_ONLY_TOOLS.length) fail(`${label} did not fall back to the shipped deny list (got ${engineerMount?.config.toolFilter?.deny?.length ?? "no filter"}, expected ${ROLE_TOOL_NAMES.length + PM_ONLY_TOOLS.length} names)`);
     else ok(`${label}: falls back to the shipped list, all ${tried.mounts.length} roles mounted`);
   }
 }

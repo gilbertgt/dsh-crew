@@ -4,11 +4,12 @@ When a decision needs its own record, which of the two it is, what each file hol
 
 **Read this when:** the user asks for something that would move scope, a DoD item or a milestone list, or the work runs into a choice about how that deserves a record.
 
-This file is not loaded into your prompt. Read it with `read` at the moment the
-job needs it, and only then — the rules you must never break live in `roles/pm.md`,
-which is always in front of you.
+This file is not loaded into your prompt. Read it with the `crew_playbook` tool —
+`crew_playbook({ name: "decisions" })` — at the moment the job needs it, and only
+then. The rules you must never break live in `roles/pm.md`, which is always in
+front of you.
 
-## Change requests: every one gets a CRD — on the `crew` and `solo` routes
+## Change requests: every one gets a CRD — on the `crew` route
 
 A **change request** is anything that would change **what the user gets** or
 **how two modules talk**, once that has been written down and confirmed:
@@ -24,8 +25,8 @@ A **change request** is anything that would change **what the user gets** or
 Its whole record is the commit message (step 1). And the moment the user asks for
 something that would move a confirmed scope, a DoD item or a milestone list, the
 work has stopped being a `direct` change: re-route it (step 1) and write the CRD
-on the route that has documents. The rest of this section is for `crew`, and for
-the `solo` task row whose DoD section is the one document it can change.
+on the route that has documents. The rest of this section is `crew`'s. A `solo` job never opens a document that a
+CRD could change, so on that route there is nothing for one to say.
 
 It does not matter who asks: the user mid-job, a role in a report, or you
 yourself. Every one becomes a file you write, before anything moves.
@@ -87,7 +88,7 @@ for and refused:
   thing that just changed, `interrupt_agent` first.
 - Nothing gets built from a CRD that is still undecided.
 
-## Decisions about how: every one gets an ADR — on the `solo` and `crew` routes
+## Decisions about how: every one gets an ADR — on the `crew` route
 
 An **ADR** is a decision record: one file that says what was being decided, what
 the choices were, which one was taken and why.
@@ -103,12 +104,11 @@ whose route was chosen because it needs no second reader.
 different document.** When the choice is big enough that a stranger a year later
 would need the options and the reason written down — a shape other code will be
 built on, a rule the next job will follow, something a reviewer would have to
-reconstruct — stop, say so in one line, and re-route the work to `solo`, or to
-`crew` when it is big as well. There the ADR has a home, an owner and a row that
-points at it. The same holds for a CRD: `direct` writes neither, and the moment
-it would need one, it is not `direct` any more.
+reconstruct — stop, say so in one line, and re-route the work to `crew`. There the ADR has a home, an owner and a row that
+points at it. The same holds for a CRD: `direct` and `solo` write neither, and the
+moment either would need one, it is not that route any more.
 
-On `solo` and `crew`, a decision about **how** goes in an ADR at
+On `crew`, a decision about **how** goes in an ADR at
 `docs/decisions/adr/NNNN-<short-name>.md`, **whatever the size of the job**. A
 decision about **what**, about the scope, or about a contract goes in a CRD, as
 the section above says. Nothing else decides where it lands: not the size of the
@@ -121,9 +121,8 @@ job, and not who is in the room.
 - **Nobody asked**, and the crew ran into a choice while doing the work. That is
   an **ADR**.
 
-**Small work has no architect — and a `solo` change has none at all — so you
-write the ADR yourself.** Step 8 is skipped
-for small work, and one small fix does not earn an architect. An ADR does not need
+**Small work has no architect, so you write the ADR yourself.** Step 8 is
+skipped for small work, and one small fix does not earn an architect. An ADR does not need
 an architect to exist; it needs a decision to exist. For big work you may start a
 `crew_architect` to write it instead.
 

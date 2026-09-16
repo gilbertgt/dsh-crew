@@ -398,8 +398,8 @@ goes in `docs/design/api/`, one file per pair of modules that talk.
   its own five-bullet flow and at most the single reviewer step 1 named — it borrows nothing from
   the numbered steps, which is why a `solo` job never opens `crew-flow.md` — and `direct` shares
   only the commit. Neither `solo` nor `direct` opens an opening document, confirms one with the user, or
-  keeps a milestone of its own; a `direct` change writes no ADR and no CRD, while `solo` writes one
-  when a choice deserves its own record, because that route has no architect and the PM writes it.
+  keeps a milestone of its own; `direct` and `solo` write no ADR and no CRD. A choice that deserves
+  its own record re-routes the work to `crew`, where the record has a crew document to attach to.
   Whether a security review is needed is a **separate** question, answered from the closed risky
   list below; it adds one reviewer to whatever route was chosen and never moves the route by
   itself, so an ordinary settings form or dropdown is not a crew because it takes input.
@@ -450,13 +450,12 @@ reasons:
   skip the move and it quietly means "lost". The same reason makes an ADR **quote** the engineer's `Q-`
   file word for word: an ADR that says "options: see Q-03" points at a file that is about to
   disappear.
-- **Every decision about how gets an ADR, whatever the size of the job — on the `solo` and `crew`
-  routes**, and the test is one
-  question: did someone ask for this? Someone asked → a CRD. Nobody asked and the crew hit the
-  choice while working → an ADR. Small work has no architect, so the PM writes it. Nothing else
-  decides where it lands — not the size of the job, not who was in the room. A `direct` change
-  writes no ADR *and* no CRD: its small implementation choice stays in the commit message, and a
-  decision that deserves a record is a re-route to `solo` or `crew`, not a document on `direct`.
+- **Every decision about how gets an ADR on the `crew` route, whatever the size of the job**, and
+  the test is one question: did someone ask for this? Someone asked → a CRD. Nobody asked and the
+  crew hit the choice while working → an ADR. Small crew work has no architect, so the PM writes
+  it. Nothing else decides where it lands — not the size of the job, not who was in the room.
+  `direct` and `solo` write no ADR and no CRD: their small implementation choice stays in the code
+  and the commit message, and a decision that deserves a record re-routes the work to `crew`.
 - **Everything QA puts in the repository goes under `qa/`** — its cases, their `run.sh`
   files and its entries in `gaps.md` — in the project's own test framework, never into the
   product's test folder and never into project config. **QA cases are scripts, not documents,

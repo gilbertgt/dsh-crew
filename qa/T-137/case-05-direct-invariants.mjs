@@ -86,10 +86,12 @@ const CONTRIBUTING_BANNED = [
 // would be a ban that fires on a correct prompt.
 //
 // The last three are the round-two defect: the `solo` flow said a decision that
-// deserved a record moves the work up to `crew` (against the ADR section, which
-// puts `solo` on the ADR routes), and the numbered-flow statement said neither
-// route starts a reviewer at all (against the routing decision table, which puts a
-// `crew_security_reviewer` on a `solo` change).
+// deserved a record moves the work up to `crew`, and the numbered-flow statement
+// said neither route starts a reviewer at all (against the routing decision table,
+// which puts a `crew_security_reviewer` on a `solo` change). Under the Crew V2
+// contract the first of those is no longer the defect it was: `solo` keeps no
+// decision record at all, so the ban is on the older wording that refused one
+// without saying where the work goes instead.
 const BANNED = [
   "whatever its size.",
   "there is no longer a lane that skips it",
@@ -189,15 +191,15 @@ const ID = {
   step2: "step 2 names the route it runs on",
   step4: "step 4 names the route that opens a PRD",
   prdBullet: "the hard-rules PRD bullet is scoped to the `crew` route",
-  adrHeading: "the ADR section's heading names the routes it applies to",
-  adrScoped: "the ADR section exempts `direct` and re-routes a decision that needs a record",
-  crdHeading: "the CRD section's heading names the routes it applies to",
-  crdScoped: "the CRD section exempts `direct`",
+  adrHeading: "the ADR section's heading says it applies to crew only",
+  adrScoped: "the ADR section exempts direct and solo, and re-routes a decision that needs a record",
+  crdHeading: "the CRD section's heading says it applies to crew only",
+  crdScoped: "the CRD section exempts direct and solo",
   soloFlow: "step 1 spells out the `solo` flow and says the numbered flow is not for it",
   soloReviewer: "the `solo` flow allows exactly the one reviewer step 1 named, and no more",
-  soloAdr: "the `solo` flow keeps its own ADR instead of escalating the decision to `crew`",
-  crewFlow: "the numbered flow says it belongs to the `crew` route, and names the two steps `solo` borrows",
-  decisionsAgree: "all four shipped documents put the ADR on the same routes",
+  soloAdr: "the `solo` flow keeps no decision record and re-routes one that is needed to crew",
+  crewFlow: "the numbered flow says it belongs to crew and that solo borrows none of it",
+  decisionsAgree: "all four shipped documents put the ADR on crew only",
   quantifier: "no paragraph pairs a whole-job claim with a required artifact without naming a route",
 };
 const skipId = (what) => `the \`direct\` bullet says it skips ${what}`;
@@ -222,17 +224,18 @@ function audit(text) {
   const bugHeadingLine = text.split("\n").find((line) => line.startsWith(BUG_HEADING)) ?? "";
   add(
     ID.bugHeading,
-    bugHeadingLine !== "" && /`crew`/.test(bugHeadingLine) && /`solo`/.test(bugHeadingLine),
-    `the heading reads ${JSON.stringify(bugHeadingLine)} — a section called "a bug becomes a task row" with no route in it is the rule this task removed`,
+    bugHeadingLine !== "" && /`crew`/.test(bugHeadingLine) && !/`solo`/.test(bugHeadingLine),
+    `the heading reads ${JSON.stringify(bugHeadingLine)} — a bug row belongs to crew only; solo carries the acceptance criteria in its TaskBrief`,
   );
   add(
     ID.bugScoped,
     bug !== ""
-      && /`crew` and `solo`/.test(flat(bug))
-      && /`direct` bug gets no row/i.test(flat(bug)),
+      && /On `crew`/.test(flat(bug))
+      && /`direct`'s entire record/i.test(flat(bug))
+      && /`solo` has no task table/i.test(flat(bug)),
     bug === ""
       ? `no "## ${BUG_HEADING}" section was found`
-      : `the bug section does not both name the routes and exempt \`direct\`: ${JSON.stringify(flat(bug).slice(0, 400))}`,
+      : `the bug section does not keep the row on crew and exempt both lighter routes: ${JSON.stringify(flat(bug).slice(0, 500))}`,
   );
 
   // --- the two steps that carry a ceremony --------------------------------
@@ -262,33 +265,34 @@ function audit(text) {
   const adrHeadingLine = text.split("\n").find((line) => line.startsWith("## Decisions about how")) ?? "";
   add(
     ID.adrHeading,
-    adrHeadingLine !== "" && /`solo`/.test(adrHeadingLine) && /`crew`/.test(adrHeadingLine),
-    `the ADR section heading reads ${JSON.stringify(adrHeadingLine)} — a section called "every one gets an ADR" with no route in it is the rule this task removed`,
+    adrHeadingLine !== "" && /`crew`/.test(adrHeadingLine) && !/`solo`/.test(adrHeadingLine),
+    `the ADR section heading reads ${JSON.stringify(adrHeadingLine)} — decision records belong to crew only`,
   );
   const flatAdr = flat(adr);
   add(
     ID.adrScoped,
     adr !== ""
       && /`direct` change writes no ADR/i.test(flatAdr)
+      && /`solo`/.test(flatAdr)
       && /re-route/i.test(flatAdr),
     adr === ""
       ? "no `## Decisions about how` section was found"
-      : `the ADR section does not both exempt \`direct\` and send a decision that needs a record up a route: ${JSON.stringify(flatAdr.slice(0, 400))}`,
+      : `the ADR section does not exempt both lighter routes and send a decision that needs a record to crew: ${JSON.stringify(flatAdr.slice(0, 500))}`,
   );
 
   const crd = blockFrom(text, "## Change requests:");
   const crdHeadingLine = text.split("\n").find((line) => line.startsWith("## Change requests:")) ?? "";
   add(
     ID.crdHeading,
-    crdHeadingLine !== "" && /`crew`/.test(crdHeadingLine) && /`solo`/.test(crdHeadingLine),
-    `the CRD section heading reads ${JSON.stringify(crdHeadingLine)} — it has to name the routes it applies to`,
+    crdHeadingLine !== "" && /`crew`/.test(crdHeadingLine) && !/`solo`/.test(crdHeadingLine),
+    `the CRD section heading reads ${JSON.stringify(crdHeadingLine)} — change requests belong to crew only`,
   );
   add(
     ID.crdScoped,
-    crd !== "" && /`direct` change writes no CRD/i.test(flat(crd)),
+    crd !== "" && /`direct` change writes no CRD/i.test(flat(crd)) && /`solo` job never opens a document/i.test(flat(crd)),
     crd === ""
       ? "no `## Change requests:` section was found"
-      : `the CRD section does not exempt \`direct\`: ${JSON.stringify(flat(crd).slice(0, 400))}`,
+      : `the CRD section does not exempt both lighter routes: ${JSON.stringify(flat(crd).slice(0, 500))}`,
   );
 
   // --- the two flows, named where a reader meets them ----------------------
@@ -320,13 +324,13 @@ function audit(text) {
       && /starts no role beyond\s+that one engineer and that one named reviewer/i.test(flatLane),
     `the \`solo\` flow does not allow exactly one named reviewer and forbid the rest: ${JSON.stringify(flatLane.slice(0, 500))}`,
   );
-  // 2. A choice that deserves a record is `solo`'s own ADR, because the ADR
-  //    section lists `solo` among the routes that write one. Sending the work up to
-  //    `crew` instead made the two sections disagree.
+  // 2. A solo change carries no decision record. A choice that deserves one is
+  //    a re-route to crew, where the ADR or CRD has a crew document to attach to.
   add(
     ID.soloAdr,
-    /A choice that deserves its own\s+record \*\*is\*\* `solo`'s business: you write that ADR yourself/i.test(flatLane),
-    `the \`solo\` flow does not say that a decision deserving a record is written as \`solo\`'s own ADR: ${JSON.stringify(flatLane.slice(0, 500))}`,
+    /A `solo` job\s+keeps no decision record/i.test(flatLane)
+      && /re-route it to `crew`/i.test(flatLane),
+    `the \`solo\` flow does not both refuse its own ADR/CRD and re-route a decision that deserves one: ${JSON.stringify(flatLane.slice(0, 650))}`,
   );
   const crewFlow = blockFrom(text, "## The `crew` flow, step by step");
   const flatCrewFlow = flat(crewFlow);
@@ -334,13 +338,11 @@ function audit(text) {
     ID.crewFlow,
     crewFlow !== ""
       && /Every numbered step below belongs to the `crew` route/i.test(flatCrewFlow)
-      && /`solo`\s+(?:otherwise\s+)?runs only\s+the five bullets/i.test(flatCrewFlow)
-      && /borrowed: `solo` uses step 9's briefing list/i.test(flatCrewFlow)
-      && /step 11's\s+commit/i.test(flatCrewFlow)
+      && /`solo` borrows none\s+of them and never opens this file/i.test(flatCrewFlow)
       && /`solo` starts only its one engineer plus the\s+single reviewer step 1 named/i.test(flatCrewFlow),
     crewFlow === ""
       ? "the numbered flow no longer has a heading saying whose flow it is"
-      : `the numbered flow does not say it is the \`crew\` route's, which two steps \`solo\` borrows, and what \`solo\` may start: ${JSON.stringify(flatCrewFlow.slice(0, 400))}`,
+      : `the numbered flow does not say it is crew-only, that solo borrows none of it, and what solo may start: ${JSON.stringify(flatCrewFlow.slice(0, 450))}`,
   );
 
   // --- the hard-rules bullet that restates the PRD rule -------------------
@@ -455,35 +457,34 @@ function auditContributing(text) {
 
 // ------------------------------------------------- the four shipped documents
 //
-// Round two's first defect was a cross-file one, and no case could see it: the ADR
-// section of `roles/pm.md` puts `solo` on the ADR routes, while `CLAUDE.md` and
-// `principles.md` said neither `solo` nor `direct` writes an ADR or a CRD — and the
-// `solo` flow's own paragraph said the work moves up to `crew` for it. Four
-// documents, two answers, every one of them green.
+// Round two's first defect was a cross-file one, and no case could see it: the
+// decision-record rule was stated differently in four documents, and every one of
+// them was green on its own.
 //
-// So the rule is judged across all four at once, in both directions:
+// Crew V2 settled the contract — decision records belong to `crew` alone, and a
+// choice that deserves one re-routes the work rather than adding a document to a
+// lighter route — so the rule is judged across all four documents at once:
 //
-//   * each document that states the ADR rule must put it on `solo` and `crew`,
-//     with `direct` exempt — that is the contract this task's review settled;
-//   * no document may claim that a `solo` change writes no ADR or no CRD.
+//   * each document that states the rule must say `solo` keeps no ADR and no CRD,
+//     in the same sentence as the words that deny it;
+//   * `roles/pm.md` is judged from its composed rules, because the paragraph moved
+//     into `decisions.md` and the core keeps only the scoped summary.
 //
-// The negative half is the one that matters: a document can stay silent about
-// `solo` and still contradict the others by denying it a record, which is exactly
-// what happened twice.
+// Judging the four together is what makes this hold: one document drifting back to
+// "`solo` writes one when a choice deserves it" is red here even though every other
+// check of that file would pass.
 const DOC_FILES = ["roles/pm.md", "CLAUDE.md", CONTRIBUTING, "principles.md"];
 const DOC_IDS = {
-  adrOnSoloAndCrew: (file) => `${file}: the ADR rule is on the \`solo\` and \`crew\` routes`,
-  noSoloDenial: (file) => `${file}: does not deny \`solo\` a decision record`,
+  adrOnSoloAndCrew: (file) => `${file}: the decision-record rule is crew-only`,
+  noSoloDenial: (file) => `${file}: says solo keeps no decision record`,
 };
-// The two shapes the denial took, and they are the only two it can take in a
-// sentence about routes: "… or writes an ADR or a CRD." on the end of a sentence
-// that started with "Neither `solo` nor `direct`", and a plain "a `solo` change
-// writes no ADR". Both are judged inside one sentence (`[^.;]`), so the fixed
-// sentence — "…; a `direct` change writes no ADR and no CRD, while `solo` writes
-// one when a choice deserves its own record" — does not match either of them.
+// The crew-only contract may be written with either route first, or as a direct
+// sentence about solo. Each shape has to say "no" or "neither" in the same
+// sentence as the decision record; a mere mention of ADR/CRD is not enough.
 const SOLO_DENIED = [
-  /or writes an adr or a crd/i,
-  /`solo`[^.;]{0,60}\b(writes no|writes neither|writes none|gets no)\b[^.;]{0,30}(adr|crd)/i,
+  /`direct` and `solo`[^.;]{0,100}\b(no|neither)\b[^.;]{0,50}(adr|crd|decision record)/i,
+  /`solo`[^.;]{0,100}\b(no|neither|writes no|keeps no)\b[^.;]{0,60}(adr|crd|decision record)/i,
+  /no (?:job folder, state file, task row, q-file, )?adr, crd/i,
 ];
 
 /**
@@ -496,17 +497,16 @@ function auditDocuments(files) {
 
   for (const file of DOC_FILES) {
     const whole = flat(files[file] ?? "");
-    add(
-      DOC_IDS.adrOnSoloAndCrew(file),
-      whole !== "" && /`solo` and `crew`/i.test(whole),
-      `${file} does not put the ADR rule on the \`solo\` and \`crew\` routes: ${JSON.stringify(whole.slice(0, 200))}`,
-    );
     const denied = SOLO_DENIED.map((pattern) => pattern.exec(whole)).find((found) => found !== null);
     add(
+      DOC_IDS.adrOnSoloAndCrew(file),
+      whole !== "" && /crew/i.test(whole) && denied !== undefined,
+      `${file} does not state the crew-only decision-record contract: ${JSON.stringify(denied?.[0] ?? whole.slice(0, 240))}`,
+    );
+    add(
       DOC_IDS.noSoloDenial(file),
-      whole !== "" && denied === undefined,
-      `${file} denies \`solo\` a decision record, which the ADR section of roles/pm.md grants it: `
-        + JSON.stringify(denied?.[0] ?? ""),
+      whole !== "" && denied !== undefined,
+      `${file} does not say that \`solo\` keeps no ADR/CRD: ${JSON.stringify(whole.slice(0, 260))}`,
     );
   }
 
@@ -556,7 +556,7 @@ function mutateContributing(from, to) {
 
 // Mutation 1: the old opener comes back in front of the scoped bug rule.
 const opener = afterBreaking((dir) => {
-  edit(dir, "roles/playbooks/bug-rows.md", "**On those two routes, a bug gets a task row of its own", "**Whatever its size.** **On those two routes, a bug gets a task row of its own");
+  edit(dir, "roles/playbooks/bug-rows.md", "**On that route a bug gets a task row of its own", "**Whatever its size.** **On that route a bug gets a task row of its own");
 });
 check(
   "mutation 1: putting the old \"Whatever its size.\" opener back turns this case red",
@@ -604,8 +604,8 @@ const freshRule = afterBreaking((dir) => {
   edit(
     dir,
     "roles/playbooks/bug-rows.md",
-    "## A bug becomes a task row — on the `crew` and `solo` routes only",
-    "Every change gets a task row in `docs/tasks/` before it starts.\n\n## A bug becomes a task row — on the `crew` and `solo` routes only",
+    "## A bug becomes a task row — on the `crew` route only",
+    "Every change gets a task row in `docs/tasks/` before it starts.\n\n## A bug becomes a task row — on the `crew` route only",
   );
 });
 check(
@@ -621,7 +621,7 @@ const adrHeadingBack = afterBreaking((dir) => {
   edit(
     dir,
     "roles/playbooks/decisions.md",
-    "## Decisions about how: every one gets an ADR — on the `solo` and `crew` routes",
+    "## Decisions about how: every one gets an ADR — on the `crew` route",
     "## Decisions about how: every one gets an ADR",
   );
 });
@@ -665,7 +665,7 @@ const soloAdrGone = afterBreaking((dir) => {
   edit(
     dir,
     "roles/pm.md",
-    "A choice that\ndeserves its own record **is** `solo`'s business: you write that ADR yourself,\nbecause this route has no architect, and a change to a TaskBrief's acceptance list\nis written up as the CRD the section above describes.",
+    "starts no role beyond that one engineer and that one named reviewer. **A `solo` job\nkeeps no decision record.**",
     "A decision big enough to deserve its own record moves the work up to\n`crew`, and a small implementation choice stays in the commit message.",
   );
 });
@@ -691,10 +691,9 @@ check(
 // and `CLAUDE.md` is not one of them, so there is no copy to edit — and the audit
 // is a pure function over text, which makes it the same proof.
 const claudeDenial = (() => {
-  const broken = documents["CLAUDE.md"].replace(
-    "keeps a milestone of its own; a `direct` change writes no ADR and no CRD, while `solo` writes one",
-    "keeps a milestone of its own, or writes an ADR or a CRD",
-  );
+  const broken = documents["CLAUDE.md"]
+    .split("`direct` and `solo` write no ADR and no CRD")
+    .join("`direct` and `solo` write their own ADR and CRD");
   if (broken === documents["CLAUDE.md"]) throw new Error("mutation anchor not found in CLAUDE.md");
   return auditDocuments({ ...documents, "CLAUDE.md": broken }).filter((result) => !result.ok).map((result) => result.id);
 })();

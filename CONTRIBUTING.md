@@ -39,7 +39,7 @@ it before doing anything (`roles/pm.md` step 1):
 | Route | Who does it | What it carries |
 | --- | --- | --- |
 | `direct` | the PM alone, no child role | one test and one commit. No interview, no PRD, no design document, no task row, no ADR, no CRD, no QA, no review |
-| `solo` | one `crew_engineer` | a task row with its own DoD section, and an ADR or a CRD only when a decision really deserves one. No interview, no PRD, no architect, no QA and no review, unless that one change really needs independent verification |
+| `solo` | one `crew_engineer` | one TaskBrief, which is the whole contract. No job folder, state file, task row, Q-file, ADR, CRD, interview, PRD, architect, QA or review, unless that one change really needs one independent reviewer |
 | `crew` | the numbered flow below, several roles | a PRD, the task table, an optional architect, the ADRs and CRDs, QA, and the reviews |
 
 `direct` is where a typo, a rename, a config line, a one-line fix, a document

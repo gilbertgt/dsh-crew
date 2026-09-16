@@ -1,5 +1,5 @@
-// T-51, DoD item 2: both new entries build their deny list as
-// `[...NO_DELEGATION]` — never a hand-written list of names.
+// T-51, DoD item 2: both new entries build their deny list from
+// `[...NO_DELEGATION, ...PM_ONLY_TOOLS]` — never a hand-written list of names.
 //
 // What it proves: the deny list of each new role WIDENS by itself when the next
 // crew role is added. This is a source-text check on purpose: at run time a
@@ -26,8 +26,8 @@ for (const key of ["test_engineer", "code_engineer"]) {
   const text = entry(key);
 
   check(
-    `${key}: deny is built as [...NO_DELEGATION]`,
-    text.includes("deny: [...NO_DELEGATION]"),
+    `${key}: deny is built as [...NO_DELEGATION, ...PM_ONLY_TOOLS]`,
+    text.includes("deny: [...NO_DELEGATION, ...PM_ONLY_TOOLS]"),
     text,
   );
 
