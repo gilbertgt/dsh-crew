@@ -2383,21 +2383,29 @@ session，而且会随模型、路由与任务不同而变。
 
 ## 65. 角色设置热重载的用例用的是合成 Fiber，真实 Cordis 的重启行为没有用例
 
-**缺口**（crew-v2，2026-09-16）：`host/roles-preset.js` 的 settings 热重载路径现在有
-`tools/verify-role-settings.mjs` 的三个用例守着——「同一轮内先改 B 再改回 A 仍以 A 落地」、
-「每个目标只排一次更新」，以及「被 host 拒绝的更新会立刻把最后一份可用 config 套回去」。
-但这三个用例用的都是**合成 Fiber**：`update()` 什么时候 resolve、什么时候 throw，由用例
-自己决定。真实宿主里那两件事实——「`Fiber.update()` 被拒绝后 fiber 会停在 inactive 且不会
-自己 rollback」、「把旧 config 再 update 一次能把它救回来」——没有用例能判，仓库里也不装
-`@deepseek-ai/dsh-tool-subagent`（CI 更没有），所以那条路径只被静态 pin 与合成对象覆盖。
+**缺口**（crew-v2，2026-09-16；2026-09-17 依实际上线的 API contract 改写）：`host/roles-preset.js`
+的 settings 热重载路径现在有 `tools/verify-role-settings.mjs` 的四个用例守着——「同一轮内先改 B
+再改回 A 仍以 A 落地」、「每个目标只排一次尝试」、「被 host 拒绝的更新会立刻把最后一份可用
+config 套回去」，以及「下一次 settings 事件再问同一个被拒绝的 route 时真的会重试，并在 host
+不再拒绝时落地」。这四个用例用的都是**合成 Fiber**。
 
-**为什么**：真实 `Fiber.update()` 的语义属于 dsh，不属于这个 package。要判它就得在一个
-挂得起真 preset 的宿主机上跑，而那正是 CI 的「普通机器」做不到的事（`verify-mount.mjs`
-的 role-tool 半套会在那里明说 SKIP）。
+它现在照真实 API 的**形状**写：`update(config)` 交出新 config 并回传 restart promise，
+`await()` 是另一个方法，负责 settle lifecycle 并 rethrow startup error（`applyToFiber` 的注释
+里有原始码依据，以及为什么少了第二个 await 会把失败的 reload 读成成功）。但真实宿主里那两件
+事实——「`Fiber._reload()` 真的把 startup failure 收进 `_error` 而 fiber 停在 error state」、
+「把旧 config 再套一次真的能把它救回来」——没有用例能判，因为仓库里不装
+`@deepseek-ai/dsh-tool-subagent`，也没有真的 Cordis fiber 可跑（CI 更没有），所以那条路径只被
+静态 pin 与合成对象覆盖。合成对象模仿得再像，也只是模仿。
 
-**该怎么办**：要一个真实宿主的证据，就在连结过 dsh 自身 node_modules 的机器上跑一次
-「把一个角色的 provider 改成不存在的值、再改回来」，看 boot log 与该 child 的 route，并把
-结果贴进该轮的报告；在拿到那份证据之前，这一段的结论只能说到「逻辑在合成 Fiber 上是
-正确的」。
+**为什么**：真实 `Fiber.update()` 的语义属于 dsh，不属于这个 package。要判它就得在一个挂得起
+真 preset 的宿主机上跑，而那正是 CI 的「普通机器」做不到的事（`verify-mount.mjs` 的 role-tool
+半套会在那里明说 SKIP）。把合成对象的行为写成「已验证」会是这一条最坏的用法：被模仿的语义
+刚好是出错时最容易看起来没问题的那个。
+
+**该怎么办**：要一个真实宿主的证据，就在连结过 dsh 自身 node_modules 的机器上跑一次「把一个
+角色的 provider 改成不存在的值、再改回来」，看 boot log 与那个 child 的 route，并把结果贴进该
+轮的报告；在拿到那份证据之前，这一段的结论只能说到「逻辑在合成 Fiber 上是正确的」。这一轮
+review 已经证明这件事值得做：`await fiber.update()` 抓不到 startup failure，是合成 fixture 与
+真实 API 不同的地方，而它骗过了当时所有的检查。
 
 **状态**：未关闭。逻辑已被覆盖，真实宿主行为未被覆盖。
